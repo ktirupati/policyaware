@@ -29,6 +29,12 @@ providers = [
   "boto3>=1.34"
 ]
 
+[project.urls]
+Homepage = "https://ktirupati.github.io/policyaware/"
+Documentation = "https://ktirupati.github.io/policyaware/"
+Repository = "https://github.com/ktirupati/policyaware"
+Issues = "https://github.com/ktirupati/policyaware/issues"
+
 [project.scripts]
 policyaware = "policyaware.cli:app"
 
