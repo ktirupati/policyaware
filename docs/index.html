@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PolicyAware AI Gateway</title>
+  <meta name="description" content="Policy-aware AI gateway for governed LLM, RAG, agent, and MCP tool execution.">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header>
+    <div class="shell nav">
+      <a class="brand" href="./">PolicyAware AI Gateway</a>
+      <nav class="nav-links">
+        <a href="#install">Install</a>
+        <a href="#examples">Examples</a>
+        <a href="#providers">Providers</a>
+        <a href="#audit">Audit</a>
+        <a href="#docs">Docs</a>
+        <a href="https://github.com/ktirupati/policyaware">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div>
+          <h1>Governed AI execution for LLMs, RAG, agents, and tools.</h1>
+          <p class="subtitle">
+            PolicyAware is an open-source Python framework that checks prompts, request context,
+            policies, model routing, tool calls, model responses, and audit traces before AI behavior
+            becomes business behavior.
+          </p>
+          <div class="button-row">
+            <a class="button" href="#install">Start with installation</a>
+            <a class="button secondary" href="https://github.com/ktirupati/policyaware">View repository</a>
+          </div>
+        </div>
+        <div class="card hero-card">
+          <h2>What It Does</h2>
+          <ul>
+            <li>Deny-by-default YAML policy enforcement</li>
+            <li>PII, PHI, secrets, and sensitive data checks</li>
+            <li>Risk classification and explainable decisions</li>
+            <li>Model routing across real providers and local models</li>
+            <li>MCP/tool governance and approval hooks</li>
+            <li>Runtime evaluation, audit traces, and replay</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="section">
+      <div class="shell">
+        <h2>Installation</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>Local Development</h3>
+            <p>Use this while working from a cloned copy of the repository:</p>
+            <pre><code>git clone https://github.com/ktirupati/policyaware.git
+cd policyaware
+pip install -e ".[dev]"</code></pre>
+          </div>
+          <div class="card">
+            <h3>Future PyPI Install</h3>
+            <p>After the package is published to PyPI, users can install it with:</p>
+            <pre><code>pip install policyaware</code></pre>
+            <p>For optional Bedrock support:</p>
+            <pre><code>pip install "policyaware[providers]"</code></pre>
+          </div>
+        </div>
+
+        <h3>Verify The Install</h3>
+        <pre><code>policyaware dev simulate
+policyaware policy validate examples/policies/basic.yaml
+policyaware policy explain examples/policies/basic.yaml --prompt "Email jane@example.com"
+policyaware risk classify "Review patient id ABCDE diagnosis: flu" --domain healthcare --autonomy agentic
+policyaware tools check examples/policies/tool-governance.yaml --agent code_assistant --connector github --action create_pr
+policyaware eval run examples/evals/executable_governance_cases.yaml --policy-file examples/policies/basic.yaml</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <h2>What PolicyAware Checks</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Area Checked</th>
+              <th>Examples</th>
+              <th>Possible Outcome</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>User prompts / messages</td>
+              <td>PII, PHI, secrets, API keys, emails, phone numbers, sensitive business text</td>
+              <td>Deny, redact, classify as higher risk, or allow</td>
+            </tr>
+            <tr>
+              <td>Request context</td>
+              <td>User role, tenant, region, task type, risk level, domain, autonomy level</td>
+              <td>Apply RBAC, tenant isolation, region restrictions, or approval requirements</td>
+            </tr>
+            <tr>
+              <td>YAML policies</td>
+              <td>basic.yaml, regulated-rag.yaml, tool-governance.yaml</td>
+              <td>Produce allow, deny, conditional_allow, or require_approval decisions</td>
+            </tr>
+            <tr>
+              <td>Tool calls</td>
+              <td>Connector name, action name, user role, arguments, approval requirements</td>
+              <td>Allow read actions, deny destructive actions, require approval for writes</td>
+            </tr>
+            <tr>
+              <td>Model responses</td>
+              <td>Sensitive data leakage, citation requirements, policy consistency</td>
+              <td>Flag eval failures, record safety scores, and produce audit evidence</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="examples" class="section">
+      <div class="shell">
+        <h2>Working Examples</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>Python SDK</h3>
+            <pre><code>from policyaware import Gateway, GatewayRequest
+
+gateway = Gateway.from_policy_file("examples/policies/basic.yaml")
+
+response = gateway.chat(
+    GatewayRequest(
+        tenant="acme",
+        app="support-copilot",
+        user={"id": "u_123", "role": "support_agent"},
+        context={
+            "region": "us",
+            "task_type": "support",
+            "risk": "low",
+            "domain": "support",
+        },
+        messages=[
+            {"role": "user", "content": "Email jane@example.com about the claim."}
+        ],
+    )
+)
+
+print(response.policy.decision)
+print(response.policy.risk_tier)
+print(response.policy.reason_codes)
+print(response.trace_id)</code></pre>
+          </div>
+          <div class="card">
+            <h3>Policy Rule</h3>
+            <pre><code>id: basic_enterprise_policy
+default: deny
+
+rules:
+  - name: block_secrets
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: redact_pii_for_non_privileged_users
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role_not_in: ["privacy_admin", "compliance_officer"]</code></pre>
+          </div>
+        </div>
+
+        <h3>CLI Examples</h3>
+        <pre><code>policyaware policy validate examples/policies/basic.yaml
+policyaware policy explain examples/policies/basic.yaml --role support_agent --prompt "Email jane@example.com"
+policyaware policy explain examples/policies/basic.yaml --role developer --prompt "Use secret_api_key_abcdefghijklmnop"
+policyaware audit view --traces-file .policyaware/traces.jsonl --out .policyaware/trace-viewer.html</code></pre>
+      </div>
+    </section>
+
+    <section id="providers" class="section">
+      <div class="shell">
+        <h2>Provider Adapters</h2>
+        <p>PolicyAware supports real provider adapters while keeping the local simulated provider for development.</p>
+        <div class="grid">
+          <div class="card"><h3>Cloud</h3><p>Azure OpenAI, Anthropic, Amazon Bedrock, Vertex AI</p></div>
+          <div class="card"><h3>Local</h3><p>Ollama and vLLM</p></div>
+          <div class="card"><h3>Generic</h3><p>OpenAI-compatible chat completion APIs</p></div>
+        </div>
+        <pre><code>from policyaware import Gateway, AzureOpenAIProvider, ProviderRegistry
+
+gateway = Gateway.from_policy_file("examples/policies/basic.yaml")
+gateway.provider_registry = ProviderRegistry({
+    "azure-openai": AzureOpenAIProvider(
+        endpoint="https://your-resource.openai.azure.com",
+        api_key="YOUR_KEY",
+    )
+})</code></pre>
+      </div>
+    </section>
+
+    <section id="audit" class="section">
+      <div class="shell">
+        <h2>Audit, Observability, And Evals</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Audit Storage</h3>
+            <pre><code>from policyaware.audit import SQLiteAuditLogger
+
+gateway.audit_logger = SQLiteAuditLogger(".policyaware/audit.db")</code></pre>
+          </div>
+          <div class="card">
+            <h3>Trace Viewer</h3>
+            <pre><code>policyaware audit view-sqlite \
+  --db .policyaware/audit.db \
+  --out .policyaware/trace-viewer.html</code></pre>
+          </div>
+          <div class="card">
+            <h3>Metrics</h3>
+            <pre><code>policyaware observability prometheus
+policyaware observability otel-json</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="docs" class="section">
+      <div class="shell">
+        <h2>More Documentation</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Working Examples</h3>
+            <p><a href="working-examples.md">Open the Markdown examples guide</a></p>
+          </div>
+          <div class="card">
+            <h3>Production Features</h3>
+            <p><a href="production-features.md">Open the production feature guide</a></p>
+          </div>
+          <div class="card">
+            <h3>User Guide</h3>
+            <p><a href="PolicyAware_AI_Gateway_User_Guide.docx">Download the Word user guide</a></p>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>GitHub Pages setup:</strong> In repository settings, set Pages source to
+          <code>Deploy from a branch</code>, branch <code>main</code>, folder <code>/docs</code>.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      PolicyAware AI Gateway is Apache-2.0 licensed. Documentation generated for the
+      <a href="https://github.com/ktirupati/policyaware">policyaware</a> repository.
+    </div>
+  </footer>
+</body>
+</html>
+

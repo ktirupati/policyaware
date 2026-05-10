@@ -4,6 +4,8 @@ PolicyAware AI Gateway is an open-source control plane for governed AI execution
 
 The default posture is deny-by-default: every request must match an allow or conditional policy before execution.
 
+Documentation site: https://ktirupati.github.io/policyaware/
+
 ## What It Provides
 
 - Policy enforcement for RBAC, context, tenant, region, compliance, budgets, tokens, latency, and model constraints.
