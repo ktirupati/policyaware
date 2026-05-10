@@ -1,0 +1,32 @@
+suite: governance_policy_eval
+
+checks:
+  - type: expected_policy_decision
+  - type: sensitive_data_leakage
+  - type: approval_path_validation
+  - type: tool_misuse
+
+cases:
+  - id: pii_support_redaction
+    input: "Email jane@example.com about the ticket."
+    user:
+      role: support_agent
+    context:
+      region: us
+      task_type: support
+    expected:
+      decision: conditional_allow
+      reason_codes:
+        - DATA.PII_DETECTED
+        - POLICY.TRANSFORM_APPLIED
+
+  - id: secret_block
+    input: "Use secret_api_key_abcdefghijklmnop"
+    user:
+      role: developer
+    expected:
+      decision: deny
+      reason_codes:
+        - DATA.SECRET_DETECTED
+        - POLICY.DENY_MATCHED
+

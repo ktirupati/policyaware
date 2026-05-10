@@ -1,0 +1,33 @@
+id: basic_enterprise_policy
+default: deny
+
+rules:
+  - name: critical_requires_approval
+    effect: require_approval
+    when:
+      risk.tier: "critical"
+
+  - name: block_secrets
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: allow_low_medium_risk_enterprise_users
+    effect: allow
+    when:
+      user.role_in: ["support_agent", "claims_adjuster", "developer", "privacy_admin"]
+      request.risk_in: ["low", "medium"]
+      request.region: "us"
+
+  - name: redact_pii_for_non_privileged_users
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role_not_in: ["privacy_admin", "compliance_officer"]
+
+  - name: require_approval_for_high_risk
+    effect: require_approval
+    when:
+      risk.tier_in: ["high", "critical"]
+

@@ -1,0 +1,23 @@
+id: regulated_rag_policy
+default: deny
+
+rules:
+  - name: block_phi_outside_compliance_roles
+    effect: deny
+    when:
+      data.contains_phi: true
+      user.role_not_in: ["clinician", "compliance_officer"]
+
+  - name: allow_grounded_rag_in_region
+    effect: allow
+    when:
+      request.task_type: "rag_answer"
+      request.region_in: ["us", "eu"]
+      request.require_citations: true
+      user.role_in: ["clinician", "analyst", "compliance_officer"]
+
+  - name: require_approval_for_tool_calls
+    effect: require_approval
+    when:
+      request.tools_requested: true
+

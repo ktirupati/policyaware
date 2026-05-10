@@ -1,0 +1,19 @@
+suite: customer_support_rag_eval
+dataset: ./datasets/support_golden.jsonl
+
+checks:
+  - type: answer_relevance
+    threshold: 0.85
+
+  - type: groundedness
+    threshold: 0.90
+
+  - type: citation_required
+    required: true
+
+  - type: pii_leakage
+    threshold: 0
+
+  - type: policy_compliance
+    required: true
+

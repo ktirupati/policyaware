@@ -1,0 +1,14 @@
+id: invalid_policy_example
+default: maybe
+
+rules:
+  - name: bad_effect
+    effect: permit
+    when:
+      user.role_in: admin
+
+  - effect: allow
+    action: redact
+    when:
+      identity.role: developer
+

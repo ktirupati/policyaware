@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "policyaware"
+version = "0.2.0"
+description = "Policy-aware control plane for enterprise LLM, RAG, and AI agent applications."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+  { name = "PolicyAware AI Gateway Contributors" }
+]
+keywords = ["llm", "ai-gateway", "policy", "rag", "agents", "governance", "audit"]
+dependencies = [
+  "pydantic>=2.6",
+  "PyYAML>=6.0",
+  "typer>=0.12",
+  "rich>=13.7"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.4"
+]
+providers = [
+  "boto3>=1.34"
+]
+
+[project.scripts]
+policyaware = "policyaware.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/policyaware"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

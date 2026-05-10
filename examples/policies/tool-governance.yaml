@@ -1,0 +1,43 @@
+id: mcp_tool_governance
+schema_version: "0.2"
+default: deny
+
+connectors:
+  - id: github
+    type: mcp
+    risk: medium
+    actions:
+      read_file:
+        effect: allow
+        risk: low
+        side_effect: none
+        when:
+          user.role_in: ["developer", "security_engineer"]
+        limits:
+          calls_per_minute: 60
+      create_pr:
+        effect: require_approval
+        risk: high
+        side_effect: write
+        when:
+          user.role_in: ["developer", "maintainer"]
+      delete_branch:
+        effect: deny
+        risk: critical
+        side_effect: delete
+
+  - id: snowflake
+    type: mcp
+    risk: high
+    actions:
+      query:
+        effect: allow
+        risk: medium
+        side_effect: read
+        when:
+          user.role_in: ["analyst", "data_scientist"]
+          arguments.database_not_in: ["payroll", "medical"]
+        limits:
+          calls_per_hour: 20
+          max_rows: 1000
+
