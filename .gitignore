@@ -6,6 +6,7 @@ __pycache__/
 .policyaware/
 .docx_tmp/
 render_tmp/
+.tools/
 docs/rendered_user_guide/
 dist/
 build/
