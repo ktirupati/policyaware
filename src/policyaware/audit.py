@@ -209,7 +209,7 @@ class AuditBundleWriter:
     def _summary(self, trace: dict[str, Any]) -> str:
         return "\n".join(
             [
-                f"# PolicyAware Audit Summary",
+                "# PolicyAware Audit Summary",
                 "",
                 f"- Trace: `{trace.get('trace_id')}`",
                 f"- Tenant: `{trace.get('tenant')}`",

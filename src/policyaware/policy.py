@@ -163,8 +163,8 @@ class PolicyEngine:
             operator = "eq"
             key = dotted_key
             for suffix, op in {
-                "_in": "in",
                 "_not_in": "not_in",
+                "_in": "in",
                 "_lte": "lte",
                 "_gte": "gte",
             }.items():

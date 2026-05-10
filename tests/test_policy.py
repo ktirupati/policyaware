@@ -47,3 +47,35 @@ def test_transform_redacts_pii_for_non_privileged_user() -> None:
     assert decision.decision == Decision.CONDITIONAL_ALLOW
     assert decision.actions == ["redact"]
     assert decision.explanation is not None
+
+
+def test_not_in_operator_matches_full_suffix_before_in() -> None:
+    engine = PolicyEngine(
+        {
+            "default": "deny",
+            "rules": [
+                {
+                    "name": "allow_support",
+                    "effect": "allow",
+                    "when": {"user.role": "support"},
+                },
+                {
+                    "name": "redact_pii_for_non_privileged",
+                    "effect": "transform",
+                    "action": "redact",
+                    "when": {
+                        "data.contains_pii": True,
+                        "user.role_not_in": ["privacy_admin", "compliance_officer"],
+                    },
+                },
+            ],
+        }
+    )
+    findings = DataProtectionEngine().inspect("email jane@example.com")
+    decision = engine.decide(
+        GatewayRequest(tenant="acme", app="test", user={"role": "support"}),
+        findings,
+    )
+
+    assert decision.decision == Decision.CONDITIONAL_ALLOW
+    assert "redact_pii_for_non_privileged" in decision.matched_rules
