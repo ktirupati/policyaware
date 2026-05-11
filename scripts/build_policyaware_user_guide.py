@@ -156,7 +156,7 @@ def build() -> None:
 
     doc.core_properties.title = "PolicyAware AI Gateway User Guide"
     doc.core_properties.subject = "Installation, usage, and working examples"
-    doc.core_properties.author = "PolicyAware AI Gateway Contributors"
+    doc.core_properties.author = "Krishna Kishor Tirupati"
 
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER

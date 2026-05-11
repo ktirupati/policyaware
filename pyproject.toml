@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "policyaware"
-version = "0.2.1"
+version = "0.2.2"
 description = "Policy-aware control plane for enterprise LLM, RAG, and AI agent applications."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
-  { name = "PolicyAware AI Gateway Contributors" }
+  { name = "Krishna Kishor Tirupati" }
 ]
 keywords = ["llm", "ai-gateway", "policy", "rag", "agents", "governance", "audit"]
 dependencies = [
