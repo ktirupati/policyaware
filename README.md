@@ -6,8 +6,8 @@ The default posture is deny-by-default: every request must match an allow or con
 
 Documentation site: https://ktirupati.github.io/policyaware/
 
-Capability docs: [docs/capabilities.md](docs/capabilities.md)
-Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](docs/capabilities/ready-to-use-yaml.md)
+Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
+Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 
 ## What It Provides
 
@@ -38,7 +38,7 @@ policyaware tools check examples/policies/tool-governance.yaml --agent code_assi
 policyaware eval run examples/evals/support_rag.yaml
 ```
 
-For copy-pasteable end-to-end examples, see [Working Examples](docs/working-examples.md).
+For copy-pasteable end-to-end examples, see [Working Examples](https://github.com/ktirupati/policyaware/blob/main/docs/working-examples.md).
 
 ```python
 from policyaware import Gateway, GatewayRequest
