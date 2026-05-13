@@ -6,6 +6,9 @@ The default posture is deny-by-default: every request must match an allow or con
 
 Documentation site: https://ktirupati.github.io/policyaware/
 
+Capability docs: [docs/capabilities.md](docs/capabilities.md)
+Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](docs/capabilities/ready-to-use-yaml.md)
+
 ## What It Provides
 
 - Policy enforcement for RBAC, context, tenant, region, compliance, budgets, tokens, latency, and model constraints.
@@ -136,10 +139,15 @@ This is a production-grade starter framework: the core extension points and exec
 - Tool governance policies for MCP-style connectors and actions.
 - Governance-aware eval report schema.
 - Provider adapters for OpenAI-compatible APIs, Azure OpenAI, Anthropic, Bedrock, Vertex AI, Ollama, and vLLM.
+- Optional ML signal integrations for Presidio PII detection, ProtectAI prompt-injection detection, and custom Transformers domain/risk classifiers.
 - SQLite audit storage and static trace viewer.
 - Prometheus text and OpenTelemetry-shaped JSON exporters.
 - File and webhook approval hooks.
 - Executable golden dataset policy checks.
+
+## Third-Party ML Models
+
+Optional ML integrations may download third-party models at runtime. PolicyAware does not bundle model weights. Review and accept the license or access terms for any model you configure, especially gated Hugging Face models.
 
 ## License
 

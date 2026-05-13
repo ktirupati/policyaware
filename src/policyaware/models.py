@@ -50,6 +50,27 @@ class DataFindings(BaseModel):
         return self.contains_pii or self.contains_phi or self.contains_secrets
 
 
+class MLSignal(BaseModel):
+    name: str
+    label: str | None = None
+    score: float = 0.0
+    detected: bool = False
+    provider: str | None = None
+    model: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class MLAssessment(BaseModel):
+    signals: dict[str, MLSignal] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    def as_policy_context(self) -> dict[str, Any]:
+        return {
+            name: signal.model_dump(mode="json")
+            for name, signal in self.signals.items()
+        }
+
+
 class RiskAssessment(BaseModel):
     tier: RiskTier
     score: float

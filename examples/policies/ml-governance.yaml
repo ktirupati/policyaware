@@ -1,0 +1,42 @@
+id: ml_assisted_governance_policy
+schema_version: "0.2"
+default: deny
+
+rules:
+  - name: deny_prompt_injection
+    effect: deny
+    when:
+      ml.prompt_injection.detected: true
+
+  - name: require_approval_for_possible_injection
+    effect: require_approval
+    when:
+      ml.prompt_injection.score_gte: 0.7
+
+  - name: require_approval_for_regulated_domain
+    effect: require_approval
+    when:
+      ml.domain.label_in:
+        - healthcare
+        - finance
+        - legal
+        - hr
+      risk.tier_in:
+        - medium
+        - high
+        - critical
+
+  - name: redact_when_pii_detected
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+
+  - name: allow_public_safe_requests
+    effect: allow
+    when:
+      ml.domain.label: public-safe
+      data.contains_sensitive: false
+      risk.tier_in:
+        - low
+        - medium

@@ -156,6 +156,7 @@ class PolicyEngine:
                 "score": risk.score,
                 "factors": risk.factors,
             },
+            "ml": request.metadata.get("ml", {}),
         }
 
     def _matches(self, expected: dict[str, Any], actual: dict[str, Any]) -> bool:

@@ -1,12 +1,36 @@
+from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger, TraceViewer
+from policyaware.data_protection import DataProtectionEngine
+from policyaware.evals import EvalSuiteRunner, RuntimeEvaluator
 from policyaware.gateway import Gateway
 from policyaware.models import (
+    AuditTrace,
+    DataFindings,
+    Decision,
+    DecisionExplanation,
+    EvalReport,
+    EvalResult,
     GatewayRequest,
     GatewayResponse,
+    MLAssessment,
+    MLSignal,
     ModelCandidate,
     PolicyDecision,
     RiskAssessment,
+    RouteDecision,
     ToolDecision,
 )
+from policyaware.ml import (
+    CompositeMLClassifier,
+    MLClassifier,
+    NoopMLClassifier,
+    OptionalMLDependencyError,
+    PresidioPIIClassifier,
+    ProtectAIPromptInjectionClassifier,
+    StaticMLClassifier,
+    TransformersDomainRiskClassifier,
+)
+from policyaware.policy import PolicyEngine, PolicyRule
+from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
 from policyaware.providers import (
     AnthropicProvider,
     AzureOpenAIProvider,
@@ -19,17 +43,47 @@ from policyaware.providers import (
     VertexAIProvider,
     default_provider_registry,
 )
-from policyaware.tools import ToolPolicyEngine, ToolRegistry
 from policyaware.risk import RiskClassifier
+from policyaware.routing import ModelRouter
+from policyaware.tools import ToolPolicyEngine, ToolRegistry
 
 __all__ = [
+    "AuditBundleWriter",
+    "AuditLogger",
+    "AuditTrace",
+    "DataFindings",
+    "DataProtectionEngine",
+    "Decision",
+    "DecisionExplanation",
+    "EvalReport",
+    "EvalResult",
+    "EvalSuiteRunner",
     "Gateway",
     "GatewayRequest",
     "GatewayResponse",
+    "MLAssessment",
+    "MLSignal",
+    "CompositeMLClassifier",
+    "MLClassifier",
     "ModelCandidate",
+    "ModelRouter",
+    "NoopMLClassifier",
+    "OptionalMLDependencyError",
     "PolicyDecision",
+    "PolicyEngine",
+    "PolicyRule",
+    "PolicySchemaValidator",
+    "PolicyValidationError",
+    "PresidioPIIClassifier",
+    "ProtectAIPromptInjectionClassifier",
     "RiskAssessment",
     "RiskClassifier",
+    "RouteDecision",
+    "RuntimeEvaluator",
+    "SQLiteAuditLogger",
+    "StaticMLClassifier",
+    "TraceViewer",
+    "TransformersDomainRiskClassifier",
     "OpenAICompatibleProvider",
     "AzureOpenAIProvider",
     "AnthropicProvider",

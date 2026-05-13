@@ -142,9 +142,9 @@ def classify_risk(
 @tools_app.command("check")
 def check_tool(
     policy_file: Path,
-    agent: str,
-    connector: str,
-    action: str,
+    agent: str = typer.Option(..., "--agent", help="Agent identity requesting the tool call."),
+    connector: str = typer.Option(..., "--connector", help="Tool connector id."),
+    action: str = typer.Option(..., "--action", help="Connector action name."),
     role: str = "developer",
 ) -> None:
     """Check whether an agent can call a governed tool action."""
@@ -178,7 +178,7 @@ def audit_bundle(
 
 @audit_app.command("view")
 def audit_view(
-    traces_file: Path = Path(".policyaware/traces.jsonl"),
+    traces_file: Path = typer.Argument(Path(".policyaware/traces.jsonl")),
     out: Path = Path(".policyaware/trace-viewer.html"),
 ) -> None:
     """Generate a static HTML trace viewer from JSONL audit traces."""
@@ -224,7 +224,7 @@ def replay_trace(
 
 @observability_app.command("prometheus")
 def export_prometheus(
-    traces_file: Path = Path(".policyaware/traces.jsonl"),
+    traces_file: Path = typer.Argument(Path(".policyaware/traces.jsonl")),
     out: Path = Path(".policyaware/metrics.prom"),
 ) -> None:
     """Export local audit traces as Prometheus text exposition metrics."""
@@ -235,7 +235,7 @@ def export_prometheus(
 
 @observability_app.command("otel-json")
 def export_otel_json(
-    traces_file: Path = Path(".policyaware/traces.jsonl"),
+    traces_file: Path = typer.Argument(Path(".policyaware/traces.jsonl")),
     out: Path = Path(".policyaware/otel-spans.json"),
 ) -> None:
     """Export local audit traces as OpenTelemetry-shaped JSON spans."""

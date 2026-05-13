@@ -18,7 +18,9 @@ class PolicySchemaValidator:
     allowed_actions: frozenset[str] = frozenset(
         {"redact", "mask", "log", "route_to_safe_model", "require_approval"}
     )
-    allowed_roots: frozenset[str] = frozenset({"tenant", "app", "user", "request", "data", "risk"})
+    allowed_roots: frozenset[str] = frozenset(
+        {"tenant", "app", "user", "request", "data", "risk", "ml"}
+    )
     operator_suffixes: tuple[str, ...] = ("_not_in", "_in", "_lte", "_gte")
 
     def validate(self, policy: dict[str, Any]) -> None:
