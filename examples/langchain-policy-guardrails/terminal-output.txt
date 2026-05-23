@@ -1,0 +1,5 @@
+$ python chain_demo.py
+safe_prompt: model_called=True decision=allow
+pii_prompt: model_called=True decision=conditional_allow actions=redact
+secret_prompt: model_called=False decision=deny
+

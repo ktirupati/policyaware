@@ -1,0 +1,6 @@
+$ python approval_demo.py
+decision=require_approval
+model_called=False
+approval_file=.policyaware-demo/approvals.jsonl
+approval_status=pending
+

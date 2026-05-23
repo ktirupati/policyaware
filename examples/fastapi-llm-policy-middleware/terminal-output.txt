@@ -1,0 +1,5 @@
+$ python demo.py
+allowed_support_request: allow
+pii_redaction_request: conditional_allow
+secret_leak_request: deny
+

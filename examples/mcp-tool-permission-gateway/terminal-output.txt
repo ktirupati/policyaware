@@ -1,0 +1,6 @@
+$ python tool_gateway_demo.py
+github.read_file as developer: allow approval_required=False
+github.create_pr as developer: require_approval approval_required=True
+github.delete_branch as developer: deny approval_required=False
+snowflake.query medical database: deny approval_required=False
+

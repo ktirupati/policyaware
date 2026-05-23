@@ -1,13 +1,20 @@
 # PolicyAware AI Gateway
 
-PolicyAware AI Gateway is an open-source control plane for governed AI execution across enterprise LLM, RAG, AI agent, and MCP-style tool workflows. It enforces organizational, legal, security, cost, and routing policy before requests reach models or tools, then evaluates outputs for safety, quality, compliance, and auditability.
+PyPI: [policyaware](https://pypi.org/project/policyaware/) |
+Downloads: [Pepy stats](https://pepy.tech/project/policyaware) |
+Python: 3.10+ |
+License: [Apache-2.0](https://github.com/ktirupati/policyaware/blob/main/LICENSE) |
+Docs: [GitHub Pages](https://ktirupati.github.io/policyaware/)
 
-The default posture is deny-by-default: every request must match an allow or conditional policy before execution.
+Add deny-by-default policy, PII redaction, tool governance, model routing, evaluation, and audit traces to LLM apps in minutes.
+
+PolicyAware AI Gateway is an open-source control plane for governed AI execution across enterprise LLM, RAG, AI agent, and MCP-style tool workflows. It enforces organizational, legal, security, cost, and routing policy before requests reach models or tools, then evaluates outputs for safety, quality, compliance, and auditability.
 
 Documentation site: https://ktirupati.github.io/policyaware/
 
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
+Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
 
 ## What It Provides
 
@@ -20,10 +27,22 @@ Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://git
 - Full request/response trace, explainable decisions, replay-ready audit logs, and exportable JSONL records.
 - Python SDK, CLI, YAML policies, local development mode, and integration shims.
 
+## Author
+
+Created and maintained by **Krishna Kishor Tirupati**.
+
+Project links:
+
+- PyPI: [policyaware](https://pypi.org/project/policyaware/)
+- GitHub: [ktirupati/policyaware](https://github.com/ktirupati/policyaware)
+- Documentation: [PolicyAware AI Gateway Docs](https://ktirupati.github.io/policyaware/)
+
 ## Quick Start
 
 ```bash
 pip install policyaware
+policyaware dev simulate
+policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare
 ```
 
 For local development from this repository:
@@ -32,13 +51,23 @@ For local development from this repository:
 pip install -e ".[dev]"
 policyaware policy test examples/policies/basic.yaml
 policyaware policy validate examples/policies/basic.yaml
-policyaware policy explain examples/policies/basic.yaml --prompt "Email jane@example.com"
 policyaware risk classify "Summarize this patient diagnosis" --domain healthcare
 policyaware tools check examples/policies/tool-governance.yaml --agent code_assistant --connector github --action create_pr
 policyaware eval run examples/evals/support_rag.yaml
 ```
 
 For copy-pasteable end-to-end examples, see [Working Examples](https://github.com/ktirupati/policyaware/blob/main/docs/working-examples.md).
+
+## Copy-Paste Examples
+
+- [FastAPI LLM policy middleware](https://github.com/ktirupati/policyaware/tree/main/examples/fastapi-llm-policy-middleware): protect a FastAPI `/chat` endpoint with policy checks before model execution.
+- [LangChain policy guardrails](https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails): wrap a chain-style LLM call with deny-by-default policy, PII redaction, and secret blocking.
+- [MCP tool permission gateway](https://github.com/ktirupati/policyaware/tree/main/examples/mcp-tool-permission-gateway): govern connector-level and action-level tool permissions for agent workflows.
+- [PII redaction policy](https://github.com/ktirupati/policyaware/tree/main/examples/pii-redaction-policy): inspect and redact sensitive text before model execution.
+- [Regulated RAG assistant](https://github.com/ktirupati/policyaware/tree/main/examples/regulated-rag-assistant): require citations and stricter controls for healthcare-style RAG.
+- [Provider routing by risk](https://github.com/ktirupati/policyaware/tree/main/examples/provider-routing-by-risk): route public-safe requests to low-cost models and high-risk requests to approved models.
+- [Audit trace viewer](https://github.com/ktirupati/policyaware/tree/main/examples/audit-trace-viewer): write audit traces and generate a local HTML trace viewer.
+- [Approval workflow hooks](https://github.com/ktirupati/policyaware/tree/main/examples/approval-workflow-hooks): send high-risk requests to approval instead of calling a model.
 
 ```python
 from policyaware import Gateway, GatewayRequest

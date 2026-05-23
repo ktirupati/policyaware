@@ -4,21 +4,19 @@ This guide shows working examples for the current PolicyAware AI Gateway MVP.
 
 PolicyAware is a Python framework for governed AI execution. It checks AI requests before they reach models or tools, applies policies, classifies risk, explains decisions, evaluates outputs, and writes audit traces.
 
-## 1. Install Locally
+## 1. Install
 
-From the repository root:
-
-```bash
-pip install -e ".[dev]"
-```
-
-After the package is published to PyPI, users will be able to install it with:
+Install the published package:
 
 ```bash
 pip install policyaware
 ```
 
-Until then, use the editable local install.
+For local development from a cloned repository:
+
+```bash
+pip install -e ".[dev]"
+```
 
 ## 2. Run A Local Simulation
 
@@ -559,4 +557,3 @@ policyaware eval run examples/evals/governance_cases.yaml
 ```
 
 If those commands run, the core MVP is wired correctly.
-

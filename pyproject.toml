@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "policyaware"
-version = "0.2.4"
+version = "0.2.5"
 description = "Policy-aware control plane for enterprise LLM, RAG, and AI agent applications."
 readme = "README.md"
 requires-python = ">=3.10"

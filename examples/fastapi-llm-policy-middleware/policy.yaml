@@ -1,0 +1,30 @@
+id: fastapi_llm_policy_middleware
+schema_version: "0.2"
+default: deny
+
+rules:
+  - name: deny_secrets
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: allow_support_in_us
+    effect: allow
+    when:
+      user.role_in:
+        - support_agent
+        - support_manager
+      request.region: us
+      risk.tier_in:
+        - low
+        - medium
+
+  - name: redact_pii_for_support
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role_not_in:
+        - privacy_admin
+        - compliance_officer
+

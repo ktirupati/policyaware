@@ -1,0 +1,4 @@
+$ python routing_demo.py
+public_safe route=external/low-cost decision=allow risk=low
+sensitive_healthcare route=internal/approved decision=conditional_allow risk=high
+secret_request route=none decision=deny risk=medium

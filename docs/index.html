@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PolicyAware AI Gateway</title>
-  <meta name="description" content="Policy-aware AI gateway for governed LLM, RAG, agent, and MCP tool execution.">
+  <meta name="description" content="Add deny-by-default policy, PII redaction, tool governance, model routing, evaluation, and audit traces to LLM apps in minutes.">
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -17,6 +17,7 @@
         <a href="#providers">Providers</a>
         <a href="#audit">Audit</a>
         <a href="#docs">Docs</a>
+        <a href="comparison.md">Comparison</a>
         <a href="https://github.com/ktirupati/policyaware">GitHub</a>
       </nav>
     </div>
@@ -28,9 +29,8 @@
         <div>
           <h1>Governed AI execution for LLMs, RAG, agents, and tools.</h1>
           <p class="subtitle">
-            PolicyAware is an open-source Python framework that checks prompts, request context,
-            policies, model routing, tool calls, model responses, and audit traces before AI behavior
-            becomes business behavior.
+            Add deny-by-default policy, PII redaction, tool governance, model routing,
+            evaluation, and audit traces to LLM apps in minutes.
           </p>
           <div class="button-row">
             <a class="button" href="#install">Start with installation</a>
@@ -56,28 +56,49 @@
         <h2>Installation</h2>
         <div class="grid two">
           <div class="card">
-            <h3>Local Development</h3>
-            <p>Use this while working from a cloned copy of the repository:</p>
-            <pre><code>git clone https://github.com/ktirupati/policyaware.git
-cd policyaware
-pip install -e ".[dev]"</code></pre>
-          </div>
-          <div class="card">
-            <h3>Future PyPI Install</h3>
-            <p>After the package is published to PyPI, users can install it with:</p>
+            <h3>Install From PyPI</h3>
+            <p>Use this for application development and normal usage:</p>
             <pre><code>pip install policyaware</code></pre>
             <p>For optional Bedrock support:</p>
             <pre><code>pip install "policyaware[providers]"</code></pre>
+          </div>
+          <div class="card">
+            <h3>Local Development</h3>
+            <p>Use this while contributing from a cloned copy of the repository:</p>
+            <pre><code>git clone https://github.com/ktirupati/policyaware.git
+cd policyaware
+pip install -e ".[dev]"</code></pre>
           </div>
         </div>
 
         <h3>Verify The Install</h3>
         <pre><code>policyaware dev simulate
-policyaware policy validate examples/policies/basic.yaml
+policyaware risk classify "Review patient id ABCDE diagnosis: flu" --domain healthcare --autonomy agentic</code></pre>
+
+        <h3>Try Repository Examples</h3>
+        <p>From a cloned repository, you can run the bundled policy, tool, and evaluation examples:</p>
+        <pre><code>policyaware policy validate examples/policies/basic.yaml
 policyaware policy explain examples/policies/basic.yaml --prompt "Email jane@example.com"
-policyaware risk classify "Review patient id ABCDE diagnosis: flu" --domain healthcare --autonomy agentic
 policyaware tools check examples/policies/tool-governance.yaml --agent code_assistant --connector github --action create_pr
 policyaware eval run examples/evals/executable_governance_cases.yaml --policy-file examples/policies/basic.yaml</code></pre>
+
+        <h3>Copy-Paste Examples</h3>
+        <ul>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/fastapi-llm-policy-middleware">FastAPI LLM policy middleware</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails">LangChain policy guardrails</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/mcp-tool-permission-gateway">MCP tool permission gateway</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/pii-redaction-policy">PII redaction policy</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/regulated-rag-assistant">Regulated RAG assistant</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/provider-routing-by-risk">Provider routing by risk</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/audit-trace-viewer">Audit trace viewer</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/approval-workflow-hooks">Approval workflow hooks</a></li>
+        </ul>
+
+        <h3>Choosing The Right Category</h3>
+        <p>
+          If you are comparing guardrails, AI gateways, and model routers,
+          read the <a href="comparison.md">PolicyAware comparison guide</a>.
+        </p>
       </div>
     </section>
 
@@ -252,14 +273,29 @@ policyaware observability otel-json</code></pre>
         </div>
       </div>
     </section>
+
+    <section id="author" class="section">
+      <div class="shell">
+        <h2>Author</h2>
+        <div class="card">
+          <h3>Krishna Kishor Tirupati</h3>
+          <p>Creator and maintainer of PolicyAware AI Gateway.</p>
+          <p>
+            <a href="https://github.com/ktirupati">GitHub profile</a> |
+            <a href="https://pypi.org/project/policyaware/">PyPI project</a> |
+            <a href="https://github.com/ktirupati/policyaware">Repository</a>
+          </p>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
     <div class="shell">
-      PolicyAware AI Gateway is Apache-2.0 licensed. Documentation generated for the
+      PolicyAware AI Gateway is Apache-2.0 licensed. Created and maintained by
+      Krishna Kishor Tirupati for the
       <a href="https://github.com/ktirupati/policyaware">policyaware</a> repository.
     </div>
   </footer>
 </body>
 </html>
-

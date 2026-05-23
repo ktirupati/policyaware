@@ -1,0 +1,22 @@
+id: approval_workflow_hooks
+schema_version: "0.2"
+default: deny
+
+rules:
+  - name: require_approval_for_high_risk
+    effect: require_approval
+    when:
+      risk.tier_in:
+        - high
+        - critical
+
+  - name: allow_low_medium_support
+    effect: allow
+    when:
+      user.role_in:
+        - support_agent
+      request.region: us
+      risk.tier_in:
+        - low
+        - medium
+

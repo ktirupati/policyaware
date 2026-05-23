@@ -1,0 +1,7 @@
+$ python demo.py
+contains_pii=True
+categories=email, phone
+redacted=Contact [REDACTED_EMAIL] or [REDACTED_PHONE] about claim ACME-42.
+gateway_decision=conditional_allow
+gateway_actions=redact
+

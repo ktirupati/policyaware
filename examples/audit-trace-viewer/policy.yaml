@@ -1,0 +1,26 @@
+id: audit_trace_viewer
+schema_version: "0.2"
+default: deny
+
+rules:
+  - name: deny_secrets
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: allow_support
+    effect: allow
+    when:
+      user.role_in:
+        - support_agent
+      request.region: us
+      risk.tier_in:
+        - low
+        - medium
+
+  - name: redact_pii
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+

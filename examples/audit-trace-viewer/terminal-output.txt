@@ -1,0 +1,6 @@
+$ python audit_demo.py
+traces_written=2
+viewer=.policyaware-demo/trace-viewer.html
+first_decision=allow
+second_decision=conditional_allow
+
