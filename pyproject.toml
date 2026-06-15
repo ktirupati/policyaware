@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "policyaware"
-version = "0.2.5"
+version = "0.2.6"
 description = "Policy-aware control plane for enterprise LLM, RAG, and AI agent applications."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,20 @@ license = "Apache-2.0"
 authors = [
   { name = "Krishna Kishor Tirupati" }
 ]
-keywords = ["llm", "ai-gateway", "policy", "rag", "agents", "governance", "audit"]
+keywords = [
+  "llm",
+  "ai-gateway",
+  "policy",
+  "rag",
+  "agents",
+  "governance",
+  "audit",
+  "guardrails",
+  "mcp",
+  "pii-redaction",
+  "model-routing",
+  "llm-governance"
+]
 dependencies = [
   "pydantic>=2.6",
   "PyYAML>=6.0",
@@ -55,6 +68,7 @@ Homepage = "https://ktirupati.github.io/policyaware/"
 Documentation = "https://ktirupati.github.io/policyaware/"
 Repository = "https://github.com/ktirupati/policyaware"
 Issues = "https://github.com/ktirupati/policyaware/issues"
+Changelog = "https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md"
 
 [project.scripts]
 policyaware = "policyaware.cli:app"

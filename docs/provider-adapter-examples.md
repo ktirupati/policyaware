@@ -54,3 +54,15 @@ Use the full guide for:
 - vLLM setup
 - sample `routing.yaml`
 
+## Credential Quick Reference
+
+| Provider | Required Setup |
+| --- | --- |
+| Azure OpenAI | `POLICYAWARE_AZURE_OPENAI_ENDPOINT`, `POLICYAWARE_AZURE_OPENAI_API_KEY`, optional `POLICYAWARE_AZURE_OPENAI_API_VERSION` |
+| Anthropic | `POLICYAWARE_ANTHROPIC_API_KEY` |
+| Amazon Bedrock | AWS credentials from your environment plus `AWS_REGION`; install `policyaware[providers]` |
+| Google Vertex AI | `POLICYAWARE_VERTEX_PROJECT`, `POLICYAWARE_VERTEX_LOCATION`, `POLICYAWARE_VERTEX_ACCESS_TOKEN` |
+| Ollama | Running local Ollama service, usually `http://localhost:11434` |
+| vLLM | Running OpenAI-compatible vLLM server, usually `http://localhost:8000/v1` |
+
+Keep production credentials in your secret manager or runtime environment. Do not store provider keys in YAML policy files.

@@ -6,7 +6,7 @@ Python: 3.10+ |
 License: [Apache-2.0](https://github.com/ktirupati/policyaware/blob/main/LICENSE) |
 Docs: [GitHub Pages](https://ktirupati.github.io/policyaware/)
 
-Add deny-by-default policy, PII redaction, tool governance, model routing, evaluation, and audit traces to LLM apps in minutes.
+PolicyAware adds deny-by-default policy, PII redaction, MCP tool governance, model routing, runtime evaluation, and audit traces to LLM, RAG, and AI agent applications in minutes.
 
 PolicyAware AI Gateway is an open-source control plane for governed AI execution across enterprise LLM, RAG, AI agent, and MCP-style tool workflows. It enforces organizational, legal, security, cost, and routing policy before requests reach models or tools, then evaluates outputs for safety, quality, compliance, and auditability.
 
@@ -15,6 +15,9 @@ Documentation site: https://ktirupati.github.io/policyaware/
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
+Alternatives guide: [PolicyAware alternatives for guardrails, AI gateways, model routers, and MCP governance](https://ktirupati.github.io/policyaware/alternatives.html)
+Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
+Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
 
 ## What It Provides
 
@@ -68,6 +71,14 @@ For copy-pasteable end-to-end examples, see [Working Examples](https://github.co
 - [Provider routing by risk](https://github.com/ktirupati/policyaware/tree/main/examples/provider-routing-by-risk): route public-safe requests to low-cost models and high-risk requests to approved models.
 - [Audit trace viewer](https://github.com/ktirupati/policyaware/tree/main/examples/audit-trace-viewer): write audit traces and generate a local HTML trace viewer.
 - [Approval workflow hooks](https://github.com/ktirupati/policyaware/tree/main/examples/approval-workflow-hooks): send high-risk requests to approval instead of calling a model.
+
+Captured terminal output for the runnable examples is available in [docs/demo-outputs.md](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md).
+
+## Articles
+
+- [PolicyAware vs Guardrails vs AI Gateways vs Model Routers](https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p)
+- [Build a Policy-Aware AI Gateway in Python](https://dev.to/ktirupati/build-a-policy-aware-ai-gateway-in-python-data-protection-policy-enforcement-with-policyaware-462h)
+- [Stop Shipping AI Features Without Guardrails](https://medium.com/@krishna.k.tirupati/stop-shipping-ai-features-without-guardrails-build-safer-ai-apps-with-policyaware-8bfd8509e4fb)
 
 ```python
 from policyaware import Gateway, GatewayRequest
@@ -177,6 +188,10 @@ This is a production-grade starter framework: the core extension points and exec
 ## Third-Party ML Models
 
 Optional ML integrations may download third-party models at runtime. PolicyAware does not bundle model weights. Review and accept the license or access terms for any model you configure, especially gated Hugging Face models.
+
+## Recommended GitHub Topics
+
+For discovery, use repository topics such as `llm`, `ai-gateway`, `llm-governance`, `guardrails`, `rag`, `mcp`, `ai-agents`, `pii-redaction`, `model-routing`, `audit`, `python`, and `open-source`.
 
 ## License
 

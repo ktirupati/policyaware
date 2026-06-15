@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LangChain Policy Guardrails - PolicyAware</title>
+  <meta name="description" content="Wrap LangChain-style LLM calls with deny-by-default policy, PII redaction, secret blocking, and audit traces using PolicyAware.">
+  <meta name="keywords" content="LangChain policy guardrails, LangChain guardrails, LangChain LLM governance, PolicyAware LangChain, Python AI guardrails">
+  <meta name="author" content="Krishna Kishor Tirupati">
+  <link rel="canonical" href="https://ktirupati.github.io/policyaware/langchain-policy-guardrails.html">
+  <meta property="og:title" content="LangChain Policy Guardrails">
+  <meta property="og:description" content="Add policy guardrails around LangChain-style LLM calls before prompts reach a model.">
+  <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <main class="section">
+    <div class="shell">
+      <h1>LangChain Policy Guardrails</h1>
+      <p>PolicyAware can wrap chain-style LLM calls with policy enforcement before model execution.</p>
+      <h2>Install</h2>
+      <pre><code>pip install policyaware</code></pre>
+      <h2>Run The Example</h2>
+      <pre><code>git clone https://github.com/ktirupati/policyaware.git
+cd policyaware/examples/langchain-policy-guardrails
+python chain_demo.py</code></pre>
+      <h2>Expected Output</h2>
+      <pre><code>safe_prompt: model_called=True decision=allow
+pii_prompt: model_called=True decision=conditional_allow actions=redact
+secret_prompt: model_called=False decision=deny</code></pre>
+      <p>Open the complete example folder on GitHub: <a href="https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails">LangChain policy guardrails</a>.</p>
+      <h2>More Reading</h2>
+      <ul>
+        <li><a href="https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p">PolicyAware vs Guardrails vs AI Gateways vs Model Routers</a></li>
+        <li><a href="https://medium.com/@krishna.k.tirupati/stop-shipping-ai-features-without-guardrails-build-safer-ai-apps-with-policyaware-8bfd8509e4fb">Stop Shipping AI Features Without Guardrails</a></li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

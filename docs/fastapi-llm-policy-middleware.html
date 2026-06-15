@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FastAPI LLM Policy Middleware - PolicyAware</title>
+  <meta name="description" content="Add deny-by-default policy, PII redaction, risk checks, and audit traces to a FastAPI LLM endpoint with PolicyAware. Copy-paste Python and YAML example.">
+  <meta name="keywords" content="FastAPI LLM policy middleware, FastAPI AI guardrails, FastAPI LLM governance, Python AI gateway, PolicyAware FastAPI">
+  <meta name="author" content="Krishna Kishor Tirupati">
+  <link rel="canonical" href="https://ktirupati.github.io/policyaware/fastapi-llm-policy-middleware.html">
+  <meta property="og:title" content="FastAPI LLM Policy Middleware">
+  <meta property="og:description" content="Protect a FastAPI LLM endpoint with deny-by-default policy, PII redaction, and audit traces.">
+  <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <main class="section">
+    <div class="shell">
+      <h1>FastAPI LLM Policy Middleware</h1>
+      <p>Add deny-by-default policy checks, PII redaction, risk scoring, and audit traces in front of a FastAPI LLM endpoint.</p>
+      <h2>Install</h2>
+      <pre><code>pip install policyaware fastapi uvicorn</code></pre>
+      <h2>Run The Example</h2>
+      <pre><code>git clone https://github.com/ktirupati/policyaware.git
+cd policyaware/examples/fastapi-llm-policy-middleware
+python demo.py</code></pre>
+      <h2>Expected Output</h2>
+      <pre><code>allowed_support_request: allow
+pii_redaction_request: conditional_allow
+secret_leak_request: deny</code></pre>
+      <p>Open the complete example folder on GitHub: <a href="https://github.com/ktirupati/policyaware/tree/main/examples/fastapi-llm-policy-middleware">FastAPI LLM policy middleware</a>.</p>
+      <h2>More Reading</h2>
+      <ul>
+        <li><a href="https://dev.to/ktirupati/build-a-policy-aware-ai-gateway-in-python-data-protection-policy-enforcement-with-policyaware-462h">Build a Policy-Aware AI Gateway in Python</a></li>
+        <li><a href="https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p">PolicyAware vs Guardrails vs AI Gateways vs Model Routers</a></li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

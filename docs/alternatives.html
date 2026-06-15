@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PolicyAware Alternatives - Guardrails AI, LiteLLM, AI Gateways, Model Routers</title>
+  <meta name="description" content="Compare PolicyAware with Guardrails AI, LiteLLM, Portkey, Kong AI Gateway, OpenRouter, model routers, and MCP governance tools. Choose the right layer for LLM governance, PII redaction, tool permissions, routing, evaluation, and audit traces.">
+  <meta name="keywords" content="PolicyAware alternatives, Guardrails AI alternative, LiteLLM alternative, Portkey alternative, Kong AI Gateway alternative, OpenRouter alternative, NeMo Guardrails alternative, LLM gateway comparison, AI gateway comparison, LLM guardrails comparison, model router comparison, MCP governance">
+  <meta name="author" content="Krishna Kishor Tirupati">
+  <link rel="canonical" href="https://ktirupati.github.io/policyaware/alternatives.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="PolicyAware Alternatives And Comparisons">
+  <meta property="og:description" content="PolicyAware compared with guardrails, AI gateways, model routers, and MCP governance tools for enterprise LLM, RAG, and AI agent governance.">
+  <meta property="og:url" content="https://ktirupati.github.io/policyaware/alternatives.html">
+  <meta property="og:site_name" content="PolicyAware AI Gateway">
+  <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <meta property="og:image:alt" content="PolicyAware alternatives for guardrails, AI gateways, model routers, and MCP governance">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PolicyAware Alternatives">
+  <meta name="twitter:description" content="Compare PolicyAware with guardrails, AI gateways, model routers, and MCP governance tools.">
+  <meta name="twitter:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <link rel="stylesheet" href="site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "PolicyAware Alternatives: Guardrails, AI Gateways, Model Routers, and MCP Governance",
+    "description": "A practical comparison of PolicyAware with guardrails libraries, AI gateways, model routers, and MCP governance tools.",
+    "author": {
+      "@type": "Person",
+      "name": "Krishna Kishor Tirupati",
+      "sameAs": "https://github.com/ktirupati"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "PolicyAware AI Gateway"
+    },
+    "url": "https://ktirupati.github.io/policyaware/alternatives.html"
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <div class="shell nav">
+      <a class="brand" href="./">PolicyAware AI Gateway</a>
+      <nav class="nav-links">
+        <a href="./">Home</a>
+        <a href="comparison.md">Comparison</a>
+        <a href="https://github.com/ktirupati/policyaware">GitHub</a>
+        <a href="https://pypi.org/project/policyaware/">PyPI</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="shell">
+        <h1>PolicyAware Alternatives: Guardrails, AI Gateways, Model Routers, And MCP Governance</h1>
+        <p class="subtitle">
+          PolicyAware is for teams that need deny-by-default policy, PII redaction,
+          MCP tool permissions, model routing, runtime evaluation, and audit traces
+          in one Python control plane.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <h2>Quick Answer</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>If You Are Searching For</th>
+              <th>Typical Need</th>
+              <th>Where PolicyAware Fits</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Guardrails AI alternative or NeMo Guardrails alternative</td>
+              <td>Prompt/output validation and safety checks</td>
+              <td>Use PolicyAware when decisions must include role, tenant, region, risk, tools, routing, approvals, and audit traces.</td>
+            </tr>
+            <tr>
+              <td>LiteLLM alternative, Portkey alternative, or Kong AI Gateway alternative</td>
+              <td>Unified model API, provider routing, keys, spend, and fallback</td>
+              <td>Use PolicyAware when routing must happen after governance policy decides the request is allowed.</td>
+            </tr>
+            <tr>
+              <td>OpenRouter alternative or LLM model router</td>
+              <td>Choose a model based on cost, quality, latency, or availability</td>
+              <td>Use PolicyAware when model selection also depends on PII, PHI, secrets, compliance, and user role.</td>
+            </tr>
+            <tr>
+              <td>MCP governance or AI agent tool permissions</td>
+              <td>Control which agent can call which tool action</td>
+              <td>Use PolicyAware for connector-level and action-level allow, deny, and approval decisions.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <h2>PolicyAware vs Guardrails</h2>
+        <p>
+          Guardrails tools are useful for validating prompts, validating outputs,
+          enforcing response structure, and catching safety issues. PolicyAware
+          covers those governance needs as part of a broader control plane.
+        </p>
+        <p>
+          Choose PolicyAware when your policy decision needs more than the prompt
+          or response text: user role, tenant, region, risk tier, regulated domain,
+          tool action, model route, approval workflow, and audit evidence.
+        </p>
+
+        <h2>PolicyAware vs AI Gateways</h2>
+        <p>
+          AI gateways usually centralize model access, provider keys, rate limits,
+          usage tracking, and fallbacks. PolicyAware can route models too, but its
+          primary job is to decide whether the request is allowed before the model
+          call or tool call happens.
+        </p>
+        <p>
+          Choose PolicyAware when your organization needs deny-by-default governance,
+          PII/PHI/secrets redaction, policy reason codes, approval hooks, and
+          replayable audit traces alongside provider routing.
+        </p>
+
+        <h2>PolicyAware vs Model Routers</h2>
+        <p>
+          Model routers optimize model choice. They are helpful when the core question
+          is cost, latency, quality, or provider availability. PolicyAware includes
+          model routing, but puts policy first.
+        </p>
+        <p>
+          Choose PolicyAware when the correct model depends on data sensitivity,
+          compliance constraints, user role, region, risk tier, and whether the
+          request was approved.
+        </p>
+
+        <h2>PolicyAware vs MCP Tool Governance Platforms</h2>
+        <p>
+          MCP governance is becoming important because agents can call real tools:
+          repositories, databases, files, ticketing systems, payment systems, and
+          internal APIs. PolicyAware includes tool governance as a first-class layer.
+        </p>
+        <p>
+          Choose PolicyAware when you need connector-level and action-level decisions:
+          allow read actions, deny destructive actions, require approval for writes,
+          and log every tool decision.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <h2>Comparison Table</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>Guardrails</th>
+              <th>AI Gateway</th>
+              <th>Model Router</th>
+              <th>PolicyAware</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Deny-by-default organizational policy</td><td>Limited</td><td>Sometimes</td><td>No</td><td>Yes</td></tr>
+            <tr><td>PII, PHI, and secrets redaction</td><td>Sometimes</td><td>Sometimes</td><td>No</td><td>Yes</td></tr>
+            <tr><td>User role, tenant, region, domain, and risk context</td><td>Limited</td><td>Limited</td><td>Limited</td><td>Yes</td></tr>
+            <tr><td>MCP and agent tool permissions</td><td>Usually no</td><td>Sometimes</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Approval workflows for risky actions</td><td>Usually no</td><td>Sometimes</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Model routing after policy approval</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+            <tr><td>Runtime evaluation tied to policy outcomes</td><td>Sometimes</td><td>Limited</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Audit traces with reason codes</td><td>Limited</td><td>Sometimes</td><td>Limited</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <h2>Install</h2>
+        <pre><code>pip install policyaware</code></pre>
+        <p>
+          See the <a href="https://github.com/ktirupati/policyaware">GitHub repository</a>,
+          <a href="https://github.com/ktirupati/policyaware/wiki/Copy-Paste-Examples">copy-paste examples</a>,
+          and <a href="comparison.md">category comparison</a>.
+        </p>
+
+        <h2>More Reading</h2>
+        <ul>
+          <li><a href="https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p">PolicyAware vs Guardrails vs AI Gateways vs Model Routers</a></li>
+          <li><a href="https://dev.to/ktirupati/build-a-policy-aware-ai-gateway-in-python-data-protection-policy-enforcement-with-policyaware-462h">Build a Policy-Aware AI Gateway in Python</a></li>
+          <li><a href="https://medium.com/@krishna.k.tirupati/stop-shipping-ai-features-without-guardrails-build-safer-ai-apps-with-policyaware-8bfd8509e4fb">Stop Shipping AI Features Without Guardrails</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

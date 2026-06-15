@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PII Redaction For LLM Apps - PolicyAware</title>
+  <meta name="description" content="Detect and redact PII, PHI, secrets, emails, phone numbers, SSNs, and API keys before prompts reach LLMs using PolicyAware.">
+  <meta name="keywords" content="PII redaction LLM, PHI redaction AI, secrets detection LLM, LLM data protection, PolicyAware PII">
+  <meta name="author" content="Krishna Kishor Tirupati">
+  <link rel="canonical" href="https://ktirupati.github.io/policyaware/pii-redaction-llm.html">
+  <meta property="og:title" content="PII Redaction For LLM Apps">
+  <meta property="og:description" content="Detect and redact sensitive text before model execution with PolicyAware.">
+  <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <main class="section">
+    <div class="shell">
+      <h1>PII Redaction For LLM Apps</h1>
+      <p>PolicyAware detects and redacts sensitive content before prompts reach models or tools.</p>
+      <h2>Install</h2>
+      <pre><code>pip install policyaware</code></pre>
+      <h2>Run The Example</h2>
+      <pre><code>git clone https://github.com/ktirupati/policyaware.git
+cd policyaware/examples/pii-redaction-policy
+python demo.py</code></pre>
+      <h2>Expected Output</h2>
+      <pre><code>contains_pii=True
+categories=email, phone
+redacted=Contact [REDACTED_EMAIL] or [REDACTED_PHONE] about claim ACME-42.
+gateway_decision=conditional_allow
+gateway_actions=redact</code></pre>
+      <p>Open the complete example folder on GitHub: <a href="https://github.com/ktirupati/policyaware/tree/main/examples/pii-redaction-policy">PII redaction policy</a>.</p>
+      <h2>More Reading</h2>
+      <ul>
+        <li><a href="https://dev.to/ktirupati/build-a-policy-aware-ai-gateway-in-python-data-protection-policy-enforcement-with-policyaware-462h">Build a Policy-Aware AI Gateway in Python</a></li>
+        <li><a href="https://medium.com/@krishna.k.tirupati/stop-shipping-ai-features-without-guardrails-build-safer-ai-apps-with-policyaware-8bfd8509e4fb">Stop Shipping AI Features Without Guardrails</a></li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

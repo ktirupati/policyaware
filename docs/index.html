@@ -3,9 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PolicyAware AI Gateway</title>
-  <meta name="description" content="Add deny-by-default policy, PII redaction, tool governance, model routing, evaluation, and audit traces to LLM apps in minutes.">
+  <title>PolicyAware AI Gateway - Open-Source LLM Governance & Guardrails</title>
+  <meta name="description" content="PolicyAware is an open-source AI gateway and governance control plane for Python. Enforce deny-by-default policies, PII redaction, MCP tool permissions, model routing, runtime evaluation, and audit traces for LLMs, RAG, and AI agents.">
+  <meta name="keywords" content="PolicyAware, AI gateway, LLM governance, LLM guardrails, RAG governance, MCP tool governance, prompt injection protection, PII redaction, model routing, AI audit traces, Python AI framework">
+  <meta name="author" content="Krishna Kishor Tirupati">
+  <link rel="canonical" href="https://ktirupati.github.io/policyaware/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="PolicyAware AI Gateway - Open-Source LLM Governance">
+  <meta property="og:description" content="Add deny-by-default policy, PII redaction, tool governance, model routing, evaluation, and audit traces to LLM, RAG, and AI agent apps in minutes.">
+  <meta property="og:url" content="https://ktirupati.github.io/policyaware/">
+  <meta property="og:site_name" content="PolicyAware AI Gateway">
+  <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <meta property="og:image:alt" content="PolicyAware AI Gateway - Open-source LLM governance control plane">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PolicyAware AI Gateway">
+  <meta name="twitter:description" content="Open-source policy-aware control plane for governed LLM, RAG, AI agent, and MCP tool execution.">
+  <meta name="twitter:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
   <link rel="stylesheet" href="site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PolicyAware AI Gateway",
+    "description": "An open-source control plane for governed AI execution. Enforce deny-by-default policy, PII redaction, tool governance, model routing, runtime evaluation, and audit traces for LLM, RAG, and AI agent applications.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "programmingLanguage": "Python",
+    "license": "https://opensource.org/licenses/Apache-2.0",
+    "author": {
+      "@type": "Person",
+      "name": "Krishna Kishor Tirupati",
+      "alternateName": "Krishna Tirupati",
+      "sameAs": "https://github.com/ktirupati"
+    },
+    "downloadUrl": "https://pypi.org/project/policyaware/",
+    "codeRepository": "https://github.com/ktirupati/policyaware",
+    "url": "https://ktirupati.github.io/policyaware/",
+    "requirements": "Python >= 3.10"
+  }
+  </script>
 </head>
 <body>
   <header>
@@ -18,6 +54,7 @@
         <a href="#audit">Audit</a>
         <a href="#docs">Docs</a>
         <a href="comparison.md">Comparison</a>
+        <a href="alternatives.html">Alternatives</a>
         <a href="https://github.com/ktirupati/policyaware">GitHub</a>
       </nav>
     </div>
@@ -27,10 +64,11 @@
     <section class="hero">
       <div class="shell hero-grid">
         <div>
-          <h1>Governed AI execution for LLMs, RAG, agents, and tools.</h1>
+          <h1>PolicyAware: Open-Source AI Gateway And LLM Governance</h1>
           <p class="subtitle">
-            Add deny-by-default policy, PII redaction, tool governance, model routing,
-            evaluation, and audit traces to LLM apps in minutes.
+            Add deny-by-default policy, PII redaction, MCP tool governance,
+            model routing, runtime evaluation, and audit traces to Python AI
+            applications before requests reach models or tools.
           </p>
           <div class="button-row">
             <a class="button" href="#install">Start with installation</a>
@@ -94,10 +132,23 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/approval-workflow-hooks">Approval workflow hooks</a></li>
         </ul>
 
+        <h3>Search-Friendly Guides</h3>
+        <ul>
+          <li><a href="fastapi-llm-policy-middleware.html">FastAPI LLM policy middleware guide</a></li>
+          <li><a href="langchain-policy-guardrails.html">LangChain policy guardrails guide</a></li>
+          <li><a href="mcp-tool-permission-gateway.html">MCP tool permission gateway guide</a></li>
+          <li><a href="pii-redaction-llm.html">PII redaction for LLM apps guide</a></li>
+          <li><a href="demo-outputs.md">Captured terminal output for runnable examples</a></li>
+          <li><a href="seo-and-distribution.md">SEO and distribution checklist</a></li>
+        </ul>
+
         <h3>Choosing The Right Category</h3>
         <p>
           If you are comparing guardrails, AI gateways, and model routers,
           read the <a href="comparison.md">PolicyAware comparison guide</a>.
+          If you are searching for Guardrails AI alternatives, LiteLLM alternatives,
+          model router alternatives, or MCP governance tools, read the
+          <a href="alternatives.html">PolicyAware alternatives guide</a>.
         </p>
       </div>
     </section>
@@ -270,6 +321,26 @@ policyaware observability otel-json</code></pre>
         <div class="callout">
           <strong>GitHub Pages setup:</strong> In repository settings, set Pages source to
           <code>Deploy from a branch</code>, branch <code>main</code>, folder <code>/docs</code>.
+        </div>
+      </div>
+    </section>
+
+    <section id="articles" class="section">
+      <div class="shell">
+        <h2>Articles</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>PolicyAware vs Guardrails vs AI Gateways vs Model Routers</h3>
+            <p><a href="https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p">Read on Dev.to</a></p>
+          </div>
+          <div class="card">
+            <h3>Build a Policy-Aware AI Gateway in Python</h3>
+            <p><a href="https://dev.to/ktirupati/build-a-policy-aware-ai-gateway-in-python-data-protection-policy-enforcement-with-policyaware-462h">Read on Dev.to</a></p>
+          </div>
+          <div class="card">
+            <h3>Stop Shipping AI Features Without Guardrails</h3>
+            <p><a href="https://medium.com/@krishna.k.tirupati/stop-shipping-ai-features-without-guardrails-build-safer-ai-apps-with-policyaware-8bfd8509e4fb">Read on Medium</a></p>
+          </div>
         </div>
       </div>
     </section>

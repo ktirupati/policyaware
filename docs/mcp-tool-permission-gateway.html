@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCP Tool Permission Gateway - PolicyAware</title>
+  <meta name="description" content="Govern MCP tool permissions for AI agents with connector-level and action-level allow, deny, approval, and audit decisions using PolicyAware.">
+  <meta name="keywords" content="MCP tool permission gateway, MCP governance, AI agent tool permissions, MCP guardrails, PolicyAware MCP">
+  <meta name="author" content="Krishna Kishor Tirupati">
+  <link rel="canonical" href="https://ktirupati.github.io/policyaware/mcp-tool-permission-gateway.html">
+  <meta property="og:title" content="MCP Tool Permission Gateway">
+  <meta property="og:description" content="Govern connector-level and action-level MCP tool permissions before an AI agent acts.">
+  <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <main class="section">
+    <div class="shell">
+      <h1>MCP Tool Permission Gateway</h1>
+      <p>PolicyAware checks agent and MCP-style connector actions before tool execution.</p>
+      <h2>Install</h2>
+      <pre><code>pip install policyaware</code></pre>
+      <h2>Run The Example</h2>
+      <pre><code>git clone https://github.com/ktirupati/policyaware.git
+cd policyaware/examples/mcp-tool-permission-gateway
+python tool_gateway_demo.py</code></pre>
+      <h2>Expected Output</h2>
+      <pre><code>github.read_file as developer: allow approval_required=False
+github.create_pr as developer: require_approval approval_required=True
+github.delete_branch as developer: deny approval_required=False
+snowflake.query medical database: deny approval_required=False</code></pre>
+      <p>Open the complete example folder on GitHub: <a href="https://github.com/ktirupati/policyaware/tree/main/examples/mcp-tool-permission-gateway">MCP tool permission gateway</a>.</p>
+      <h2>More Reading</h2>
+      <ul>
+        <li><a href="https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p">PolicyAware vs Guardrails vs AI Gateways vs Model Routers</a></li>
+        <li><a href="https://dev.to/ktirupati/build-a-policy-aware-ai-gateway-in-python-data-protection-policy-enforcement-with-policyaware-462h">Build a Policy-Aware AI Gateway in Python</a></li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>
