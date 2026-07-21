@@ -45,6 +45,17 @@ from policyaware.providers import (
 )
 from policyaware.risk import RiskClassifier
 from policyaware.routing import ModelRouter
+from policyaware.scanner import (
+    ScanConfig,
+    LocalCodeScanner,
+    ScanFinding,
+    ScanHtmlReportWriter,
+    ScanJsonReportWriter,
+    ScanMarkdownReportWriter,
+    ScanReport,
+    ScanSarifReportWriter,
+    git_changed_files,
+)
 from policyaware.tools import ToolPolicyEngine, ToolRegistry
 
 __all__ = [
@@ -80,6 +91,15 @@ __all__ = [
     "RiskClassifier",
     "RouteDecision",
     "RuntimeEvaluator",
+    "ScanConfig",
+    "LocalCodeScanner",
+    "ScanFinding",
+    "ScanHtmlReportWriter",
+    "ScanJsonReportWriter",
+    "ScanMarkdownReportWriter",
+    "ScanReport",
+    "ScanSarifReportWriter",
+    "git_changed_files",
     "SQLiteAuditLogger",
     "StaticMLClassifier",
     "TraceViewer",

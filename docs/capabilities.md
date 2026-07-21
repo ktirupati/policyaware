@@ -19,6 +19,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Audit | Persist traces, replay requests, generate evidence bundles | `AuditLogger`, `SQLiteAuditLogger`, `AuditBundleWriter`, `TraceViewer` |
 | Observability | Export local traces as Prometheus or OpenTelemetry-shaped data | `PrometheusExporter`, `OpenTelemetryJsonExporter` |
 | ML-assisted signals | Add optional PII, prompt-injection, domain/risk classifier signals | `CompositeMLClassifier`, `MLSignal`, ML adapters |
+| Local code scan | Scan repositories for AI governance, compliance, PII, PHI, secrets, model calls, tool use, RAG, data residency, and audit gaps | `LocalCodeScanner`, `ScanConfig`, `policyaware scan` |
 
 ## Capability Guides
 
@@ -34,6 +35,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Evaluation](capabilities/evaluation.md)
 - [Audit And Observability](capabilities/audit-observability.md)
 - [ML-Assisted Signals](capabilities/ml-assisted-signals.md)
+- [Local Code Scan](local-code-scan.md)
 
 ## API Discovery Tables
 
@@ -48,6 +50,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Evaluation](capabilities/evaluation.md) | Main APIs, `EvalResult` fields, `EvalReport` fields, eval case YAML fields |
 | [Audit And Observability](capabilities/audit-observability.md) | Main APIs, `AuditTrace` fields, exporter APIs |
 | [ML-Assisted Signals](capabilities/ml-assisted-signals.md) | Main APIs, `MLSignal` fields, YAML policy fields |
+| [Local Code Scan](local-code-scan.md) | Main APIs, `ScanFinding` fields, scan config YAML, CLI output formats |
 
 ## Recommended Learning Path
 
@@ -56,4 +59,5 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 3. Use `Gateway` for complete request handling.
 4. Add `RiskClassifier`, `ModelRouter`, and audit storage.
 5. Add tool governance for agents.
-6. Add optional ML signals only after the rules-based path is understood.
+6. Run `policyaware scan .` to find governance and compliance gaps in local code.
+7. Add optional ML signals only after the rules-based path is understood.

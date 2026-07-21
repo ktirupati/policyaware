@@ -2,6 +2,11 @@
 
 All notable PolicyAware changes are tracked here.
 
+## 0.2.7
+
+- Added local AI governance code scanning documentation and examples for HTML, JSON, SARIF, and Markdown reports.
+- Added scan config YAML examples, inline suppressions, Git diff scanning, notebook/IaC coverage, CI templates, compliance filters, and remediation checklist documentation.
+
 ## 0.2.6
 
 - Added SEO-focused GitHub Pages landing pages for FastAPI middleware, LangChain guardrails, MCP tool governance, PII redaction, and PolicyAware alternatives.

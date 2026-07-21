@@ -1,0 +1,38 @@
+name: PolicyAware Scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  policyaware-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PolicyAware
+        run: python -m pip install policyaware
+
+      - name: Run PolicyAware scan
+        run: |
+          policyaware scan . \
+            --out policyaware-scan-report.html \
+            --config examples/policyaware-scan.yaml \
+            --format html,json,sarif,markdown \
+            --fail-on high
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: policyaware-scan-report
+          path: |
+            policyaware-scan-report.html
+            policyaware-scan-report.json
+            policyaware-scan-report.md
+            policyaware-scan-report.sarif

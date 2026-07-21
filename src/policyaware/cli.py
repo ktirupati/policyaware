@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -15,6 +16,7 @@ from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExpor
 from policyaware.policy import PolicyEngine
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
 from policyaware.risk import RiskClassifier
+from policyaware.scanner import LocalCodeScanner, ScanConfig, git_changed_files
 from policyaware.tools import ToolPolicyEngine
 
 app = typer.Typer(help="PolicyAware AI Gateway CLI")
@@ -33,6 +35,85 @@ app.add_typer(audit_app, name="audit")
 app.add_typer(risk_app, name="risk")
 app.add_typer(observability_app, name="observability")
 console = Console()
+
+
+def _parse_size(value: str) -> int:
+    normalized = value.strip().lower()
+    multiplier = 1
+    if normalized.endswith("kb"):
+        multiplier = 1024
+        normalized = normalized[:-2]
+    elif normalized.endswith("mb"):
+        multiplier = 1024 * 1024
+        normalized = normalized[:-2]
+    elif normalized.endswith("b"):
+        normalized = normalized[:-1]
+    try:
+        return int(float(normalized) * multiplier)
+    except ValueError as exc:
+        raise typer.BadParameter("Use a size like 512kb, 1mb, or 1048576.") from exc
+
+
+def _parse_csv(value: str | None) -> list[str] | None:
+    if value is None:
+        return None
+    parsed = [item.strip() for item in value.split(",") if item.strip()]
+    return parsed or None
+
+
+def _should_fail_scan(fail_on: str, severity_counts: dict[str, int]) -> bool:
+    normalized = fail_on.strip().lower()
+    if normalized in {"", "none", "off", "never"}:
+        return False
+    order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    if normalized not in order:
+        raise typer.BadParameter("Use one of: critical, high, medium, low, none.")
+    threshold = order[normalized]
+    return any(count and order[severity] <= threshold for severity, count in severity_counts.items())
+
+
+def _load_ignore_patterns(path: Path | None) -> list[str]:
+    if path is None or not path.exists():
+        return []
+    patterns: list[str] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line and not line.startswith("#"):
+            patterns.append(line)
+    return patterns
+
+
+def _load_baseline(path: Path | None) -> set[str]:
+    if path is None or not path.exists():
+        return set()
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data, list):
+        return {str(item) for item in data}
+    if isinstance(data, dict):
+        if isinstance(data.get("fingerprints"), list):
+            return {str(item) for item in data["fingerprints"]}
+        if isinstance(data.get("findings"), list):
+            return {
+                str(item["fingerprint"])
+                for item in data["findings"]
+                if isinstance(item, dict) and item.get("fingerprint")
+            }
+    return set()
+
+
+def _write_baseline(path: Path, fingerprints: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "0.1",
+                "tool": "policyaware",
+                "fingerprints": sorted(set(fingerprints)),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
 
 @policy_app.command("validate")
@@ -264,6 +345,162 @@ def chat(
         )
     )
     console.print(response.model_dump_json(indent=2))
+
+
+@app.command("scan")
+def scan_code(
+    path: Path = typer.Argument(..., help="Local folder or file to scan."),
+    out: Path = typer.Option(
+        Path("policyaware-scan-report.html"),
+        "--out",
+        "-o",
+        help="HTML report output path.",
+    ),
+    workers: int = typer.Option(
+        0,
+        "--workers",
+        "-w",
+        help="Parallel scanner workers. Use 0 for CPU count capped at 8.",
+    ),
+    max_file_size: str = typer.Option(
+        "512kb",
+        "--max-file-size",
+        help="Skip files larger than this size, such as 512kb or 1mb.",
+    ),
+    json_out: Path | None = typer.Option(
+        None,
+        "--json",
+        help="Optional machine-readable JSON report output path.",
+    ),
+    sarif_out: Path | None = typer.Option(
+        None,
+        "--sarif",
+        help="Optional SARIF report output path for code scanning integrations.",
+    ),
+    markdown_out: Path | None = typer.Option(
+        None,
+        "--markdown",
+        "--md",
+        help="Optional Markdown report output path for PRs or review tickets.",
+    ),
+    formats: str = typer.Option(
+        "html",
+        "--format",
+        help='Comma-separated output formats: "html", "json", "sarif", "markdown", or "html,json,sarif,markdown".',
+    ),
+    config_file: Path | None = typer.Option(
+        None,
+        "--config",
+        help="Optional PolicyAware scan config YAML file.",
+    ),
+    diff: bool = typer.Option(
+        False,
+        "--diff",
+        help="Scan only files changed relative to --diff-base.",
+    ),
+    diff_base: str = typer.Option(
+        "HEAD",
+        "--diff-base",
+        help="Git ref used by --diff, for example HEAD, main, or origin/main.",
+    ),
+    fail_on: str = typer.Option(
+        "none",
+        "--fail-on",
+        help="Exit with code 1 when findings at this severity or higher exist: critical, high, medium, low, none.",
+    ),
+    include: str | None = typer.Option(
+        None,
+        "--include",
+        help='Comma-separated extensions to scan, for example ".py,.yaml,.json".',
+    ),
+    exclude: str | None = typer.Option(
+        None,
+        "--exclude",
+        help='Comma-separated directory names to exclude in addition to defaults, for example "tests,fixtures".',
+    ),
+    ignore_file: Path | None = typer.Option(
+        None,
+        "--ignore-file",
+        help="Optional .policyawareignore file with path globs to skip.",
+    ),
+    baseline: Path | None = typer.Option(
+        None,
+        "--baseline",
+        help="Optional baseline JSON file of known finding fingerprints to ignore.",
+    ),
+    write_baseline: Path | None = typer.Option(
+        None,
+        "--write-baseline",
+        help="Write current finding fingerprints to a baseline JSON file after scanning.",
+    ),
+    open_report: bool = typer.Option(False, "--open", help="Open the HTML report after scanning."),
+) -> None:
+    """Fast local AI governance scan with a user-friendly HTML report."""
+    if not path.exists():
+        raise typer.BadParameter(f"Path does not exist: {path}")
+    exclude_dirs = set(LocalCodeScanner.DEFAULT_EXCLUDED_DIRS)
+    exclude_dirs.update(_parse_csv(exclude) or [])
+    default_ignore = path / ".policyawareignore" if path.is_dir() else path.parent / ".policyawareignore"
+    ignore_patterns = _load_ignore_patterns(ignore_file or default_ignore)
+    config = ScanConfig.from_file(config_file) if config_file else ScanConfig()
+    requested_formats = {item.lower() for item in (_parse_csv(formats) or ["html"])}
+    if "json" in requested_formats and json_out is None:
+        json_out = out.with_suffix(".json")
+    if "sarif" in requested_formats and sarif_out is None:
+        sarif_out = out.with_suffix(".sarif")
+    if ({"markdown", "md"} & requested_formats) and markdown_out is None:
+        markdown_out = out.with_suffix(".md")
+    diff_files = git_changed_files(path if path.is_dir() else path.parent, diff_base) if diff else []
+    scanner = LocalCodeScanner(
+        include_extensions=_parse_csv(include),
+        exclude_dirs=exclude_dirs,
+        ignore_patterns=ignore_patterns,
+        baseline_fingerprints=_load_baseline(baseline),
+        config=config,
+        diff_files=diff_files,
+        workers=workers or None,
+        max_file_size_bytes=_parse_size(max_file_size),
+    )
+    report = scanner.scan(
+        path,
+        out=out,
+        json_out=json_out,
+        sarif_out=sarif_out,
+        markdown_out=markdown_out,
+        open_report=open_report,
+    )
+    if write_baseline:
+        _write_baseline(write_baseline, [finding.fingerprint for finding in report.findings])
+
+    table = Table(title="PolicyAware Local Code Scan")
+    table.add_column("Metric")
+    table.add_column("Value")
+    table.add_row("Overall risk", report.overall_risk)
+    table.add_row("Files scanned", str(report.files_scanned))
+    table.add_row("Files skipped", str(report.files_skipped))
+    table.add_row("Findings", str(len(report.findings)))
+    table.add_row("Critical", str(report.severity_counts["critical"]))
+    table.add_row("High", str(report.severity_counts["high"]))
+    table.add_row("Medium", str(report.severity_counts["medium"]))
+    table.add_row("Low", str(report.severity_counts["low"]))
+    table.add_row("Policy coverage", f"{report.policy_coverage_score}%")
+    table.add_row("Suppressed findings", str(report.suppressed_findings))
+    table.add_row("Baseline ignored", str(report.baseline_ignored))
+    if diff:
+        table.add_row("Diff files matched", str(len(diff_files)))
+    table.add_row("Scan time", f"{report.duration_seconds:.2f}s")
+    table.add_row("HTML report", report.output_path)
+    if json_out:
+        table.add_row("JSON report", str(json_out.resolve()))
+    if sarif_out:
+        table.add_row("SARIF report", str(sarif_out.resolve()))
+    if markdown_out:
+        table.add_row("Markdown report", str(markdown_out.resolve()))
+    if write_baseline:
+        table.add_row("Baseline written", str(write_baseline.resolve()))
+    console.print(table)
+    if _should_fail_scan(fail_on, dict(report.severity_counts)):
+        raise typer.Exit(code=1)
 
 
 @dev_app.command("simulate")

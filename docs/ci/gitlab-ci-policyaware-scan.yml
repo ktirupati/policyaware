@@ -1,0 +1,13 @@
+policyaware_scan:
+  image: python:3.12
+  stage: test
+  script:
+    - python -m pip install policyaware
+    - policyaware scan . --out policyaware-scan-report.html --config examples/policyaware-scan.yaml --format html,json,sarif,markdown --fail-on high
+  artifacts:
+    when: always
+    paths:
+      - policyaware-scan-report.html
+      - policyaware-scan-report.json
+      - policyaware-scan-report.md
+      - policyaware-scan-report.sarif

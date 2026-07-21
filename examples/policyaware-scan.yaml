@@ -1,0 +1,26 @@
+scan:
+  include_extensions:
+    - .py
+    - .js
+    - .ts
+    - .yaml
+    - .json
+    - .ipynb
+    - .tf
+    - .sql
+
+  exclude_dirs:
+    - tests/fixtures
+    - generated
+
+  ignore_patterns:
+    - docs/examples/**
+
+  disabled_categories: []
+
+  severity_overrides:
+    Data Residency: high
+    Cost Governance: low
+
+  max_file_size: 1mb
+  max_findings_per_file: 30

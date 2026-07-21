@@ -9,5 +9,7 @@ render_tmp/
 .tools/
 docs/rendered_user_guide/
 dist/
+release-dist-*/
 build/
 *.egg-info/
+policyaware-scan-report.*
