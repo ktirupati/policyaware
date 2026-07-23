@@ -2,6 +2,14 @@ from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger,
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.evals import EvalSuiteRunner, RuntimeEvaluator
 from policyaware.gateway import Gateway
+from policyaware.guardrails import (
+    BaseGuardrailAdapter,
+    GuardrailAdapter,
+    GuardrailResult,
+    GuardrailsAIAdapter,
+    NeMoGuardrailsAdapter,
+    OptionalGuardrailsDependencyError,
+)
 from policyaware.models import (
     AuditTrace,
     DataFindings,
@@ -72,6 +80,10 @@ __all__ = [
     "Gateway",
     "GatewayRequest",
     "GatewayResponse",
+    "BaseGuardrailAdapter",
+    "GuardrailAdapter",
+    "GuardrailResult",
+    "GuardrailsAIAdapter",
     "MLAssessment",
     "MLSignal",
     "CompositeMLClassifier",
@@ -79,7 +91,9 @@ __all__ = [
     "ModelCandidate",
     "ModelRouter",
     "NoopMLClassifier",
+    "NeMoGuardrailsAdapter",
     "OptionalMLDependencyError",
+    "OptionalGuardrailsDependencyError",
     "PolicyDecision",
     "PolicyEngine",
     "PolicyRule",

@@ -19,6 +19,27 @@ from policyaware import Gateway
 gateway = Gateway.from_policy_file("policy.yaml")
 ```
 
+## Guardrails Section
+
+Policies may include an optional top-level `guards` section. This lets teams run NeMo Guardrails, Guardrails AI, or custom validators as policy-as-code.
+
+```yaml
+guards:
+  input:
+    - name: nemo
+      config_path: rails/
+      when:
+        request.task_type: chatbot
+
+  output:
+    - name: guardrails_ai
+      rail_spec: guardrails/spec.rail
+      when:
+        request.output_format: json
+```
+
+Known guard names are `nemo`, `nemoguardrails`, `guardrails_ai`, `guardrails-ai`, and `guardrails`.
+
 ## 1. Basic Enterprise Policy
 
 Save as `basic-enterprise.yaml`.

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import typer
+import yaml
 from rich.console import Console
 from rich.table import Table
 
@@ -27,6 +28,7 @@ tools_app = typer.Typer(help="MCP and tool governance commands")
 audit_app = typer.Typer(help="Audit and replay commands")
 risk_app = typer.Typer(help="Risk classification commands")
 observability_app = typer.Typer(help="Metrics and trace export commands")
+guards_app = typer.Typer(help="Guardrails integration commands")
 app.add_typer(policy_app, name="policy")
 app.add_typer(eval_app, name="eval")
 app.add_typer(dev_app, name="dev")
@@ -34,6 +36,7 @@ app.add_typer(tools_app, name="tools")
 app.add_typer(audit_app, name="audit")
 app.add_typer(risk_app, name="risk")
 app.add_typer(observability_app, name="observability")
+app.add_typer(guards_app, name="guards")
 console = Console()
 
 
@@ -114,6 +117,32 @@ def _write_baseline(path: Path, fingerprints: list[str]) -> None:
         ),
         encoding="utf-8",
     )
+
+
+@guards_app.command("list")
+def list_guards(policy_file: Path) -> None:
+    """List guards declared in a PolicyAware YAML policy."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    policy = yaml.safe_load(policy_file.read_text(encoding="utf-8")) or {}
+    guards = policy.get("guards", {}) if isinstance(policy, dict) else {}
+    table = Table(title=f"PolicyAware Guards: {policy_file}")
+    table.add_column("Phase")
+    table.add_column("Name")
+    table.add_column("Config")
+    table.add_column("When")
+    for phase in ("input", "output"):
+        for spec in guards.get(phase, []) if isinstance(guards, dict) else []:
+            if not isinstance(spec, dict):
+                continue
+            config = spec.get("config_path") or spec.get("config") or spec.get("rail_spec") or "-"
+            table.add_row(
+                phase,
+                str(spec.get("name", "")),
+                str(config),
+                json.dumps(spec.get("when", {}), sort_keys=True),
+            )
+    console.print(table)
 
 
 @policy_app.command("validate")

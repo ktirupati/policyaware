@@ -12,14 +12,14 @@ class PolicyValidationError(ValueError):
 
 @dataclass(frozen=True)
 class PolicySchemaValidator:
-    allowed_top_level: frozenset[str] = frozenset({"id", "schema_version", "default", "rules"})
+    allowed_top_level: frozenset[str] = frozenset({"id", "schema_version", "default", "rules", "guards"})
     allowed_rule_fields: frozenset[str] = frozenset({"name", "effect", "when", "action"})
     allowed_effects: frozenset[str] = frozenset({"allow", "deny", "transform", "require_approval"})
     allowed_actions: frozenset[str] = frozenset(
         {"redact", "mask", "log", "route_to_safe_model", "require_approval"}
     )
     allowed_roots: frozenset[str] = frozenset(
-        {"tenant", "app", "user", "request", "data", "risk", "ml"}
+        {"tenant", "app", "user", "request", "data", "risk", "ml", "metadata"}
     )
     operator_suffixes: tuple[str, ...] = ("_not_in", "_in", "_lte", "_gte")
 
@@ -31,6 +31,7 @@ class PolicySchemaValidator:
         self._validate_top_level(policy, errors)
         self._validate_default(policy, errors)
         self._validate_rules(policy, errors)
+        self._validate_guards(policy, errors)
 
         if errors:
             raise PolicyValidationError(errors)
@@ -136,3 +137,28 @@ class PolicySchemaValidator:
             errors.append(f"{path}.when '{key}' must have a list value for '{operator}'.")
         if operator in {"lte", "gte"} and not isinstance(expected, (int, float)):
             errors.append(f"{path}.when '{key}' must have a numeric value for '{operator}'.")
+
+    def _validate_guards(self, policy: dict[str, Any], errors: list[str]) -> None:
+        guards = policy.get("guards")
+        if guards is None:
+            return
+        if not isinstance(guards, dict):
+            errors.append("Field 'guards' must be a mapping/object.")
+            return
+        for phase in ("input", "output"):
+            entries = guards.get(phase, [])
+            if entries is None:
+                continue
+            if not isinstance(entries, list):
+                errors.append(f"guards.{phase} must be a list.")
+                continue
+            for index, entry in enumerate(entries):
+                path = f"guards.{phase}[{index}]"
+                if not isinstance(entry, dict):
+                    errors.append(f"{path} must be a mapping/object.")
+                    continue
+                if not isinstance(entry.get("name"), str) or not entry.get("name", "").strip():
+                    errors.append(f"{path}.name is required and must be a non-empty string.")
+                when = entry.get("when", {})
+                if when is not None:
+                    self._validate_when(when, path, errors)

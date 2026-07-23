@@ -518,7 +518,42 @@ Production adapters can later be added for:
 - Ollama
 - TGI
 
-## 17. What This Framework Is Best For
+## 17. Full-Stack Guardrails Example
+
+PolicyAware can orchestrate optional NeMo Guardrails, Guardrails AI, or custom guard validators while keeping policy, routing, audit, and evaluation centralized.
+
+Runnable local demo without external dependencies:
+
+```bash
+cd examples/full-stack-guardrails
+python demo.py
+```
+
+Optional integrations:
+
+```bash
+pip install "policyaware[nemo]"
+pip install "policyaware[guardrails-ai]"
+pip install "policyaware[full]"
+```
+
+Python shape:
+
+```python
+from policyaware import Gateway, GuardrailsAIAdapter, NeMoGuardrailsAdapter
+
+gateway = Gateway.from_policy_file("policy.yaml")
+gateway.add_input_guard(NeMoGuardrailsAdapter(config_path="rails/"))
+gateway.add_output_guard(GuardrailsAIAdapter(rail_spec="guardrails/spec.rail"))
+```
+
+Guard results are included in:
+
+```python
+response.metadata["guardrails"]
+```
+
+## 18. What This Framework Is Best For
 
 PolicyAware is useful when you need to govern:
 
@@ -531,7 +566,7 @@ PolicyAware is useful when you need to govern:
 - AI agents with tool access
 - MCP-style connector access
 
-## 18. Current MVP Limitations
+## 19. Current MVP Limitations
 
 The current framework is a strong MVP, but these pieces are still future production work:
 
@@ -544,7 +579,7 @@ The current framework is a strong MVP, but these pieces are still future product
 - Approval workflow integrations
 - Dashboard or local trace viewer
 
-## 19. Fast Smoke Test
+## 20. Fast Smoke Test
 
 Run these after local install:
 

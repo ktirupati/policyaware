@@ -259,6 +259,15 @@ class LocalCodeScanner:
         )\b
         """
     )
+    GUARDRAILS_INTEGRATION_RE = re.compile(
+        r"""(?ix)
+        \b(
+            nemoguardrails|NeMoGuardrails|LLMRails|RailsConfig|
+            guardrails_ai|guardrails-ai|from\s+guardrails\s+import|import\s+guardrails|
+            GuardrailsAIAdapter|NeMoGuardrailsAdapter
+        )\b
+        """
+    )
     REGION_ENDPOINT_RE = re.compile(
         r"""(?ix)
         \b(region|location|endpoint|base_url|api_base|api_endpoint|aws_region|azure_endpoint)\b
@@ -562,6 +571,23 @@ class LocalCodeScanner:
                     docs_url=self.DOCS["routing"],
                 )
             )
+        if self.GUARDRAILS_INTEGRATION_RE.search(text) and not has_policyaware and _is_code_file(path):
+            findings.append(
+                ScanFinding(
+                    severity="medium",
+                    category="Guardrails Integration",
+                    file=relative,
+                    line=_first_match_line(text, self.GUARDRAILS_INTEGRATION_RE),
+                    title="Guardrails library usage found outside PolicyAware orchestration",
+                    evidence="NeMo Guardrails or Guardrails AI usage detected in source code.",
+                    recommendation=(
+                        "Attach NeMo Guardrails, Guardrails AI, or custom validators through "
+                        "PolicyAware guard adapters so guard decisions are policy-aware, routed, "
+                        "evaluated, and audited consistently."
+                    ),
+                    docs_url=self.DOCS["policy"],
+                )
+            )
         if (self.REGION_ENDPOINT_RE.search(text) or self.EXTERNAL_ENDPOINT_RE.search(text)) and not has_region_policy:
             findings.append(
                 ScanFinding(
@@ -863,6 +889,86 @@ class LocalCodeScanner:
                     docs_url=self.DOCS["policy"],
                 )
             )
+        findings.extend(self._scan_guard_policy(data, relative))
+        return findings
+
+    def _scan_guard_policy(self, data: dict[str, object], relative: str) -> list[ScanFinding]:
+        guards = data.get("guards")
+        if not isinstance(guards, dict):
+            return []
+        findings: list[ScanFinding] = []
+        known_guards = {"nemo", "nemoguardrails", "guardrails_ai", "guardrails-ai", "guardrails"}
+        for phase in ("input", "output"):
+            entries = guards.get(phase, [])
+            if not isinstance(entries, list):
+                continue
+            for index, entry in enumerate(entries):
+                if not isinstance(entry, dict):
+                    continue
+                name = str(entry.get("name", "")).strip()
+                title_prefix = f"guards.{phase}[{index}]"
+                if name and name not in known_guards and not entry.get("custom"):
+                    findings.append(
+                        ScanFinding(
+                            severity="medium",
+                            category="Guardrails Integration",
+                            file=relative,
+                            line=1,
+                            title="Custom guard declared without explicit custom marker",
+                            evidence=f"{title_prefix}.name: {name}",
+                            recommendation=(
+                                "For internal/custom guard adapters, set `custom: true` and register "
+                                "the guard in Gateway guard_registry so policy reviewers know this is intentional."
+                            ),
+                            docs_url=self.DOCS["policy"],
+                        )
+                    )
+                if name in {"nemo", "nemoguardrails"} and not (entry.get("config_path") or entry.get("config")):
+                    findings.append(
+                        ScanFinding(
+                            severity="medium",
+                            category="Guardrails Integration",
+                            file=relative,
+                            line=1,
+                            title="NeMo guard policy is missing config path",
+                            evidence=title_prefix,
+                            recommendation="Add `config_path: rails/` or `config: rails/` for NeMo Guardrails.",
+                            docs_url=self.DOCS["policy"],
+                        )
+                    )
+                if name in {"guardrails_ai", "guardrails-ai", "guardrails"} and not (
+                    entry.get("rail_spec") or entry.get("rail") or entry.get("spec")
+                ):
+                    findings.append(
+                        ScanFinding(
+                            severity="medium",
+                            category="Guardrails Integration",
+                            file=relative,
+                            line=1,
+                            title="Guardrails AI policy is missing rail specification",
+                            evidence=title_prefix,
+                            recommendation=(
+                                "Add `rail_spec`, `rail`, or `spec` so Guardrails AI validation is reproducible."
+                            ),
+                            docs_url=self.DOCS["policy"],
+                        )
+                    )
+                if not entry.get("when"):
+                    findings.append(
+                        ScanFinding(
+                            severity="low",
+                            category="Guardrails Integration",
+                            file=relative,
+                            line=1,
+                            title="Guard policy has no `when` condition",
+                            evidence=title_prefix,
+                            recommendation=(
+                                "Add a `when` condition such as `request.task_type` or `request.output_format` "
+                                "so guard execution is explicit and reviewable."
+                            ),
+                            docs_url=self.DOCS["policy"],
+                        )
+                    )
         return findings
 
 
@@ -1408,6 +1514,10 @@ def _recommendations_plain(report: ScanReport) -> list[str]:
         recommendations.append(
             "Review prompt templates for instruction-bypass language and add prompt-injection checks before model or tool execution."
         )
+    if categories["Guardrails Integration"]:
+        recommendations.append(
+            "Route NeMo Guardrails, Guardrails AI, and internal validators through PolicyAware guard adapters so guard results are included in policy, audit, and evaluation evidence."
+        )
     if categories["RAG Governance"]:
         recommendations.append(
             "Add grounding and citation evaluations for RAG answers, especially for regulated or factual workflows."
@@ -1667,6 +1777,7 @@ def _compliance_framework_mapping(report: ScanReport) -> dict[str, list[str]]:
             "Autonomous Agent Governance",
             "RAG Governance",
             "Prompt Safety",
+            "Guardrails Integration",
             "Cost Governance",
         },
     }
@@ -1696,6 +1807,7 @@ def _compliance_area(category: str) -> str:
         "Data Pipeline Governance": "Data Pipeline Governance",
         "Configuration Governance": "Secure Configuration",
         "Prompt Safety": "Prompt Safety",
+        "Guardrails Integration": "Guardrails Orchestration",
     }.get(category, "Governance")
 
 
@@ -1783,6 +1895,11 @@ env:
     effect: deny
     when:
       prompt.contains_injection_pattern: true""",
+        "Guardrails Integration": """from policyaware import Gateway, GuardrailsAIAdapter, NeMoGuardrailsAdapter
+
+gateway = Gateway.from_policy_file("policyaware.yaml")
+gateway.add_input_guard(NeMoGuardrailsAdapter(config_path="rails/"))
+gateway.add_output_guard(GuardrailsAIAdapter(rail_spec="guardrails/spec.rail"))""",
     }
     return snippets.get(category, "")
 
@@ -1822,6 +1939,7 @@ def _policy_coverage(findings: list[ScanFinding]) -> tuple[int, list[str]]:
         "PHI": "regulated-data handling",
         "LLM Governance": "gateway enforcement before model calls",
         "Prompt Safety": "prompt safety checks",
+        "Guardrails Integration": "guardrail orchestration through PolicyAware",
         "Tool Governance": "tool approval policy",
         "Agent Tool Governance": "agent/MCP tool permissions",
         "RAG Governance": "RAG citation and grounding evaluation",

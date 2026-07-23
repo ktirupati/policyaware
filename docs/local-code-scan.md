@@ -127,6 +127,7 @@ The fast local scanner checks:
 | Autonomous agent governance | `while True`, `agent.run`, auto-execute, long-running autonomous loops | Add human approval, max iterations, budgets, and audit logs. |
 | Cost governance | Model or agent calls without token, timeout, rate, retry, or cost limits | Define request-level and workflow-level limits. |
 | Prompt safety | Prompt templates with bypass, ignore-instructions, reveal-system-prompt, or execute-without-approval language | Add prompt safety checks and approvals for autonomous actions. |
+| Guardrails integration | Direct NeMo Guardrails or Guardrails AI usage outside PolicyAware orchestration, missing guard config paths, custom guards without markers, guard policies without `when` conditions | Attach guardrails through PolicyAware adapters so guard results are audited and policy-aware. |
 | RAG governance | Retrieval, vectorstore, similarity search, embedding code | Add grounding and citation evaluation. |
 | Data pipeline governance | PySpark, Spark reads/writes, streaming, cloud storage paths, sensitive column names | Mask sensitive columns and audit data writes. |
 | Configuration governance | `.env`, YAML, JSON, Terraform, Docker, and CI/CD style files with sensitive config context | Use secret manager references and avoid plaintext secrets. |

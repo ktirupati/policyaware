@@ -27,6 +27,7 @@ Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/
 - Runtime evaluation for safety, policy compliance, grounding, citations, and leakage.
 - Risk-tier classification with explainable reason codes.
 - MCP/tool governance for connector-level and action-level permissions.
+- Optional NeMo Guardrails and Guardrails AI adapter orchestration for full-stack guardrails.
 - Full request/response trace, explainable decisions, replay-ready audit logs, and exportable JSONL records.
 - Python SDK, CLI, YAML policies, local development mode, and integration shims.
 - Fast local code scanning with a user-friendly HTML governance report for PII, PHI, secrets, direct LLM calls, provider routing, tool governance, autonomous agents, RAG grounding, data residency, cost controls, policy YAML, configuration risks, and audit gaps.
@@ -55,6 +56,15 @@ policyaware scan ./mylocalfolder --baseline policyaware-baseline.json
 policyaware scan ./mylocalfolder --config examples/policyaware-scan.yaml
 policyaware scan ./mylocalfolder --diff --diff-base origin/main
 policyaware scan ./mylocalfolder --format html,json,sarif,markdown
+policyaware guards list examples/full-stack-guardrails/policy.yaml
+```
+
+Optional full-stack guardrails:
+
+```bash
+pip install "policyaware[nemo]"
+pip install "policyaware[guardrails-ai]"
+pip install "policyaware[full]"
 ```
 
 For local development from this repository:
@@ -87,6 +97,7 @@ Local code scan docs: [policyaware scan](https://github.com/ktirupati/policyawar
 - [Audit trace viewer](https://github.com/ktirupati/policyaware/tree/main/examples/audit-trace-viewer): write audit traces and generate a local HTML trace viewer.
 - [Approval workflow hooks](https://github.com/ktirupati/policyaware/tree/main/examples/approval-workflow-hooks): send high-risk requests to approval instead of calling a model.
 - [Local code scan](https://github.com/ktirupati/policyaware/blob/main/docs/local-code-scan.md): scan local AI app code and generate an HTML governance report.
+- [Full-stack guardrails](https://github.com/ktirupati/policyaware/tree/main/examples/full-stack-guardrails): orchestrate NeMo Guardrails, Guardrails AI, or custom validators as input/output guards.
 
 Captured terminal output for the runnable examples is available in [docs/demo-outputs.md](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md).
 
@@ -196,6 +207,7 @@ This is a production-grade starter framework: the core extension points and exec
 - Governance-aware eval report schema.
 - Provider adapters for OpenAI-compatible APIs, Azure OpenAI, Anthropic, Bedrock, Vertex AI, Ollama, and vLLM.
 - Optional ML signal integrations for Presidio PII detection, ProtectAI prompt-injection detection, and custom Transformers domain/risk classifiers.
+- Optional NeMo Guardrails and Guardrails AI adapters for full-stack guardrail orchestration.
 - Fast local code scanner and HTML recommendation report.
 - SQLite audit storage and static trace viewer.
 - Prometheus text and OpenTelemetry-shaped JSON exporters.

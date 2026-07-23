@@ -2,6 +2,12 @@
 
 All notable PolicyAware changes are tracked here.
 
+## 0.2.8
+
+- Added optional NeMo Guardrails and Guardrails AI adapter orchestration for full-stack guardrail workflows.
+- Added stable `GuardrailResult` adapter contract and Gateway input/output guard hooks.
+- Added full-stack guardrails example and documentation.
+
 ## 0.2.7
 
 - Added local AI governance code scanning documentation and examples for HTML, JSON, SARIF, and Markdown reports.

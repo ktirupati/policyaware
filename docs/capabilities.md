@@ -20,6 +20,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Observability | Export local traces as Prometheus or OpenTelemetry-shaped data | `PrometheusExporter`, `OpenTelemetryJsonExporter` |
 | ML-assisted signals | Add optional PII, prompt-injection, domain/risk classifier signals | `CompositeMLClassifier`, `MLSignal`, ML adapters |
 | Local code scan | Scan repositories for AI governance, compliance, PII, PHI, secrets, model calls, tool use, RAG, data residency, and audit gaps | `LocalCodeScanner`, `ScanConfig`, `policyaware scan` |
+| Guardrails integrations | Orchestrate NeMo Guardrails, Guardrails AI, or custom validators as optional input/output guards | `NeMoGuardrailsAdapter`, `GuardrailsAIAdapter`, `GuardrailResult` |
 
 ## Capability Guides
 
@@ -36,6 +37,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Audit And Observability](capabilities/audit-observability.md)
 - [ML-Assisted Signals](capabilities/ml-assisted-signals.md)
 - [Local Code Scan](local-code-scan.md)
+- [Guardrails Integrations](capabilities/guardrails-integrations.md)
 
 ## API Discovery Tables
 
@@ -51,6 +53,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Audit And Observability](capabilities/audit-observability.md) | Main APIs, `AuditTrace` fields, exporter APIs |
 | [ML-Assisted Signals](capabilities/ml-assisted-signals.md) | Main APIs, `MLSignal` fields, YAML policy fields |
 | [Local Code Scan](local-code-scan.md) | Main APIs, `ScanFinding` fields, scan config YAML, CLI output formats |
+| [Guardrails Integrations](capabilities/guardrails-integrations.md) | Main APIs, `GuardrailResult` fields, optional extras, adapter examples |
 
 ## Recommended Learning Path
 

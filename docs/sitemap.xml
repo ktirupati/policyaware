@@ -116,4 +116,8 @@
     <loc>https://ktirupati.github.io/policyaware/capabilities/ml-assisted-signals.md</loc>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/capabilities/guardrails-integrations.md</loc>
+    <priority>0.8</priority>
+  </url>
 </urlset>

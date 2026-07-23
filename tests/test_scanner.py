@@ -274,3 +274,51 @@ def test_scan_reads_notebooks_and_diff_file_filter(tmp_path: Path) -> None:
     assert report.scanned_files == ["analysis.ipynb"]
     assert report.category_counts["PII"] >= 1
     assert report.category_counts["Secrets"] == 0
+
+
+def test_scan_detects_unorchestrated_guardrails_usage(tmp_path: Path) -> None:
+    (tmp_path / "guards.py").write_text(
+        "\n".join(
+            [
+                "from nemoguardrails import LLMRails, RailsConfig",
+                "import guardrails as gd",
+                "rails = LLMRails(RailsConfig.from_path('rails'))",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    report = LocalCodeScanner(workers=1).scan(tmp_path, out=tmp_path / "report.html")
+
+    assert report.category_counts["Guardrails Integration"] >= 1
+    finding = next(item for item in report.findings if item.category == "Guardrails Integration")
+    assert finding.compliance_area == "Guardrails Orchestration"
+
+
+def test_scan_reviews_guard_policy_yaml(tmp_path: Path) -> None:
+    (tmp_path / "policy.yaml").write_text(
+        """
+id: guard_policy
+schema_version: "0.2"
+default: deny
+guards:
+  input:
+    - name: nemo
+  output:
+    - name: internal_safety
+rules:
+  - name: allow_support
+    effect: allow
+    when:
+      user.role: support_agent
+""",
+        encoding="utf-8",
+    )
+
+    report = LocalCodeScanner(workers=1).scan(tmp_path, out=tmp_path / "report.html")
+
+    guard_findings = [finding for finding in report.findings if finding.category == "Guardrails Integration"]
+    titles = {finding.title for finding in guard_findings}
+    assert "NeMo guard policy is missing config path" in titles
+    assert "Custom guard declared without explicit custom marker" in titles
+    assert "Guard policy has no `when` condition" in titles
