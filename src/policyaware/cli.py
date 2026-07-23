@@ -39,6 +39,32 @@ app.add_typer(observability_app, name="observability")
 app.add_typer(guards_app, name="guards")
 console = Console()
 
+PROJECT_URL = "https://github.com/ktirupati/policyaware"
+DOCS_URL = "https://ktirupati.github.io/policyaware/"
+PYPI_URL = "https://pypi.org/project/policyaware/"
+DISCUSSIONS_URL = "https://github.com/ktirupati/policyaware/discussions"
+ISSUES_URL = "https://github.com/ktirupati/policyaware/issues"
+TESTIMONIALS_URL = "https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell"
+FEEDBACK_FORM_URL = (
+    "https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform"
+)
+LINKEDIN_URL = "https://www.linkedin.com/in/krishna-tirupati/"
+
+
+def _project_links_table(title: str) -> Table:
+    table = Table(title=title)
+    table.add_column("Resource")
+    table.add_column("Link")
+    table.add_row("Documentation", DOCS_URL)
+    table.add_row("GitHub", PROJECT_URL)
+    table.add_row("PyPI", PYPI_URL)
+    table.add_row("Issues", ISSUES_URL)
+    table.add_row("Discussions", DISCUSSIONS_URL)
+    table.add_row("Feedback form", FEEDBACK_FORM_URL)
+    table.add_row("Testimonials / Show and Tell", TESTIMONIALS_URL)
+    table.add_row("Maintainer LinkedIn", LINKEDIN_URL)
+    return table
+
 
 def _parse_size(value: str) -> int:
     normalized = value.strip().lower()
@@ -117,6 +143,35 @@ def _write_baseline(path: Path, fingerprints: list[str]) -> None:
         ),
         encoding="utf-8",
     )
+
+
+@app.command("about")
+def about() -> None:
+    """Show project, documentation, and maintainer links."""
+    console.print("[bold]PolicyAware AI Gateway[/bold]")
+    console.print(
+        "Open-source policy-aware control plane for governed LLM, RAG, MCP/tool, "
+        "and AI-agent applications."
+    )
+    console.print("Created and maintained by Krishna Kishor Tirupati.")
+    console.print(f"Docs: {DOCS_URL}")
+    console.print(f"GitHub: {PROJECT_URL}")
+    console.print(f"Feedback: {DISCUSSIONS_URL}")
+    console.print(_project_links_table("PolicyAware Links"))
+
+
+@app.command("feedback")
+def feedback() -> None:
+    """Show feedback, issue, and testimonial links."""
+    console.print("[bold]PolicyAware Feedback And Testimonials[/bold]")
+    console.print(
+        "Share real-world usage, feature requests, issues, testimonials, and Show and Tell stories."
+    )
+    console.print("Please do not share secrets, private prompts, PHI, PII, or confidential data.")
+    console.print(f"Feedback form: {FEEDBACK_FORM_URL}")
+    console.print(f"GitHub Discussions: {DISCUSSIONS_URL}")
+    console.print(f"Testimonials / Show and Tell: {TESTIMONIALS_URL}")
+    console.print(_project_links_table("Feedback Channels"))
 
 
 @guards_app.command("list")

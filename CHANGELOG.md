@@ -2,6 +2,13 @@
 
 All notable PolicyAware changes are tracked here.
 
+## 0.2.9
+
+- Added project-wide feedback and testimonial links for GitHub Discussions, Google Form feedback, and Show and Tell user stories.
+- Added `policyaware about` and `policyaware feedback` CLI commands for pip-only users.
+- Added feedback/testimonial links to scan HTML and Markdown reports, README, docs, and package metadata.
+- Added adoption and testimonial tracking documents for open-source user insight collection.
+
 ## 0.2.8
 
 - Added optional NeMo Guardrails and Guardrails AI adapter orchestration for full-stack guardrail workflows.

@@ -592,3 +592,13 @@ policyaware eval run examples/evals/governance_cases.yaml
 ```
 
 If those commands run, the core MVP is wired correctly.
+
+## 21. Share Feedback
+
+If an example helps you build or evaluate a real AI governance workflow, please share feedback:
+
+- Private structured feedback form: https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform
+- GitHub Discussions: https://github.com/ktirupati/policyaware/discussions
+- Testimonials and Show and Tell: https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell
+
+Please do not share secrets, private prompts, PHI, PII, customer data, or confidential internal details.

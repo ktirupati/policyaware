@@ -41,11 +41,40 @@ Project links:
 - PyPI: [policyaware](https://pypi.org/project/policyaware/)
 - GitHub: [ktirupati/policyaware](https://github.com/ktirupati/policyaware)
 - Documentation: [PolicyAware AI Gateway Docs](https://ktirupati.github.io/policyaware/)
+- LinkedIn: [Krishna Tirupati](https://www.linkedin.com/in/krishna-tirupati/)
+
+## Feedback And Testimonials
+
+Using PolicyAware in a project, prototype, enterprise AI workflow, security review, or governance evaluation?
+
+Please share feedback, use cases, feature requests, and testimonials through the channels below:
+
+- Private structured feedback form: [PolicyAware User Feedback And Testimonials](https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform)
+- Public discussions: [GitHub Discussions](https://github.com/ktirupati/policyaware/discussions)
+- Testimonials and user stories: [Show and Tell](https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell)
+- Issues and bugs: [GitHub Issues](https://github.com/ktirupati/policyaware/issues)
+
+Helpful feedback includes what you built, which PolicyAware feature you used, what risk or governance gap it helped identify, and what should improve next.
+
+Please do not share secrets, private prompts, PHI, PII, customer data, or confidential internal details.
+
+## Contributing And Roadmap
+
+PolicyAware welcomes focused contributions from developers, AI platform engineers, security engineers, and governance practitioners.
+
+- Contributing guide: [CONTRIBUTING.md](https://github.com/ktirupati/policyaware/blob/main/CONTRIBUTING.md)
+- Roadmap: [ROADMAP.md](https://github.com/ktirupati/policyaware/blob/main/ROADMAP.md)
+- Good first issues: [GOOD_FIRST_ISSUES.md](https://github.com/ktirupati/policyaware/blob/main/GOOD_FIRST_ISSUES.md)
+- Security policy: [SECURITY.md](https://github.com/ktirupati/policyaware/blob/main/SECURITY.md)
+- Adoption and impact tracking: [ADOPTION.md](https://github.com/ktirupati/policyaware/blob/main/ADOPTION.md)
+- Curated testimonials: [TESTIMONIALS.md](https://github.com/ktirupati/policyaware/blob/main/TESTIMONIALS.md)
 
 ## Quick Start
 
 ```bash
 pip install policyaware
+policyaware about
+policyaware feedback
 policyaware dev simulate
 policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare
 policyaware scan ./mylocalfolder

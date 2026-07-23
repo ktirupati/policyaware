@@ -34,7 +34,10 @@
       "@type": "Person",
       "name": "Krishna Kishor Tirupati",
       "alternateName": "Krishna Tirupati",
-      "sameAs": "https://github.com/ktirupati"
+      "sameAs": [
+        "https://github.com/ktirupati",
+        "https://www.linkedin.com/in/krishna-tirupati/"
+      ]
     },
     "downloadUrl": "https://pypi.org/project/policyaware/",
     "codeRepository": "https://github.com/ktirupati/policyaware",
@@ -53,6 +56,7 @@
         <a href="#providers">Providers</a>
         <a href="#audit">Audit</a>
         <a href="#docs">Docs</a>
+        <a href="#feedback">Feedback</a>
         <a href="comparison.md">Comparison</a>
         <a href="alternatives.html">Alternatives</a>
         <a href="https://github.com/ktirupati/policyaware">GitHub</a>
@@ -253,7 +257,9 @@ rules:
         </div>
 
         <h3>CLI Examples</h3>
-        <pre><code>policyaware policy validate examples/policies/basic.yaml
+        <pre><code>policyaware about
+policyaware feedback
+policyaware policy validate examples/policies/basic.yaml
 policyaware policy explain examples/policies/basic.yaml --role support_agent --prompt "Email jane@example.com"
 policyaware policy explain examples/policies/basic.yaml --role developer --prompt "Use secret_api_key_abcdefghijklmnop"
 policyaware scan . --out policyaware-scan-report.html
@@ -353,6 +359,59 @@ policyaware observability otel-json</code></pre>
       </div>
     </section>
 
+    <section id="feedback" class="section">
+      <div class="shell">
+        <h2>Feedback And Testimonials</h2>
+        <div class="card">
+          <p>
+            PolicyAware improves through real-world user feedback from AI platform,
+            security, compliance, and engineering teams. Share what you built, which
+            feature you used, what risk or governance gap it helped identify, and
+            what should improve next.
+          </p>
+          <p>Please do not share secrets, private prompts, PHI, PII, customer data, or confidential internal details.</p>
+          <ul>
+            <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform">Private structured feedback form</a></li>
+            <li><a href="https://github.com/ktirupati/policyaware/discussions">GitHub Discussions</a></li>
+            <li><a href="https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell">Testimonials and Show and Tell</a></li>
+            <li><a href="https://github.com/ktirupati/policyaware/issues">GitHub Issues</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="contribute" class="section">
+      <div class="shell">
+        <h2>Contributing And Roadmap</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Contribute</h3>
+            <p><a href="https://github.com/ktirupati/policyaware/blob/main/CONTRIBUTING.md">Read CONTRIBUTING.md</a></p>
+          </div>
+          <div class="card">
+            <h3>Roadmap</h3>
+            <p><a href="https://github.com/ktirupati/policyaware/blob/main/ROADMAP.md">Read ROADMAP.md</a></p>
+          </div>
+          <div class="card">
+            <h3>Good First Issues</h3>
+            <p><a href="https://github.com/ktirupati/policyaware/blob/main/GOOD_FIRST_ISSUES.md">Find starter tasks</a></p>
+          </div>
+          <div class="card">
+            <h3>Security</h3>
+            <p><a href="https://github.com/ktirupati/policyaware/blob/main/SECURITY.md">Read SECURITY.md</a></p>
+          </div>
+          <div class="card">
+            <h3>Adoption</h3>
+            <p><a href="https://github.com/ktirupati/policyaware/blob/main/ADOPTION.md">Track adoption and impact</a></p>
+          </div>
+          <div class="card">
+            <h3>Testimonials</h3>
+            <p><a href="https://github.com/ktirupati/policyaware/blob/main/TESTIMONIALS.md">Read curated testimonials</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="author" class="section">
       <div class="shell">
         <h2>Author</h2>
@@ -361,6 +420,7 @@ policyaware observability otel-json</code></pre>
           <p>Creator and maintainer of PolicyAware AI Gateway.</p>
           <p>
             <a href="https://github.com/ktirupati">GitHub profile</a> |
+            <a href="https://www.linkedin.com/in/krishna-tirupati/">LinkedIn profile</a> |
             <a href="https://pypi.org/project/policyaware/">PyPI project</a> |
             <a href="https://github.com/ktirupati/policyaware">Repository</a>
           </p>

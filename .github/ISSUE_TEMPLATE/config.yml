@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Private structured feedback form
+    url: https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform
+    about: Share private PolicyAware feedback, use cases, or testimonial permissions.
+  - name: GitHub Discussions
+    url: https://github.com/ktirupati/policyaware/discussions
+    about: Ask questions, share ideas, and discuss use cases.
+  - name: Testimonials and Show and Tell
+    url: https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell
+    about: Share public user stories, testimonials, screenshots, or adoption examples.

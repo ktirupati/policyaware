@@ -19,6 +19,15 @@ from typing import Iterable
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
 
+PROJECT_URL = "https://github.com/ktirupati/policyaware"
+DOCS_URL = "https://ktirupati.github.io/policyaware/"
+DISCUSSIONS_URL = "https://github.com/ktirupati/policyaware/discussions"
+TESTIMONIALS_URL = "https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell"
+FEEDBACK_FORM_URL = (
+    "https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform"
+)
+LINKEDIN_URL = "https://www.linkedin.com/in/krishna-tirupati/"
+
 
 @dataclass(frozen=True)
 class ScanFinding:
@@ -1120,8 +1129,23 @@ class ScanHtmlReportWriter:
       background: white;
     }}
     .hidden-row {{ display: none; }}
+    .footer-links {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }}
+    .footer-links a {{
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f8fafc;
+      text-decoration: none;
+      font-weight: 700;
+    }}
     @media (max-width: 900px) {{
-      .cards, .grid-two, .filters {{ grid-template-columns: 1fr; }}
+      .cards, .grid-two, .filters, .footer-links {{ grid-template-columns: 1fr; }}
       header {{ padding: 24px 20px; }}
       table {{ font-size: 14px; }}
     }}
@@ -1287,6 +1311,24 @@ rules:
         <li><a href="{self._doc("audit")}">Audit traces and observability</a></li>
       </ul>
     </section>
+
+    <section>
+      <h2>Feedback And Testimonials</h2>
+      <p>
+        PolicyAware improves through real user feedback. If this scan helped identify
+        an AI governance gap, sensitive-data risk, tool governance issue, audit gap,
+        or useful improvement idea, please share it with the project.
+      </p>
+      <p class="muted">Do not share secrets, private prompts, PHI, PII, customer data, or confidential internal details.</p>
+      <div class="footer-links">
+        <a href="{FEEDBACK_FORM_URL}">Private structured feedback form</a>
+        <a href="{DISCUSSIONS_URL}">GitHub Discussions</a>
+        <a href="{TESTIMONIALS_URL}">Testimonials / Show and Tell</a>
+        <a href="{PROJECT_URL}">GitHub repository</a>
+        <a href="{DOCS_URL}">PolicyAware docs</a>
+        <a href="{LINKEDIN_URL}">Maintainer LinkedIn</a>
+      </div>
+    </section>
   </main>
   <script>
     const textFilter = document.getElementById('filterText');
@@ -1365,6 +1407,7 @@ class ScanMarkdownReportWriter:
         lines.extend(["", "## Findings", ""])
         if not report.findings:
             lines.append("No findings detected.")
+            lines.extend(_markdown_feedback_lines())
             return "\n".join(lines) + "\n"
         lines.extend(
             [
@@ -1379,6 +1422,7 @@ class ScanMarkdownReportWriter:
                 f"{finding.category} | {finding.compliance_area} | "
                 f"{finding.title} |"
             )
+        lines.extend(_markdown_feedback_lines())
         return "\n".join(lines) + "\n"
 
 
@@ -1485,6 +1529,23 @@ def _file_section(file: str, findings: list[ScanFinding]) -> str:
 
 def _recommendations(report: ScanReport) -> str:
     return "\n".join(f"<li>{html.escape(item)}</li>" for item in _recommendations_plain(report))
+
+
+def _markdown_feedback_lines() -> list[str]:
+    return [
+        "",
+        "## Feedback And Testimonials",
+        "",
+        "PolicyAware improves through real user feedback. Please do not share secrets, "
+        "private prompts, PHI, PII, customer data, or confidential internal details.",
+        "",
+        f"- Private structured feedback form: {FEEDBACK_FORM_URL}",
+        f"- GitHub Discussions: {DISCUSSIONS_URL}",
+        f"- Testimonials / Show and Tell: {TESTIMONIALS_URL}",
+        f"- Documentation: {DOCS_URL}",
+        f"- Repository: {PROJECT_URL}",
+        f"- Maintainer LinkedIn: {LINKEDIN_URL}",
+    ]
 
 
 def _recommendations_plain(report: ScanReport) -> list[str]:

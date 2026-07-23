@@ -618,3 +618,13 @@ policyaware scan . --out policyaware-scan-report.html
 ```
 
 For CI, keep the HTML report as an artifact so reviewers can inspect governance findings.
+
+## Feedback From Scan Users
+
+If `policyaware scan` helped identify an AI governance gap, sensitive-data risk, direct model call, ungoverned tool path, RAG issue, or audit gap, please share feedback with the project.
+
+- Private structured feedback form: https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform
+- GitHub Discussions: https://github.com/ktirupati/policyaware/discussions
+- Testimonials and Show and Tell: https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell
+
+Please do not share secrets, private prompts, PHI, PII, customer data, or confidential internal details.

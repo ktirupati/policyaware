@@ -37,6 +37,9 @@ def test_local_code_scanner_generates_html_report(tmp_path: Path) -> None:
     assert "jane@example.com" not in html
     assert all(finding.fingerprint.startswith("policyaware:") for finding in report.findings)
     assert "PolicyAware Documentation" in html
+    assert "Feedback And Testimonials" in html
+    assert "https://github.com/ktirupati/policyaware/discussions" in html
+    assert "https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform" in html
 
 
 def test_scan_cli_writes_report(tmp_path: Path) -> None:
@@ -90,7 +93,23 @@ def test_scan_cli_writes_report(tmp_path: Path) -> None:
     html = report_path.read_text(encoding="utf-8")
     assert "Prompt Safety" in html
     assert "Agent Tool Governance" in html
-    assert "PolicyAware Local Code Scan Report" in markdown_path.read_text(encoding="utf-8")
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert "PolicyAware Local Code Scan Report" in markdown
+    assert "Feedback And Testimonials" in markdown
+
+
+def test_cli_about_and_feedback_show_project_links() -> None:
+    runner = CliRunner()
+
+    about_result = runner.invoke(app, ["about"])
+    feedback_result = runner.invoke(app, ["feedback"])
+
+    assert about_result.exit_code == 0
+    assert feedback_result.exit_code == 0
+    assert "Krishna Kishor Tirupati" in about_result.output
+    assert "https://ktirupati.github.io/policyaware/" in about_result.output
+    assert "https://github.com/ktirupati/policyaware/discussions" in feedback_result.output
+    assert "https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell" in feedback_result.output
 
 
 def test_scan_cli_fail_on_threshold(tmp_path: Path) -> None:

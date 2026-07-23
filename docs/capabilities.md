@@ -64,3 +64,13 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 5. Add tool governance for agents.
 6. Run `policyaware scan .` to find governance and compliance gaps in local code.
 7. Add optional ML signals only after the rules-based path is understood.
+
+## Feedback And User Stories
+
+PolicyAware improves through real-world user feedback.
+
+- Private structured feedback form: https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform
+- Public GitHub Discussions: https://github.com/ktirupati/policyaware/discussions
+- Testimonials and Show and Tell: https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell
+
+Please do not share secrets, private prompts, PHI, PII, customer data, or confidential internal details.
