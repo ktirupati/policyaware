@@ -39,7 +39,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
-  "ruff>=0.4"
+  "ruff>=0.4",
+  "tomli>=2.0; python_version < '3.11'"
 ]
 providers = [
   "boto3>=1.34"
