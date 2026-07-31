@@ -3,29 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PolicyAware AI Gateway - Open-Source LLM Governance & Guardrails</title>
-  <meta name="description" content="PolicyAware is an open-source AI gateway and governance control plane for Python. Enforce deny-by-default policies, PII redaction, MCP tool permissions, model routing, runtime evaluation, and audit traces for LLMs, RAG, and AI agents.">
-  <meta name="keywords" content="PolicyAware, AI gateway, LLM governance, LLM guardrails, RAG governance, MCP tool governance, prompt injection protection, PII redaction, model routing, AI audit traces, Python AI framework">
+  <title>PolicyAware AI Gateway & Agent Control Plane - Open-Source LLM Governance</title>
+  <meta name="description" content="PolicyAware is an open-source AI gateway and agent control plane for Python. Add deny-by-default policy, PII redaction, MCP tool governance, model routing, evaluation, local code scanning, and audit traces to LLM, RAG, and AI agent apps.">
+  <meta name="keywords" content="PolicyAware, AI gateway, agent control plane, LLM governance, LLM guardrails, RAG governance, MCP tool governance, prompt injection protection, PII redaction, model routing, AI audit traces, Python AI framework, local code scan">
   <meta name="author" content="Krishna Kishor Tirupati">
   <link rel="canonical" href="https://ktirupati.github.io/policyaware/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="PolicyAware AI Gateway - Open-Source LLM Governance">
-  <meta property="og:description" content="Add deny-by-default policy, PII redaction, tool governance, model routing, evaluation, and audit traces to LLM, RAG, and AI agent apps in minutes.">
+  <meta property="og:title" content="PolicyAware AI Gateway & Agent Control Plane">
+  <meta property="og:description" content="Add deny-by-default policy, PII redaction, MCP tool governance, model routing, evaluation, local code scanning, and audit traces to LLM, RAG, and AI agent apps in minutes.">
   <meta property="og:url" content="https://ktirupati.github.io/policyaware/">
-  <meta property="og:site_name" content="PolicyAware AI Gateway">
+  <meta property="og:site_name" content="PolicyAware AI Gateway & Agent Control Plane">
   <meta property="og:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
-  <meta property="og:image:alt" content="PolicyAware AI Gateway - Open-source LLM governance control plane">
+  <meta property="og:image:alt" content="PolicyAware AI Gateway and Agent Control Plane - Open-source LLM governance">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="PolicyAware AI Gateway">
-  <meta name="twitter:description" content="Open-source policy-aware control plane for governed LLM, RAG, AI agent, and MCP tool execution.">
+  <meta name="twitter:title" content="PolicyAware AI Gateway & Agent Control Plane">
+  <meta name="twitter:description" content="Open-source policy-aware control plane for governed LLM, RAG, AI agent, MCP tool execution, and local code scanning.">
   <meta name="twitter:image" content="https://ktirupati.github.io/policyaware/social-preview.svg">
   <link rel="stylesheet" href="site.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "PolicyAware AI Gateway",
-    "description": "An open-source control plane for governed AI execution. Enforce deny-by-default policy, PII redaction, tool governance, model routing, runtime evaluation, and audit traces for LLM, RAG, and AI agent applications.",
+    "name": "PolicyAware AI Gateway & Agent Control Plane",
+    "description": "An open-source AI gateway and agent control plane for governed AI execution. Enforce deny-by-default policy, PII redaction, MCP tool governance, model routing, runtime evaluation, local code scanning, and audit traces for LLM, RAG, and AI agent applications.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "All",
     "programmingLanguage": "Python",
@@ -49,7 +49,7 @@
 <body>
   <header>
     <div class="shell nav">
-      <a class="brand" href="./">PolicyAware AI Gateway</a>
+      <a class="brand" href="./">PolicyAware AI Gateway & Agent Control Plane</a>
       <nav class="nav-links">
         <a href="#install">Install</a>
         <a href="#examples">Examples</a>
@@ -68,11 +68,11 @@
     <section class="hero">
       <div class="shell hero-grid">
         <div>
-          <h1>PolicyAware: Open-Source AI Gateway And LLM Governance</h1>
+          <h1>PolicyAware: Open-Source AI Gateway And Agent Control Plane</h1>
           <p class="subtitle">
             Add deny-by-default policy, PII redaction, MCP tool governance,
-            model routing, runtime evaluation, and audit traces to Python AI
-            applications before requests reach models or tools.
+            model routing, runtime evaluation, local code scanning, and audit
+            traces to Python AI applications before workflows reach production.
           </p>
           <div class="button-row">
             <a class="button" href="#install">Start with installation</a>
@@ -90,6 +90,7 @@
             <li>Optional NeMo Guardrails and Guardrails AI orchestration</li>
             <li>Runtime evaluation, audit traces, and replay</li>
             <li>Local code scanning with HTML, JSON, SARIF, and Markdown reports</li>
+            <li>LangChain and LlamaIndex callback governance</li>
           </ul>
         </div>
       </div>
@@ -101,10 +102,13 @@
         <div class="grid two">
           <div class="card">
             <h3>Install From PyPI</h3>
-            <p>Use this for application development and normal usage:</p>
+            <p>Use this lightweight base install for application development and normal usage:</p>
             <pre><code>pip install policyaware</code></pre>
-            <p>For optional Bedrock support:</p>
-            <pre><code>pip install "policyaware[providers]"</code></pre>
+            <p>Install optional integrations only when you need them:</p>
+            <pre><code>pip install "policyaware[privacy]"     # Presidio + spaCy
+pip install "policyaware[guardrails]"  # NeMo Guardrails + Guardrails AI
+pip install "policyaware[providers]"   # Provider extras
+pip install "policyaware[all]"         # All optional integrations</code></pre>
           </div>
           <div class="card">
             <h3>Local Development</h3>
@@ -116,7 +120,9 @@ pip install -e ".[dev]"</code></pre>
         </div>
 
         <h3>Verify The Install</h3>
-        <pre><code>policyaware dev simulate
+        <pre><code>policyaware init
+policyaware policy validate policyaware.yaml
+policyaware dev simulate
 policyaware risk classify "Review patient id ABCDE diagnosis: flu" --domain healthcare --autonomy agentic</code></pre>
 
         <h3>Try Repository Examples</h3>
@@ -146,6 +152,7 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="pii-redaction-llm.html">PII redaction for LLM apps guide</a></li>
           <li><a href="local-code-scan.md">Local code scan and HTML report guide</a></li>
           <li><a href="capabilities/guardrails-integrations.md">NeMo Guardrails and Guardrails AI integrations</a></li>
+          <li><a href="capabilities/integration-callbacks.md">LangChain and LlamaIndex callback integrations</a></li>
           <li><a href="ci/policyaware-scan-github-actions.yml">GitHub Actions scan template</a></li>
           <li><a href="demo-outputs.md">Captured terminal output for runnable examples</a></li>
           <li><a href="seo-and-distribution.md">SEO and distribution checklist</a></li>
@@ -259,6 +266,8 @@ rules:
         <h3>CLI Examples</h3>
         <pre><code>policyaware about
 policyaware feedback
+policyaware init
+policyaware policy validate policyaware.yaml
 policyaware policy validate examples/policies/basic.yaml
 policyaware policy explain examples/policies/basic.yaml --role support_agent --prompt "Email jane@example.com"
 policyaware policy explain examples/policies/basic.yaml --role developer --prompt "Use secret_api_key_abcdefghijklmnop"
@@ -266,6 +275,18 @@ policyaware scan . --out policyaware-scan-report.html
 policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sarif,markdown
 policyaware scan . --diff --diff-base origin/main --fail-on high
 policyaware audit view --traces-file .policyaware/traces.jsonl --out .policyaware/trace-viewer.html</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <h2>Starter Policy Initialization</h2>
+        <div class="card">
+          <p>Create a NIST-aligned deny-by-default starter policy with baseline privacy, tool governance, token budget, and agent-loop controls:</p>
+          <pre><code>policyaware init
+policyaware policy validate policyaware.yaml</code></pre>
+          <p>The generated template includes PII/PHI/secrets handling, risky MCP/tool command blocking, approval requirements for side-effecting actions, token caps, and high-iteration agent approval rules.</p>
+        </div>
       </div>
     </section>
 
@@ -330,6 +351,30 @@ policyaware observability otel-json</code></pre>
           <div class="card">
             <h3>User Guide</h3>
             <p><a href="PolicyAware_AI_Gateway_User_Guide.docx">Download the Word user guide</a></p>
+          </div>
+          <div class="card">
+            <h3>Usage Modes</h3>
+            <p><a href="usage-modes.md">Choose Gateway, callbacks, tool governance, scan, or direct engine APIs</a></p>
+          </div>
+          <div class="card">
+            <h3>Enterprise Readiness</h3>
+            <p><a href="enterprise-readiness.md">Review enterprise governance controls and evidence artifacts</a></p>
+          </div>
+          <div class="card">
+            <h3>Limitations</h3>
+            <p><a href="limitations.md">Understand current scope and production validation responsibilities</a></p>
+          </div>
+          <div class="card">
+            <h3>Security Model</h3>
+            <p><a href="security-model.md">Understand deny-by-default enforcement, tool governance, output evaluation, and scan boundaries</a></p>
+          </div>
+          <div class="card">
+            <h3>Examples Matrix</h3>
+            <p><a href="examples-matrix.md">Choose the right runnable example by use case</a></p>
+          </div>
+          <div class="card">
+            <h3>Compatibility</h3>
+            <p><a href="compatibility.md">Review Python versions, optional extras, provider adapters, and integration status</a></p>
           </div>
         </div>
         <div class="callout">

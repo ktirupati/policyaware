@@ -19,6 +19,31 @@ from policyaware import Gateway
 gateway = Gateway.from_policy_file("policy.yaml")
 ```
 
+## Generate A Starter Policy
+
+Use `policyaware init` to create a NIST-aligned baseline starter policy in the current directory:
+
+```bash
+policyaware init
+policyaware policy validate policyaware.yaml
+```
+
+The generated `policyaware.yaml` is deny-by-default and includes baseline rules for:
+
+- PII redaction for standard users
+- PHI redaction for non-privileged users
+- secret leakage denial
+- risky MCP/tool command blocking
+- approval for write/delete/deploy/payment/refund tool actions
+- token budget caps
+- approval for high-iteration agent workflows
+
+Use `--force` only when you intentionally want to overwrite an existing file:
+
+```bash
+policyaware init --out policyaware.yaml --force
+```
+
 ## Guardrails Section
 
 Policies may include an optional top-level `guards` section. This lets teams run NeMo Guardrails, Guardrails AI, or custom validators as policy-as-code.

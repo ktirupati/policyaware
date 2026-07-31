@@ -25,7 +25,13 @@ Base install:
 pip install policyaware
 ```
 
-NeMo Guardrails:
+Combined guardrails profile:
+
+```bash
+pip install "policyaware[guardrails]"
+```
+
+Backward-compatible individual extras:
 
 ```bash
 pip install "policyaware[nemo]"
@@ -40,8 +46,10 @@ pip install "policyaware[guardrails-ai]"
 Full optional stack:
 
 ```bash
-pip install "policyaware[full]"
+pip install "policyaware[all]"
 ```
+
+The older `policyaware[full]` extra remains available as a backward-compatible alias.
 
 These integrations are optional so normal users can keep the lightweight install:
 

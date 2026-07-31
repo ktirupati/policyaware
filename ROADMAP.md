@@ -34,6 +34,7 @@ This roadmap lists practical work that can improve adoption, enterprise usefulne
 - Add policy bundle examples for regulated RAG, support copilots, code assistants, analytics agents, and multi-agent workflows.
 - Improve OpenTelemetry and Prometheus documentation with production-style examples.
 - Add more golden dataset examples for policy and RAG quality regression tests.
+- Continue refining lightweight install profiles and optional dependency aliases for enterprise adoption.
 
 ## Next 90 Days
 

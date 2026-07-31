@@ -1,6 +1,6 @@
 # PolicyAware Local Code Scan
 
-`policyaware scan` scans a local folder quickly and generates a user-friendly HTML report with findings, recommendations, and PolicyAware documentation links.
+`policyaware scan` scans a local folder quickly and generates a Rich terminal dashboard plus a user-friendly HTML report with findings, recommendations, and PolicyAware documentation links.
 
 It is designed for developers who want to answer:
 
@@ -14,6 +14,15 @@ pip install policyaware
 
 ## Quick Start
 
+Generate a starter policy:
+
+```bash
+policyaware init
+policyaware policy validate policyaware.yaml
+```
+
+Then scan a local folder:
+
 ```bash
 policyaware scan ./mylocalfolder
 ```
@@ -23,6 +32,27 @@ Default output:
 ```text
 policyaware-scan-report.html
 ```
+
+## Report Preview
+
+Terminal dashboard:
+
+![PolicyAware scan terminal dashboard](assets/scan-terminal-preview.svg)
+
+HTML report:
+
+![PolicyAware scan HTML report](assets/scan-html-report-preview.svg)
+
+The terminal dashboard shows:
+
+- overall risk
+- files scanned
+- scan duration
+- Critical findings in red
+- Warning findings in yellow
+- Passed checks in green
+- top recommendations
+- generated report paths
 
 Custom output:
 

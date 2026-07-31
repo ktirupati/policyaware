@@ -1,4 +1,4 @@
-# PolicyAware AI Gateway
+# PolicyAware AI Gateway & Agent Control Plane
 
 PyPI: [policyaware](https://pypi.org/project/policyaware/) |
 Downloads: [Pepy stats](https://pepy.tech/project/policyaware) |
@@ -6,9 +6,11 @@ Python: 3.10+ |
 License: [Apache-2.0](https://github.com/ktirupati/policyaware/blob/main/LICENSE) |
 Docs: [GitHub Pages](https://ktirupati.github.io/policyaware/)
 
-PolicyAware adds deny-by-default policy, PII redaction, MCP tool governance, model routing, runtime evaluation, and audit traces to LLM, RAG, and AI agent applications in minutes.
+PolicyAware adds deny-by-default policy, PII redaction, MCP tool governance, model routing, runtime evaluation, local code scanning, and audit traces to LLM, RAG, and AI agent applications in minutes.
 
-PolicyAware AI Gateway is an open-source control plane for governed AI execution across enterprise LLM, RAG, AI agent, and MCP-style tool workflows. It enforces organizational, legal, security, cost, and routing policy before requests reach models or tools, then evaluates outputs for safety, quality, compliance, and auditability.
+PolicyAware is an open-source AI control plane and security gateway for governed LLM applications, RAG pipelines, MCP-style tools, and autonomous AI agents. Distributed as a lightweight Python package (`pip install policyaware`), it helps teams inspect prompts, request context, tool calls, model routing decisions, outputs, local code, and audit traces before AI workflows move into production.
+
+Unlike basic content filters that only check text strings, PolicyAware provides policy-aware governance across requests, tools, models, evaluations, and local code scans.
 
 Documentation site: https://ktirupati.github.io/policyaware/
 
@@ -16,21 +18,78 @@ Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
 Alternatives guide: [PolicyAware alternatives for guardrails, AI gateways, model routers, and MCP governance](https://ktirupati.github.io/policyaware/alternatives.html)
+Usage modes: [Gateway vs callbacks vs tool governance vs scan](https://github.com/ktirupati/policyaware/blob/main/docs/usage-modes.md)
+Enterprise readiness: [enterprise AI governance checklist](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-readiness.md)
+Limitations: [current scope and production validation notes](https://github.com/ktirupati/policyaware/blob/main/docs/limitations.md)
+Security model: [deny-by-default and layered AI governance](https://github.com/ktirupati/policyaware/blob/main/docs/security-model.md)
+Examples matrix: [choose the right runnable example](https://github.com/ktirupati/policyaware/blob/main/docs/examples-matrix.md)
+Compatibility: [Python, providers, extras, and integration status](https://github.com/ktirupati/policyaware/blob/main/docs/compatibility.md)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
 
-## What It Provides
+## Enterprise Core Capabilities
 
-- Policy enforcement for RBAC, context, tenant, region, compliance, budgets, tokens, latency, and model constraints.
-- PII, PHI, secrets, and sensitive-data detection with redaction actions.
-- Multi-provider model routing with fallbacks by policy, task type, risk, cost, availability, and quality.
-- Runtime evaluation for safety, policy compliance, grounding, citations, and leakage.
-- Risk-tier classification with explainable reason codes.
-- MCP/tool governance for connector-level and action-level permissions.
-- Optional NeMo Guardrails and Guardrails AI adapter orchestration for full-stack guardrails.
-- Full request/response trace, explainable decisions, replay-ready audit logs, and exportable JSONL records.
-- Python SDK, CLI, YAML policies, local development mode, and integration shims.
-- Fast local code scanning with a user-friendly HTML governance report for PII, PHI, secrets, direct LLM calls, provider routing, tool governance, autonomous agents, RAG grounding, data residency, cost controls, policy YAML, configuration risks, and audit gaps.
+### 1. Agent Control Plane And MCP Governance
+
+- **Action-level tool governance:** Evaluates connector names, action names, arguments, user role, tenant, region, and approval requirements before agent tools execute.
+- **Deny-by-default tool shielding:** Supports MCP-style tool policies that block unauthorized or destructive actions unless explicitly allowed.
+
+### 2. Multi-Engine Security And Guardrail Orchestration
+
+- **Unified governance pipeline:** Combines data protection, YAML policy enforcement, risk classification, model routing, guardrail adapters, evaluation, and audit logging in one modular Python framework.
+- **Optional security integrations:** Supports optional integrations such as Microsoft Presidio for stronger PII detection, ProtectAI/Transformers-based classifiers for ML signals, NVIDIA NeMo Guardrails, and Guardrails AI adapters.
+
+### 3. Cost-Aware Runtime Routing And FinOps Controls
+
+- **Policy-based model routing:** Routes requests across local and external model providers based on task type, risk level, region, provider availability, cost, quality, and policy constraints.
+- **Token and budget controls:** Supports token, budget, and risk-aware limits to help reduce runaway agent loops and uncontrolled model usage.
+
+### 4. Observability, Audit, And Local Code Scanning
+
+- **Audit-ready traces:** Records structured policy decisions, risk tiers, reason codes, model choices, evaluation scores, token estimates, and request/response snapshots.
+- **Observability exporters:** Provides Prometheus-style and OpenTelemetry-shaped exports for integration with monitoring and compliance workflows.
+- **PolicyAware Scan CLI:** Scans local codebases for PII, PHI, secrets, direct LLM calls, missing tool governance, weak routing controls, audit gaps, and configuration risks, then generates developer-friendly HTML, JSON, SARIF, and Markdown reports.
+- **Framework callbacks:** Includes lightweight LangChain and LlamaIndex callback handlers that aggregate streamed tokens and report policy, risk, leakage, eval, and token-accounting results.
+
+## Runtime Flow Summary
+
+```mermaid
+flowchart LR
+    A["AI App / RAG Pipeline / Agent"] --> B["PolicyAware SDK / CLI / Middleware / Callback"]
+    B --> C["Data Protection"]
+    C --> D["Risk Classification"]
+    D --> E["Policy Decision"]
+    E -->|deny| F["Stop"]
+    E -->|approval| G["Human Approval"]
+    E -->|allow| H["Model Routing"]
+    E --> J["MCP Tool Governance"]
+    H --> I["Model Provider"]
+    J --> K["Tool / Connector"]
+    I --> L["Runtime Evaluation"]
+    K --> L
+    L --> M["Audit Trace / Evidence"]
+```
+
+Read more: [Architecture](https://github.com/ktirupati/policyaware/blob/main/docs/architecture.md)
+
+## Which Entry Point Should I Use?
+
+| Need | Use |
+| --- | --- |
+| Full model request control, routing, eval, and audit | `Gateway.chat(...)` |
+| Existing LangChain or LlamaIndex pipeline telemetry | `PolicyAwareCallbackHandler` |
+| MCP-style connector/action permissions | `ToolPolicyEngine` |
+| Pre-deployment code governance scan | `policyaware scan ./app` |
+| Simple PII/PHI/secrets string check | `DataProtectionEngine.inspect(...)` |
+| YAML policy unit testing | `PolicyEngine.decide(...)` |
+
+Read more: [Usage Modes](https://github.com/ktirupati/policyaware/blob/main/docs/usage-modes.md)
+
+## Scan Report Preview
+
+![PolicyAware scan terminal dashboard](https://raw.githubusercontent.com/ktirupati/policyaware/main/docs/assets/scan-terminal-preview.svg)
+
+![PolicyAware scan HTML report](https://raw.githubusercontent.com/ktirupati/policyaware/main/docs/assets/scan-html-report-preview.svg)
 
 ## Author
 
@@ -75,6 +134,8 @@ PolicyAware welcomes focused contributions from developers, AI platform engineer
 pip install policyaware
 policyaware about
 policyaware feedback
+policyaware init
+policyaware policy validate policyaware.yaml
 policyaware dev simulate
 policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare
 policyaware scan ./mylocalfolder
@@ -88,9 +149,29 @@ policyaware scan ./mylocalfolder --format html,json,sarif,markdown
 policyaware guards list examples/full-stack-guardrails/policy.yaml
 ```
 
-Optional full-stack guardrails:
+## Installation Profiles
+
+The default install is intentionally lightweight. It includes the core CLI, local scanner, policy engine, routing abstractions, cost/risk governance primitives, audit/eval contracts, and YAML policy support.
 
 ```bash
+pip install policyaware
+```
+
+Install optional integrations only when you need them:
+
+```bash
+pip install "policyaware[privacy]"     # Presidio + spaCy privacy detection
+pip install "policyaware[guardrails]"  # NeMo Guardrails + Guardrails AI
+pip install "policyaware[providers]"   # Provider extras such as Bedrock boto3
+pip install "policyaware[ml]"          # Transformers/Torch classifiers
+pip install "policyaware[onnx]"        # ONNX runtime path for supported classifiers
+pip install "policyaware[all]"         # All optional integrations
+```
+
+Backward-compatible aliases are also available:
+
+```bash
+pip install "policyaware[presidio]"
 pip install "policyaware[nemo]"
 pip install "policyaware[guardrails-ai]"
 pip install "policyaware[full]"
@@ -114,6 +195,72 @@ policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sa
 For copy-pasteable end-to-end examples, see [Working Examples](https://github.com/ktirupati/policyaware/blob/main/docs/working-examples.md).
 
 Local code scan docs: [policyaware scan](https://github.com/ktirupati/policyaware/blob/main/docs/local-code-scan.md)
+
+## Generate A Starter Policy
+
+Create a NIST-aligned baseline starter policy in the current directory:
+
+```bash
+policyaware init
+policyaware policy validate policyaware.yaml
+```
+
+Use a custom path or overwrite intentionally:
+
+```bash
+policyaware init --out config/policyaware.yaml
+policyaware init --out policyaware.yaml --force
+```
+
+The generated template is deny-by-default and includes baseline rules for PII/PHI/secrets handling, risky MCP/tool command blocking, approval for side-effecting tool actions, token budget caps, and high-iteration agent workflows.
+
+## LangChain And LlamaIndex Callbacks
+
+Use callbacks when you already have an LLM framework pipeline and want PolicyAware governance results without changing the model call.
+
+```python
+from policyaware.integrations.langchain import PolicyAwareCallbackHandler
+
+policyaware_callback = PolicyAwareCallbackHandler(config="policyaware.yaml")
+
+response = chain.invoke(
+    {"question": "Summarize this customer ticket."},
+    config={"callbacks": [policyaware_callback]},
+)
+
+result = policyaware_callback.last_result
+print(result.policy_decision.decision)
+print(result.risk.tier)
+print(result.output_findings.contains_sensitive)
+```
+
+Streaming-friendly manual example:
+
+```python
+from policyaware.integrations.langchain import PolicyAwareCallbackHandler
+
+handler = PolicyAwareCallbackHandler(config="policyaware.yaml")
+handler.on_llm_start(prompts=["Email jane@example.com with the ticket summary."])
+
+for token in ["Safe ", "summary ", "without ", "private ", "data."]:
+    handler.on_llm_new_token(token)
+
+result = handler.on_llm_end()
+print(result.to_dict())
+```
+
+LlamaIndex-style callbacks are also available:
+
+```python
+from policyaware.integrations.llamaindex import PolicyAwareCallbackHandler
+
+handler = PolicyAwareCallbackHandler(config="policyaware.yaml")
+handler.on_event_start(payload={"query_str": "Answer with citations from policy documents."})
+handler.on_llm_new_token("The policy requires citation review [doc-1].")
+result = handler.on_event_end(payload={})
+```
+
+More details: [LangChain and LlamaIndex callback integrations](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/integration-callbacks.md)
 
 ## Copy-Paste Examples
 

@@ -184,7 +184,44 @@ Example output shape:
 }
 ```
 
-## 8. Use The Python SDK
+## 8. Add A LangChain Callback
+
+Use this when you already have a LangChain-style pipeline and want PolicyAware to capture prompt risk, policy decisions, streamed output, leakage checks, evals, and token counts.
+
+```python
+from policyaware.integrations.langchain import PolicyAwareCallbackHandler
+
+handler = PolicyAwareCallbackHandler(config="examples/policies/basic.yaml")
+handler.on_llm_start(prompts=["Email jane@example.com with the ticket summary."])
+
+for token in ["Safe ", "summary ", "without ", "private ", "data."]:
+    handler.on_llm_new_token(token)
+
+result = handler.on_llm_end()
+
+print(result.policy_decision.decision)
+print(result.risk.tier)
+print(result.output_findings.contains_sensitive)
+print(result.to_dict())
+```
+
+## 9. Add A LlamaIndex Callback
+
+Use this when you want RAG-style output checks such as citation validation.
+
+```python
+from policyaware.integrations.llamaindex import PolicyAwareCallbackHandler
+
+handler = PolicyAwareCallbackHandler(config="examples/policies/basic.yaml")
+handler.on_event_start(payload={"query_str": "Answer with citations from policy documents."})
+handler.on_llm_new_token("The policy requires citation review [doc-1].")
+result = handler.on_event_end(payload={})
+
+print(result.policy_decision.decision)
+print([check.name for check in result.evals])
+```
+
+## 10. Use The Python SDK
 
 ```python
 from policyaware import Gateway, GatewayRequest
@@ -224,7 +261,7 @@ What happens:
 - The simulated provider receives redacted text.
 - The response includes a trace ID.
 
-## 9. Govern MCP-Style Tool Access
+## 11. Govern MCP-Style Tool Access
 
 Use the sample tool policy:
 
@@ -290,7 +327,7 @@ Expected decision:
 }
 ```
 
-## 10. Parse A Governance Eval Suite
+## 12. Parse A Governance Eval Suite
 
 ```bash
 policyaware eval run examples/evals/governance_cases.yaml
@@ -315,7 +352,7 @@ Example output shape:
 
 The next production step is to execute these cases against real model providers and compare actual policy outcomes with expected outcomes.
 
-## 11. Create An Audit Trace
+## 13. Create An Audit Trace
 
 Run a request:
 
@@ -348,7 +385,7 @@ Audit traces include:
 - Request snapshot
 - Response snapshot
 
-## 12. Generate An Audit Bundle
+## 14. Generate An Audit Bundle
 
 Use the trace ID from a previous run:
 
@@ -371,7 +408,7 @@ Generated files:
 
 This bundle is meant for security, compliance, or incident review.
 
-## 13. Replay A Trace Against A Policy
+## 15. Replay A Trace Against A Policy
 
 ```bash
 policyaware audit replay trc_your_trace_id \
@@ -397,7 +434,7 @@ Example output shape:
 }
 ```
 
-## 14. Example Policy: Basic Enterprise Policy
+## 16. Example Policy: Basic Enterprise Policy
 
 File:
 
@@ -448,7 +485,7 @@ rules:
       risk.tier_in: ["high", "critical"]
 ```
 
-## 15. Example Tool Governance Policy
+## 17. Example Tool Governance Policy
 
 File:
 
@@ -495,7 +532,7 @@ connectors:
         side_effect: delete
 ```
 
-## 16. What Is Simulated In The MVP
+## 18. What Is Simulated In The MVP
 
 The current provider is intentionally simulated:
 
@@ -518,7 +555,7 @@ Production adapters can later be added for:
 - Ollama
 - TGI
 
-## 17. Full-Stack Guardrails Example
+## 19. Full-Stack Guardrails Example
 
 PolicyAware can orchestrate optional NeMo Guardrails, Guardrails AI, or custom guard validators while keeping policy, routing, audit, and evaluation centralized.
 
@@ -532,9 +569,10 @@ python demo.py
 Optional integrations:
 
 ```bash
+pip install "policyaware[guardrails]"
 pip install "policyaware[nemo]"
 pip install "policyaware[guardrails-ai]"
-pip install "policyaware[full]"
+pip install "policyaware[all]"
 ```
 
 Python shape:
@@ -553,7 +591,7 @@ Guard results are included in:
 response.metadata["guardrails"]
 ```
 
-## 18. What This Framework Is Best For
+## 20. What This Framework Is Best For
 
 PolicyAware is useful when you need to govern:
 
@@ -566,7 +604,7 @@ PolicyAware is useful when you need to govern:
 - AI agents with tool access
 - MCP-style connector access
 
-## 19. Current MVP Limitations
+## 21. Current MVP Limitations
 
 The current framework is a strong MVP, but these pieces are still future production work:
 
@@ -579,7 +617,7 @@ The current framework is a strong MVP, but these pieces are still future product
 - Approval workflow integrations
 - Dashboard or local trace viewer
 
-## 20. Fast Smoke Test
+## 22. Fast Smoke Test
 
 Run these after local install:
 
@@ -593,7 +631,7 @@ policyaware eval run examples/evals/governance_cases.yaml
 
 If those commands run, the core MVP is wired correctly.
 
-## 21. Share Feedback
+## 23. Share Feedback
 
 If an example helps you build or evaluate a real AI governance workflow, please share feedback:
 

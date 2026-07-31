@@ -86,6 +86,11 @@ def test_scan_cli_writes_report(tmp_path: Path) -> None:
     assert sarif_path.exists()
     assert markdown_path.exists()
     assert "PolicyAware Local Code Scan" in result.output
+    assert "Critical" in result.output
+    assert "Warning" in result.output
+    assert "Passed" in result.output
+    assert "Top Recommendations" in result.output
+    assert "Reports" in result.output
     payload = json.loads(json_path.read_text(encoding="utf-8"))
     sarif = json.loads(sarif_path.read_text(encoding="utf-8"))
     assert payload["findings"]

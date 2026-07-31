@@ -2,6 +2,21 @@
 
 All notable PolicyAware changes are tracked here.
 
+## Unreleased
+
+- No unreleased changes yet.
+
+## 0.3.0
+
+- Added user-friendly optional dependency aliases: `privacy`, `guardrails`, and `all`.
+- Documented the lightweight default install and optional install profiles while keeping backward-compatible extras.
+- Enhanced `policyaware scan` terminal output with a Rich dashboard for Critical, Warning, Passed, recommendations, and report paths.
+- Added `policyaware init` to generate a NIST-aligned deny-by-default starter `policyaware.yaml`.
+- Added lightweight LangChain and LlamaIndex callback handlers for streamed-token aggregation, policy review, risk scoring, output leakage checks, runtime evals, and token accounting.
+- Sharpened project positioning around PolicyAware as an AI Gateway and Agent Control Plane while keeping implementation claims precise.
+- Added architecture diagram, usage-mode guidance, enterprise-readiness checklist, and limitations/production-validation documentation.
+- Added scan report preview assets, examples matrix, security model, and compatibility/integration status documentation.
+
 ## 0.2.9
 
 - Added project-wide feedback and testimonial links for GitHub Discussions, Google Form feedback, and Show and Tell user stories.

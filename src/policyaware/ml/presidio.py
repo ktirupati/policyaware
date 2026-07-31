@@ -15,7 +15,10 @@ class PresidioPIIClassifier:
         try:
             from presidio_analyzer import AnalyzerEngine
         except ImportError as exc:
-            raise OptionalMLDependencyError("Presidio PII classifier", 'pip install "policyaware[presidio]"') from exc
+            raise OptionalMLDependencyError(
+                "Presidio PII classifier",
+                'pip install "policyaware[privacy]"',
+            ) from exc
 
         self.language = language
         self.score_threshold = score_threshold

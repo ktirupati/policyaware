@@ -113,7 +113,7 @@ class NeMoGuardrailsAdapter(BaseGuardrailAdapter):
             from nemoguardrails import LLMRails, RailsConfig
         except ImportError as exc:
             raise OptionalGuardrailsDependencyError(
-                'NeMo Guardrails is optional. Install it with `pip install "policyaware[nemo]"`.'
+                'NeMo Guardrails is optional. Install it with `pip install "policyaware[guardrails]"`.'
             ) from exc
         config = RailsConfig.from_path(str(config_path))
         return LLMRails(config)
@@ -194,7 +194,7 @@ class GuardrailsAIAdapter(BaseGuardrailAdapter):
             import guardrails as gd
         except ImportError as exc:
             raise OptionalGuardrailsDependencyError(
-                'Guardrails AI is optional. Install it with `pip install "policyaware[guardrails-ai]"`.'
+                'Guardrails AI is optional. Install it with `pip install "policyaware[guardrails]"`.'
             ) from exc
         spec = Path(rail_spec)
         if spec.exists() and hasattr(gd, "Guard"):

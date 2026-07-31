@@ -19,9 +19,10 @@ pip install policyaware
 Optional integrations:
 
 ```bash
+pip install "policyaware[guardrails]"
 pip install "policyaware[nemo]"
 pip install "policyaware[guardrails-ai]"
-pip install "policyaware[full]"
+pip install "policyaware[all]"
 ```
 
 ## Run

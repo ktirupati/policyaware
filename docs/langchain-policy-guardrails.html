@@ -28,7 +28,33 @@ python chain_demo.py</code></pre>
       <pre><code>safe_prompt: model_called=True decision=allow
 pii_prompt: model_called=True decision=conditional_allow actions=redact
 secret_prompt: model_called=False decision=deny</code></pre>
+      <h2>Drop-In Callback Example</h2>
+      <p>For an existing LangChain pipeline, use the lightweight callback handler to collect PolicyAware governance results without changing the model provider.</p>
+      <pre><code>from policyaware.integrations.langchain import PolicyAwareCallbackHandler
+
+policyaware_callback = PolicyAwareCallbackHandler(config="policyaware.yaml")
+
+response = chain.invoke(
+    {"question": "Summarize this customer ticket."},
+    config={"callbacks": [policyaware_callback]},
+)
+
+result = policyaware_callback.last_result
+print(result.policy_decision.decision)
+print(result.risk.tier)
+print(result.output_findings.contains_sensitive)</code></pre>
+      <h2>Streaming Token Aggregation</h2>
+      <pre><code>handler = PolicyAwareCallbackHandler(config="policyaware.yaml")
+handler.on_llm_start(prompts=["Email jane@example.com with the ticket summary."])
+
+for token in ["Safe ", "summary ", "without ", "private ", "data."]:
+    handler.on_llm_new_token(token)
+
+result = handler.on_llm_end()
+print(result.to_dict())</code></pre>
+      <p>The callback stores prompt checks, risk tier, policy decision, output leakage checks, runtime evals, and estimated token counts in <code>last_result</code>.</p>
       <p>Open the complete example folder on GitHub: <a href="https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails">LangChain policy guardrails</a>.</p>
+      <p>Read the full callback guide: <a href="capabilities/integration-callbacks.md">LangChain and LlamaIndex callback integrations</a>.</p>
       <h2>More Reading</h2>
       <ul>
         <li><a href="https://dev.to/ktirupati/policyaware-vs-guardrails-vs-ai-gateways-vs-model-routers-the-comparison-every-ai-engineer-needs-289p">PolicyAware vs Guardrails vs AI Gateways vs Model Routers</a></li>

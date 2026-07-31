@@ -2,6 +2,39 @@
 
 PolicyAware AI Gateway is organized around explicit, replaceable engines.
 
+## Control Plane Diagram
+
+```mermaid
+flowchart LR
+    A["AI App / RAG Pipeline / Agent"] --> B["PolicyAware SDK / CLI / Middleware / Callback"]
+    B --> C["DataProtectionEngine<br/>PII, PHI, secrets, sensitive data"]
+    C --> D["RiskClassifier<br/>low, medium, high, critical"]
+    D --> E["PolicyEngine<br/>deny, allow, redact, approval"]
+    E -->|deny| F["Stop Before Execution"]
+    E -->|approval| G["Approval Workflow"]
+    E -->|allow / conditional_allow| H["ModelRouter<br/>provider, region, cost, quality"]
+    H --> I["Model Provider<br/>local, Azure OpenAI, Anthropic, Bedrock, Vertex, Ollama, vLLM"]
+    E --> J["ToolPolicyEngine<br/>MCP connector/action governance"]
+    J --> K["Tool / Connector Execution"]
+    I --> L["RuntimeEvaluator<br/>leakage, citations, policy consistency"]
+    K --> L
+    L --> M["AuditLogger / Trace Viewer<br/>JSONL, SQLite, audit bundle"]
+    M --> N["Prometheus / OpenTelemetry-shaped exports"]
+```
+
+## Entry Points
+
+PolicyAware can be adopted at different layers:
+
+| Entry Point | Best For | Controls Execution? |
+| --- | --- | --- |
+| `Gateway.chat(...)` | Central policy, routing, evaluation, and audit flow for LLM requests | Yes |
+| FastAPI/Flask middleware | Protecting application endpoints before model calls | Application-controlled |
+| LangChain/LlamaIndex callbacks | Observing existing framework pipelines, streamed tokens, and output checks | No, callback observes and reports |
+| `ToolPolicyEngine` | MCP-style connector and action permissions | Yes, when called before tool execution |
+| `policyaware scan` | Pre-deployment repository governance and compliance scanning | Static analysis only |
+| `PolicyEngine` directly | Unit testing policy-as-code decisions | Policy decision only |
+
 ## Request Lifecycle
 
 1. The SDK or middleware constructs a `GatewayRequest`.

@@ -10,6 +10,7 @@ from policyaware.guardrails import (
     NeMoGuardrailsAdapter,
     OptionalGuardrailsDependencyError,
 )
+from policyaware.integrations.callbacks import BasePolicyAwareCallbackHandler, PolicyAwareCallbackResult
 from policyaware.models import (
     AuditTrace,
     DataFindings,
@@ -81,6 +82,7 @@ __all__ = [
     "GatewayRequest",
     "GatewayResponse",
     "BaseGuardrailAdapter",
+    "BasePolicyAwareCallbackHandler",
     "GuardrailAdapter",
     "GuardrailResult",
     "GuardrailsAIAdapter",
@@ -95,6 +97,7 @@ __all__ = [
     "OptionalMLDependencyError",
     "OptionalGuardrailsDependencyError",
     "PolicyDecision",
+    "PolicyAwareCallbackResult",
     "PolicyEngine",
     "PolicyRule",
     "PolicySchemaValidator",

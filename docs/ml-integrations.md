@@ -14,7 +14,15 @@ Core package only:
 pip install policyaware
 ```
 
-Presidio PII detection:
+The base install includes the core CLI, local scanner, policy engine, routing abstractions, cost/risk governance primitives, audit/eval contracts, and YAML policy support.
+
+Privacy detection with Presidio and spaCy:
+
+```bash
+pip install "policyaware[privacy]"
+```
+
+Backward-compatible Presidio alias:
 
 ```bash
 pip install "policyaware[presidio]"
@@ -36,6 +44,12 @@ All optional ML integrations:
 
 ```bash
 pip install "policyaware[all-ml]"
+```
+
+All optional PolicyAware integrations, including providers and guardrails:
+
+```bash
+pip install "policyaware[all]"
 ```
 
 ## Signal Model

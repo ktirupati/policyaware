@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 from policyaware.gateway import Gateway
+from policyaware.integrations.callbacks import BasePolicyAwareCallbackHandler, PolicyAwareCallbackResult
 from policyaware.models import GatewayRequest
 
 
@@ -27,3 +30,57 @@ class PolicyAwareChatModel:
         )
         return response.content
 
+
+class PolicyAwareCallbackHandler(BasePolicyAwareCallbackHandler):
+    """LangChain-compatible callback handler without a hard LangChain dependency.
+
+    Use this in LangChain pipelines as:
+    `callbacks=[PolicyAwareCallbackHandler(config="policyaware.yaml")]`.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        kwargs.setdefault("app", "langchain")
+        super().__init__(*args, **kwargs)
+
+    def on_llm_start(
+        self,
+        serialized: dict[str, Any] | None = None,
+        prompts: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.start(prompts or kwargs.get("prompts") or serialized, langchain_serialized=serialized or {})
+
+    async def aon_llm_start(
+        self,
+        serialized: dict[str, Any] | None = None,
+        prompts: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.on_llm_start(serialized=serialized, prompts=prompts, **kwargs)
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        self.add_token(token)
+
+    async def aon_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        self.on_llm_new_token(token, **kwargs)
+
+    def on_llm_end(self, response: Any = None, **kwargs: Any) -> PolicyAwareCallbackResult:
+        return self.finish(_extract_langchain_output(response), langchain_metadata=kwargs)
+
+    async def aon_llm_end(self, response: Any = None, **kwargs: Any) -> PolicyAwareCallbackResult:
+        return self.on_llm_end(response, **kwargs)
+
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
+        self.error(error)
+
+    async def aon_llm_error(self, error: BaseException, **kwargs: Any) -> None:
+        self.on_llm_error(error, **kwargs)
+
+
+def _extract_langchain_output(response: Any) -> Any:
+    if response is None:
+        return None
+    generations = getattr(response, "generations", None)
+    if generations is not None:
+        return generations
+    return response

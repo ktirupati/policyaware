@@ -27,11 +27,14 @@ from policyaware import (
 ## Optional Install Profiles
 
 ```bash
+pip install "policyaware[privacy]"
 pip install "policyaware[presidio]"
 pip install "policyaware[ml]"
 pip install "policyaware[onnx]"
 pip install "policyaware[all-ml]"
 ```
+
+Use `policyaware[privacy]` for the friendly Presidio + spaCy install profile. The older `policyaware[presidio]` extra remains available as a backward-compatible alias.
 
 ## Main APIs
 

@@ -65,6 +65,30 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/usage-modes.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/enterprise-readiness.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/limitations.md</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/security-model.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/examples-matrix.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/compatibility.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/local-code-scan.md</loc>
     <priority>0.9</priority>
   </url>
@@ -118,6 +142,10 @@
   </url>
   <url>
     <loc>https://ktirupati.github.io/policyaware/capabilities/guardrails-integrations.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/capabilities/integration-callbacks.md</loc>
     <priority>0.8</priority>
   </url>
 </urlset>

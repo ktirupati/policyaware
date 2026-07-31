@@ -1,6 +1,8 @@
 # PolicyAware Capabilities
 
-PolicyAware is a policy-aware control plane for governed AI execution. The capabilities below are documented independently so users can adopt one feature at a time.
+PolicyAware is an open-source AI gateway and agent control plane for governed LLM applications, RAG pipelines, MCP-style tools, and autonomous AI agents.
+
+Unlike basic content filters that only check text strings, PolicyAware provides policy-aware governance across requests, tools, models, evaluations, audit traces, and local code scans. The capabilities below are documented independently so users can adopt one feature at a time.
 
 Each capability guide includes copy/paste code, YAML examples, and API tables that show the important classes, methods, result fields, and policy fields.
 
@@ -21,6 +23,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | ML-assisted signals | Add optional PII, prompt-injection, domain/risk classifier signals | `CompositeMLClassifier`, `MLSignal`, ML adapters |
 | Local code scan | Scan repositories for AI governance, compliance, PII, PHI, secrets, model calls, tool use, RAG, data residency, and audit gaps | `LocalCodeScanner`, `ScanConfig`, `policyaware scan` |
 | Guardrails integrations | Orchestrate NeMo Guardrails, Guardrails AI, or custom validators as optional input/output guards | `NeMoGuardrailsAdapter`, `GuardrailsAIAdapter`, `GuardrailResult` |
+| Framework callbacks | Add lightweight LangChain and LlamaIndex callbacks for streamed-token aggregation, policy review, and output leakage checks | `PolicyAwareCallbackHandler`, `PolicyAwareCallbackResult` |
 
 ## Capability Guides
 
@@ -32,12 +35,19 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Risk Classification](capabilities/risk-classification.md)
 - [Model Routing And Providers](capabilities/model-routing-providers.md)
 - [Provider Adapter Examples](provider-adapter-examples.md)
+- [Usage Modes](usage-modes.md)
+- [Enterprise Readiness](enterprise-readiness.md)
+- [Limitations And Scope](limitations.md)
+- [Security Model](security-model.md)
+- [Examples Matrix](examples-matrix.md)
+- [Compatibility And Integration Status](compatibility.md)
 - [Tool Governance](capabilities/tool-governance.md)
 - [Evaluation](capabilities/evaluation.md)
 - [Audit And Observability](capabilities/audit-observability.md)
 - [ML-Assisted Signals](capabilities/ml-assisted-signals.md)
 - [Local Code Scan](local-code-scan.md)
 - [Guardrails Integrations](capabilities/guardrails-integrations.md)
+- [LangChain And LlamaIndex Callback Integrations](capabilities/integration-callbacks.md)
 
 ## API Discovery Tables
 
@@ -54,6 +64,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [ML-Assisted Signals](capabilities/ml-assisted-signals.md) | Main APIs, `MLSignal` fields, YAML policy fields |
 | [Local Code Scan](local-code-scan.md) | Main APIs, `ScanFinding` fields, scan config YAML, CLI output formats |
 | [Guardrails Integrations](capabilities/guardrails-integrations.md) | Main APIs, `GuardrailResult` fields, optional extras, adapter examples |
+| [LangChain And LlamaIndex Callback Integrations](capabilities/integration-callbacks.md) | Main APIs, callback event methods, `PolicyAwareCallbackResult` fields, YAML example |
 
 ## Recommended Learning Path
 

@@ -105,6 +105,12 @@ rules:
 Install:
 
 ```bash
+pip install "policyaware[privacy]"
+```
+
+Backward-compatible alias:
+
+```bash
 pip install "policyaware[presidio]"
 ```
 
