@@ -26,12 +26,14 @@ def test_user_friendly_optional_dependency_groups_exist() -> None:
 
     assert "privacy" in extras
     assert "guardrails" in extras
+    assert "haystack" in extras
     assert "all" in extras
     assert "presidio-analyzer>=2.2" in extras["privacy"]
     assert "presidio-anonymizer>=2.2" in extras["privacy"]
     assert "spacy>=3.7" in extras["privacy"]
     assert "nemoguardrails>=0.10" in extras["guardrails"]
     assert "guardrails-ai>=0.5" in extras["guardrails"]
+    assert "haystack-ai>=2.0" in extras["haystack"]
 
 
 def test_backward_compatible_optional_dependency_aliases_remain() -> None:

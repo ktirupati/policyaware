@@ -1,0 +1,26 @@
+policy_decision= conditional_allow
+risk_tier= medium
+route_model= local/sim-small
+evals= ['sensitive_data_leakage', 'policy_compliance']
+tool_decision= deny
+gateway_evidence_decision= permit
+tool_evidence_decision= deny
+
+control_plane_summary=
+{
+  "trace_id": "trc_...",
+  "policy": "conditional_allow",
+  "risk": "medium",
+  "tool": "deny",
+  "reason_codes": [
+    "DATA.PII_DETECTED",
+    "RISK.HIGH_AUTONOMY",
+    "RISK.MEDIUM",
+    "POLICY.ALLOW_MATCHED",
+    "POLICY.TRANSFORM_APPLIED"
+  ],
+  "tool_reason_codes": [
+    "TOOL.RATE_LIMIT_DECLARED",
+    "TOOL.DENIED"
+  ]
+}

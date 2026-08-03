@@ -1,0 +1,27 @@
+id: haystack_policyaware_rag_governance
+default: deny
+
+rules:
+  - name: block_secrets
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: allow_haystack_rag_users
+    effect: allow
+    when:
+      user.role_in: ["developer", "analyst", "support_agent"]
+      request.region: "us"
+      request.risk_in: ["low", "medium"]
+
+  - name: redact_pii_for_rag_queries
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role_not_in: ["privacy_admin", "compliance_officer"]
+
+  - name: require_approval_for_high_risk
+    effect: require_approval
+    when:
+      risk.tier_in: ["high", "critical"]

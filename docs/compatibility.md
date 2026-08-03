@@ -19,6 +19,7 @@ PolicyAware keeps the default install lightweight and makes heavier provider, pr
 | --- | --- | --- |
 | `policyaware[privacy]` | Presidio Analyzer, Presidio Anonymizer, spaCy | Stronger PII detection and redaction workflows |
 | `policyaware[guardrails]` | NeMo Guardrails, Guardrails AI | Full-stack guardrail orchestration |
+| `policyaware[haystack]` | Haystack AI | Haystack RAG and agent integration environment |
 | `policyaware[providers]` | Provider helper dependencies such as `boto3` | Cloud provider adapters such as Bedrock |
 | `policyaware[ml]` | Transformers and Torch | Optional ML classifiers and prompt-injection/domain signals |
 | `policyaware[onnx]` | Transformers and ONNX runtime path dependencies | ONNX-friendly classifier execution |
@@ -49,8 +50,11 @@ Structural adapter means the class exists and follows the PolicyAware provider i
 | Flask middleware | Shim/example available | Use to protect Flask routes. |
 | LangChain wrapper | Lightweight wrapper available | `PolicyAwareChatModel` can wrap gateway-style usage. |
 | LangChain callback | Available | Aggregates streamed tokens and stores `PolicyAwareCallbackResult`. |
+| LangGraph node guard | Available | Dependency-free `PolicyAwareNodeGuard` wraps graph nodes and checks tool calls without requiring LangGraph at import time. |
 | LlamaIndex wrapper | Lightweight wrapper available | `PolicyAwareLLM` can wrap gateway-style completion. |
 | LlamaIndex callback | Available | RAG-oriented callback defaults include citation checks. |
+| Haystack-style components | Available | Query governance, output evaluation, and tool-governance components expose `run(...)` methods without requiring Haystack at import time. |
+| Microsoft AGT-style evidence export | Available | Dependency-free JSON mapping helpers for policy, tool, gateway, and audit decisions. |
 | MCP/tool governance | Available | Use `ToolPolicyEngine` for connector/action permissions. |
 
 ## Scan Coverage
@@ -70,3 +74,9 @@ Structural adapter means the class exists and follows the PolicyAware provider i
 Core local tests cover policy decisions, scanner behavior, CLI behavior, packaging metadata, provider abstractions, guardrail adapter contracts, and callback integrations.
 
 Live provider calls are intentionally not run in the default test suite because they require external credentials and cloud resources.
+
+## Official Vs Compatible
+
+PolicyAware integrates with, adapts to, or exports data for multiple ecosystems. Unless explicitly stated, external project names do not imply affiliation, endorsement, or official support from those projects.
+
+See [Integration Strategy](integrations-strategy.md) for wording and adoption guidance.

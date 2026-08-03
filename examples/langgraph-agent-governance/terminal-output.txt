@@ -1,0 +1,4 @@
+safe_node_output= {'messages': [{'role': 'assistant', 'content': 'Customer record summarized safely.'}]}
+blocked_node_output= {'policyaware': {'allowed': False, 'decision': 'deny', 'trace_id': 'trc_...', 'reason_codes': ['DATA.SECRET_DETECTED', 'RISK.MEDIUM', 'POLICY.DENY_MATCHED'], 'matched_rules': ['deny_secrets'], 'risk_tier': 'medium'}, 'messages': [{'role': 'assistant', 'content': 'Request blocked by PolicyAware policy.'}]}
+tool_decision= require_approval
+tool_approval_required= True

@@ -11,6 +11,24 @@ from policyaware.guardrails import (
     OptionalGuardrailsDependencyError,
 )
 from policyaware.integrations.callbacks import BasePolicyAwareCallbackHandler, PolicyAwareCallbackResult
+from policyaware.integrations.haystack import (
+    PolicyAwareHaystackResult,
+    PolicyAwareInputComponent,
+    PolicyAwareOutputComponent,
+    PolicyAwareToolGovernanceComponent,
+)
+from policyaware.integrations.langgraph import PolicyAwareNodeGuard, PolicyAwareNodeResult
+from policyaware.integrations.microsoft_agt import (
+    to_agt_audit_evidence,
+    to_agt_decision,
+    to_agt_gateway_evidence,
+    to_agt_tool_evidence,
+)
+from policyaware.integrations.recommender import (
+    IntegrationRecommendation,
+    IntegrationRecommendationReport,
+    IntegrationRecommender,
+)
 from policyaware.models import (
     AuditTrace,
     DataFindings,
@@ -26,6 +44,7 @@ from policyaware.models import (
     PolicyDecision,
     RiskAssessment,
     RouteDecision,
+    ToolCallRequest,
     ToolDecision,
 )
 from policyaware.ml import (
@@ -86,6 +105,9 @@ __all__ = [
     "GuardrailAdapter",
     "GuardrailResult",
     "GuardrailsAIAdapter",
+    "IntegrationRecommendation",
+    "IntegrationRecommendationReport",
+    "IntegrationRecommender",
     "MLAssessment",
     "MLSignal",
     "CompositeMLClassifier",
@@ -98,6 +120,12 @@ __all__ = [
     "OptionalGuardrailsDependencyError",
     "PolicyDecision",
     "PolicyAwareCallbackResult",
+    "PolicyAwareHaystackResult",
+    "PolicyAwareInputComponent",
+    "PolicyAwareNodeGuard",
+    "PolicyAwareNodeResult",
+    "PolicyAwareOutputComponent",
+    "PolicyAwareToolGovernanceComponent",
     "PolicyEngine",
     "PolicyRule",
     "PolicySchemaValidator",
@@ -132,6 +160,11 @@ __all__ = [
     "default_provider_registry",
     "SimulatedProvider",
     "ToolDecision",
+    "ToolCallRequest",
     "ToolPolicyEngine",
     "ToolRegistry",
+    "to_agt_audit_evidence",
+    "to_agt_decision",
+    "to_agt_gateway_evidence",
+    "to_agt_tool_evidence",
 ]

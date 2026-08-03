@@ -1,0 +1,9 @@
+read_customer_decision=permit
+read_customer_policyaware_decision=allow
+read_customer_approval_required=False
+update_customer_decision=review
+update_customer_policyaware_decision=require_approval
+update_customer_approval_required=True
+delete_customer_decision=deny
+delete_customer_policyaware_decision=deny
+delete_customer_approval_required=False

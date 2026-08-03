@@ -1,0 +1,24 @@
+default: deny
+
+connectors:
+  - id: github
+    description: GitHub repository connector exposed to a Haystack agent.
+    actions:
+      read_file:
+        effect: allow
+        when:
+          user.role_in: ["developer", "maintainer"]
+        limits:
+          requests_per_minute: 30
+
+      create_pr:
+        effect: require_approval
+        when:
+          user.role_in: ["developer", "maintainer"]
+        limits:
+          requests_per_minute: 5
+
+      delete_branch:
+        effect: deny
+        when:
+          user.role_in: ["developer", "maintainer"]

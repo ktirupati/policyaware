@@ -1,0 +1,24 @@
+default: deny
+
+connectors:
+  - id: crm
+    description: CRM connector used by a LangGraph support agent.
+    actions:
+      read_customer:
+        effect: allow
+        when:
+          user.role_in: ["support_agent", "manager"]
+        limits:
+          requests_per_minute: 60
+
+      update_customer:
+        effect: require_approval
+        when:
+          user.role_in: ["support_agent", "manager"]
+        limits:
+          requests_per_minute: 10
+
+      delete_customer:
+        effect: deny
+        when:
+          user.role_in: ["support_agent", "manager"]

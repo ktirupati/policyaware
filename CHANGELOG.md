@@ -4,7 +4,15 @@ All notable PolicyAware changes are tracked here.
 
 ## Unreleased
 
-- No unreleased changes yet.
+## 0.3.1
+
+- Added optional Haystack-style integration components for RAG query governance, output evaluation, and agent tool permission checks.
+- Added Haystack RAG governance example, documentation, optional install extra, and tests.
+- Added Microsoft AGT-style interop helpers, evidence export docs, example, and tests.
+- Added dependency-free LangGraph node guard, integration discovery CLI, enterprise control-plane demo, integration strategy docs, and lightweight benchmark guidance.
+- Added explainable local integration recommender that scans project signals plus user hints and recommends the best PolicyAware entry point.
+- Added `policyaware doctor`, `policyaware examples list/run`, recommendation HTML reports, and conservative policy migration helper.
+- Added clearer maturity, optional dependency, latency, and category-fit guidance so users understand when to use PolicyAware versus guardrails, gateways, or model routers.
 
 ## 0.3.0
 

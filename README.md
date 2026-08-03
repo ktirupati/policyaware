@@ -12,6 +12,8 @@ PolicyAware is an open-source AI control plane and security gateway for governed
 
 Unlike basic content filters that only check text strings, PolicyAware provides policy-aware governance across requests, tools, models, evaluations, and local code scans.
 
+Deployment model: PolicyAware is an adoption-ready open-source framework that teams embed and operate inside their own AI applications, platforms, and CI workflows. It keeps the base install lightweight with native rules-based governance, and uses optional integrations such as Presidio, ProtectAI/Transformers, NeMo Guardrails, Guardrails AI, Haystack, and provider adapters when teams need deeper detection or ecosystem-specific behavior.
+
 Documentation site: https://ktirupati.github.io/policyaware/
 
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
@@ -24,6 +26,8 @@ Limitations: [current scope and production validation notes](https://github.com/
 Security model: [deny-by-default and layered AI governance](https://github.com/ktirupati/policyaware/blob/main/docs/security-model.md)
 Examples matrix: [choose the right runnable example](https://github.com/ktirupati/policyaware/blob/main/docs/examples-matrix.md)
 Compatibility: [Python, providers, extras, and integration status](https://github.com/ktirupati/policyaware/blob/main/docs/compatibility.md)
+Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
+Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
 
@@ -50,6 +54,10 @@ Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/
 - **Observability exporters:** Provides Prometheus-style and OpenTelemetry-shaped exports for integration with monitoring and compliance workflows.
 - **PolicyAware Scan CLI:** Scans local codebases for PII, PHI, secrets, direct LLM calls, missing tool governance, weak routing controls, audit gaps, and configuration risks, then generates developer-friendly HTML, JSON, SARIF, and Markdown reports.
 - **Framework callbacks:** Includes lightweight LangChain and LlamaIndex callback handlers that aggregate streamed tokens and report policy, risk, leakage, eval, and token-accounting results.
+- **LangGraph node guard:** Adds dependency-free node/state and tool-call governance for graph-based AI agents.
+- **Haystack governance components:** Adds optional Haystack-style components for RAG query governance, output evaluation, and agent tool permission checks.
+- **Microsoft AGT-style evidence export:** Converts PolicyAware policy, tool, gateway, and audit decisions into dependency-free evidence JSON for enterprise agent governance workflows.
+- **Smart integration recommender:** Inspects project signals and user hints to recommend FastAPI, LangChain, LangGraph, Haystack, MCP/tool governance, privacy, guardrails, routing, audit, or scan entry points with reasons.
 
 ## Runtime Flow Summary
 
@@ -78,12 +86,25 @@ Read more: [Architecture](https://github.com/ktirupati/policyaware/blob/main/doc
 | --- | --- |
 | Full model request control, routing, eval, and audit | `Gateway.chat(...)` |
 | Existing LangChain or LlamaIndex pipeline telemetry | `PolicyAwareCallbackHandler` |
+| LangGraph node/state governance | `PolicyAwareNodeGuard` |
 | MCP-style connector/action permissions | `ToolPolicyEngine` |
 | Pre-deployment code governance scan | `policyaware scan ./app` |
+| Microsoft AGT-style evidence export | `to_agt_tool_evidence(...)` |
+| Find the best integration for a project | `policyaware integrations recommend .` |
 | Simple PII/PHI/secrets string check | `DataProtectionEngine.inspect(...)` |
 | YAML policy unit testing | `PolicyEngine.decide(...)` |
 
 Read more: [Usage Modes](https://github.com/ktirupati/policyaware/blob/main/docs/usage-modes.md)
+
+## Where PolicyAware Fits
+
+Use Guardrails AI or NeMo Guardrails when your main goal is conversational safety, structured outputs, or model response validation.
+
+Use an AI gateway or model router when your main goal is provider abstraction, API key handling, retries, rate limits, fallback, or cost/latency routing.
+
+Use PolicyAware when AI requests and agent actions need governance: user/tenant/context policy, PII/PHI/secrets handling, MCP/tool permissions, approval decisions, model routing after policy approval, evaluations, and audit evidence.
+
+Short version: **use PolicyAware when AI actions need governance, not just generation.**
 
 ## Scan Report Preview
 
@@ -134,8 +155,16 @@ PolicyAware welcomes focused contributions from developers, AI platform engineer
 pip install policyaware
 policyaware about
 policyaware feedback
+policyaware integrations list
+policyaware integrations recommend .
+policyaware integrations recommend . --use-case rag --framework haystack --needs "citations pii audit"
+policyaware integrations recommend . --html integration-report.html
+policyaware doctor
+policyaware examples list
+policyaware examples run langgraph-agent-governance
 policyaware init
 policyaware policy validate policyaware.yaml
+policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
 policyaware dev simulate
 policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare
 policyaware scan ./mylocalfolder
@@ -162,6 +191,7 @@ Install optional integrations only when you need them:
 ```bash
 pip install "policyaware[privacy]"     # Presidio + spaCy privacy detection
 pip install "policyaware[guardrails]"  # NeMo Guardrails + Guardrails AI
+pip install "policyaware[haystack]"    # Haystack RAG/agent integration environment
 pip install "policyaware[providers]"   # Provider extras such as Bedrock boto3
 pip install "policyaware[ml]"          # Transformers/Torch classifiers
 pip install "policyaware[onnx]"        # ONNX runtime path for supported classifiers
@@ -195,6 +225,14 @@ policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sa
 For copy-pasteable end-to-end examples, see [Working Examples](https://github.com/ktirupati/policyaware/blob/main/docs/working-examples.md).
 
 Local code scan docs: [policyaware scan](https://github.com/ktirupati/policyaware/blob/main/docs/local-code-scan.md)
+
+CLI usability docs: [doctor, examples, migration, recommendation reports](https://github.com/ktirupati/policyaware/blob/main/docs/cli-usability.md)
+
+Microsoft AGT-style interop example: [examples/microsoft-agt-interop](https://github.com/ktirupati/policyaware/tree/main/examples/microsoft-agt-interop)
+
+LangGraph governance example: [examples/langgraph-agent-governance](https://github.com/ktirupati/policyaware/tree/main/examples/langgraph-agent-governance)
+
+Enterprise control-plane demo: [examples/enterprise-ai-control-plane](https://github.com/ktirupati/policyaware/tree/main/examples/enterprise-ai-control-plane)
 
 ## Generate A Starter Policy
 
@@ -267,6 +305,7 @@ More details: [LangChain and LlamaIndex callback integrations](https://github.co
 - [FastAPI LLM policy middleware](https://github.com/ktirupati/policyaware/tree/main/examples/fastapi-llm-policy-middleware): protect a FastAPI `/chat` endpoint with policy checks before model execution.
 - [LangChain policy guardrails](https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails): wrap a chain-style LLM call with deny-by-default policy, PII redaction, and secret blocking.
 - [MCP tool permission gateway](https://github.com/ktirupati/policyaware/tree/main/examples/mcp-tool-permission-gateway): govern connector-level and action-level tool permissions for agent workflows.
+- [Haystack RAG governance](https://github.com/ktirupati/policyaware/tree/main/examples/haystack-policyaware-rag-governance): add PolicyAware query, output, and tool governance around Haystack-style RAG and agent workflows.
 - [PII redaction policy](https://github.com/ktirupati/policyaware/tree/main/examples/pii-redaction-policy): inspect and redact sensitive text before model execution.
 - [Regulated RAG assistant](https://github.com/ktirupati/policyaware/tree/main/examples/regulated-rag-assistant): require citations and stricter controls for healthcare-style RAG.
 - [Provider routing by risk](https://github.com/ktirupati/policyaware/tree/main/examples/provider-routing-by-risk): route public-safe requests to low-cost models and high-risk requests to approved models.
@@ -371,7 +410,7 @@ rules:
 
 ## Development Status
 
-This is a production-grade starter framework: the core extension points and executable behavior are present, while provider integrations, enterprise identity adapters, dashboard UI, and long-term storage can be expanded by contributors.
+This is a production-oriented open-source framework: the core extension points and executable behavior are present, while teams can connect their preferred identity systems, workflow tools, storage backends, dashboards, and enterprise review processes around it.
 
 ## v0.2 MVP Capabilities
 

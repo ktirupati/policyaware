@@ -1,0 +1,12 @@
+$ python rag_pipeline_demo.py
+input_decision=conditional_allow
+governed_query=Summarize the policy for [REDACTED_EMAIL].
+output_allowed=True
+output_decision=allow
+evals=['sensitive_data_leakage', 'citation_required', 'policy_compliance']
+
+$ python tool_governance_demo.py
+read_file_decision=allow
+create_pr_decision=require_approval
+create_pr_approval_required=True
+delete_branch_decision=deny

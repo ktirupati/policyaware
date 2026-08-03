@@ -4,6 +4,8 @@ PolicyAware is designed for enterprise AI teams that need governance controls ac
 
 This page summarizes the features that help security, platform, compliance, and governance teams evaluate the framework.
 
+PolicyAware is an open-source framework that enterprise teams can embed, extend, and operate as a policy-aware control plane inside their own AI applications and platform workflows. Teams can connect their preferred identity systems, storage retention model, approval workflows, dashboards, SIEM/GRC tools, and compliance review processes around PolicyAware controls.
+
 ## Readiness Checklist
 
 | Area | PolicyAware Support |
@@ -49,6 +51,8 @@ flowchart TD
 - Require approval for high-risk, regulated, destructive, or autonomous tool actions.
 - Keep optional ML/guardrail integrations behind explicit extras so the base package remains lightweight.
 - Live-test provider adapters in your own environment because cloud credentials, endpoints, and quotas are enterprise-specific.
+- Benchmark latency in representative request paths, especially when optional ML classifiers or external guardrail engines are enabled.
+- Decide whether PolicyAware audit traces are enough for your retention needs or whether they should be exported to enterprise storage, SIEM, or GRC systems.
 
 ## Evidence Artifacts
 

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
+from importlib.util import find_spec
 from pathlib import Path
 
 import typer
@@ -14,6 +18,7 @@ from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger,
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.evals import EvalSuiteRunner
 from policyaware.gateway import Gateway
+from policyaware.integrations.recommender import IntegrationRecommender
 from policyaware.models import GatewayRequest, ToolCallRequest
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
 from policyaware.policy import PolicyEngine
@@ -31,6 +36,8 @@ audit_app = typer.Typer(help="Audit and replay commands")
 risk_app = typer.Typer(help="Risk classification commands")
 observability_app = typer.Typer(help="Metrics and trace export commands")
 guards_app = typer.Typer(help="Guardrails integration commands")
+integrations_app = typer.Typer(help="Integration discovery commands")
+examples_app = typer.Typer(help="Runnable example commands")
 app.add_typer(policy_app, name="policy")
 app.add_typer(eval_app, name="eval")
 app.add_typer(dev_app, name="dev")
@@ -39,6 +46,8 @@ app.add_typer(audit_app, name="audit")
 app.add_typer(risk_app, name="risk")
 app.add_typer(observability_app, name="observability")
 app.add_typer(guards_app, name="guards")
+app.add_typer(integrations_app, name="integrations")
+app.add_typer(examples_app, name="examples")
 console = Console()
 
 PROJECT_URL = "https://github.com/ktirupati/policyaware"
@@ -51,6 +60,156 @@ FEEDBACK_FORM_URL = (
     "https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform"
 )
 LINKEDIN_URL = "https://www.linkedin.com/in/krishna-tirupati/"
+INTEGRATIONS = [
+    {
+        "name": "FastAPI",
+        "status": "shim/example",
+        "extra": "base",
+        "install": "pip install policyaware",
+        "example": "examples/fastapi-llm-policy-middleware",
+        "notes": "Protect API routes before LLM execution.",
+    },
+    {
+        "name": "LangChain",
+        "status": "available",
+        "extra": "base",
+        "install": "pip install policyaware",
+        "example": "examples/langchain-policy-guardrails",
+        "notes": "Callbacks and wrapper patterns for chain-style LLM calls.",
+    },
+    {
+        "name": "LangGraph",
+        "status": "available",
+        "extra": "base",
+        "install": "pip install policyaware",
+        "example": "examples/langgraph-agent-governance",
+        "notes": "Dependency-free node guard for state, tool calls, and approvals.",
+    },
+    {
+        "name": "LlamaIndex",
+        "status": "available",
+        "extra": "base",
+        "install": "pip install policyaware",
+        "example": "docs/capabilities/integration-callbacks.md",
+        "notes": "RAG-oriented callback checks for streamed output and citations.",
+    },
+    {
+        "name": "Haystack",
+        "status": "available",
+        "extra": "haystack",
+        "install": 'pip install "policyaware[haystack]"',
+        "example": "examples/haystack-policyaware-rag-governance",
+        "notes": "RAG query, output, and agent tool governance components.",
+    },
+    {
+        "name": "Guardrails AI",
+        "status": "optional adapter",
+        "extra": "guardrails",
+        "install": 'pip install "policyaware[guardrails]"',
+        "example": "examples/full-stack-guardrails",
+        "notes": "Optional validation engine orchestrated by PolicyAware.",
+    },
+    {
+        "name": "NVIDIA NeMo Guardrails",
+        "status": "optional adapter",
+        "extra": "guardrails",
+        "install": 'pip install "policyaware[guardrails]"',
+        "example": "examples/full-stack-guardrails",
+        "notes": "Optional conversational guardrail engine orchestrated by PolicyAware.",
+    },
+    {
+        "name": "Microsoft AGT-style evidence",
+        "status": "available",
+        "extra": "base",
+        "install": "pip install policyaware",
+        "example": "examples/microsoft-agt-interop",
+        "notes": "Dependency-free evidence JSON export, not an official Microsoft wire contract.",
+    },
+    {
+        "name": "Provider adapters",
+        "status": "available",
+        "extra": "providers",
+        "install": 'pip install "policyaware[providers]"',
+        "example": "docs/provider-adapter-examples.md",
+        "notes": "Azure OpenAI, Anthropic, Bedrock, Vertex AI, Ollama, vLLM, OpenAI-compatible.",
+    },
+    {
+        "name": "Privacy ML",
+        "status": "optional",
+        "extra": "privacy",
+        "install": 'pip install "policyaware[privacy]"',
+        "example": "docs/ml-integrations.md",
+        "notes": "Microsoft Presidio and spaCy for stronger privacy detection.",
+    },
+]
+EXAMPLES = [
+    {
+        "id": "fastapi-llm-policy-middleware",
+        "command": ["app.py"],
+        "description": "Protect a FastAPI route before LLM execution.",
+    },
+    {
+        "id": "langchain-policy-guardrails",
+        "command": ["chain_demo.py"],
+        "description": "Apply PolicyAware checks around LangChain-style calls.",
+    },
+    {
+        "id": "langgraph-agent-governance",
+        "command": ["langgraph_demo.py"],
+        "description": "Guard graph state, nodes, and tool calls.",
+    },
+    {
+        "id": "haystack-policyaware-rag-governance",
+        "command": ["rag_pipeline_demo.py"],
+        "description": "Govern Haystack-style RAG query and output flow.",
+    },
+    {
+        "id": "mcp-tool-permission-gateway",
+        "command": ["tool_gateway_demo.py"],
+        "description": "Check MCP-style connector/action permissions.",
+    },
+    {
+        "id": "microsoft-agt-interop",
+        "command": ["agt_interop_demo.py"],
+        "description": "Export tool decisions as AGT-style evidence JSON.",
+    },
+    {
+        "id": "enterprise-ai-control-plane",
+        "command": ["control_plane_demo.py"],
+        "description": "Show prompt, routing, tool, eval, audit, and evidence flow together.",
+    },
+    {
+        "id": "pii-redaction-policy",
+        "command": ["pii_demo.py"],
+        "description": "Detect and redact PII before model execution.",
+    },
+    {
+        "id": "provider-routing-by-risk",
+        "command": ["routing_demo.py"],
+        "description": "Route by risk, region, policy, cost, and availability.",
+    },
+    {
+        "id": "regulated-rag-assistant",
+        "command": ["rag_demo.py"],
+        "description": "Require citations and stronger controls for regulated RAG.",
+    },
+]
+OPTIONAL_DEPENDENCY_GROUPS = {
+    "privacy": ["presidio_analyzer", "presidio_anonymizer", "spacy"],
+    "guardrails": ["nemoguardrails", "guardrails"],
+    "haystack": ["haystack"],
+    "providers": ["boto3"],
+    "ml": ["transformers", "torch"],
+    "onnx": ["optimum", "onnxruntime"],
+}
+PROVIDER_ENV_VARS = {
+    "Azure OpenAI": ["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"],
+    "Anthropic": ["ANTHROPIC_API_KEY"],
+    "AWS Bedrock": ["AWS_ACCESS_KEY_ID", "AWS_REGION"],
+    "Vertex AI": ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_PROJECT"],
+    "Ollama": ["OLLAMA_HOST"],
+    "vLLM": ["VLLM_BASE_URL"],
+}
 BASELINE_POLICY_TEMPLATE = """# PolicyAware starter policy
 # Generated by: policyaware init
 #
@@ -177,6 +336,18 @@ def _project_links_table(title: str) -> Table:
     return table
 
 
+def _examples_root() -> Path:
+    repo_examples = Path.cwd() / "examples"
+    if repo_examples.exists():
+        return repo_examples
+    return Path(__file__).resolve().parents[2] / "examples"
+
+
+def _example_by_id(example_id: str) -> dict[str, object] | None:
+    normalized = example_id.strip().lower()
+    return next((item for item in EXAMPLES if item["id"] == normalized), None)
+
+
 def _starter_policy_template(profile: str) -> str:
     normalized = profile.strip().lower()
     if normalized != "baseline":
@@ -261,6 +432,14 @@ def _write_baseline(path: Path, fingerprints: list[str]) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def _migrated_policy(policy: dict, target_version: str) -> dict:
+    migrated = dict(policy)
+    migrated["schema_version"] = target_version
+    migrated.setdefault("default", "deny")
+    migrated.setdefault("rules", [])
+    return migrated
 
 
 def _render_scan_dashboard(
@@ -461,6 +640,84 @@ def feedback() -> None:
     console.print(_project_links_table("Feedback Channels"))
 
 
+@app.command("doctor")
+def doctor(
+    policy_file: Path | None = typer.Option(
+        None,
+        "--policy",
+        help="Optional PolicyAware YAML policy file to validate.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print health report as JSON."),
+) -> None:
+    """Check local PolicyAware install health and optional integration readiness."""
+    checks: list[dict[str, object]] = []
+    checks.append(
+        {
+            "name": "Python version",
+            "status": sys.version_info >= (3, 10),
+            "detail": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        }
+    )
+    for package in ("pydantic", "yaml", "typer", "rich"):
+        checks.append(
+            {
+                "name": f"Base dependency: {package}",
+                "status": find_spec(package) is not None,
+                "detail": "installed" if find_spec(package) is not None else "missing",
+            }
+        )
+    for group, packages in OPTIONAL_DEPENDENCY_GROUPS.items():
+        installed = [package for package in packages if find_spec(package) is not None]
+        checks.append(
+            {
+                "name": f"Optional extra: {group}",
+                "status": bool(installed),
+                "detail": f"{len(installed)}/{len(packages)} packages detected",
+            }
+        )
+    for provider, env_vars in PROVIDER_ENV_VARS.items():
+        present = [name for name in env_vars if os.environ.get(name)]
+        checks.append(
+            {
+                "name": f"Provider env: {provider}",
+                "status": bool(present),
+                "detail": f"{len(present)}/{len(env_vars)} env vars present; values hidden",
+            }
+        )
+    if policy_file:
+        try:
+            policy = yaml.safe_load(policy_file.read_text(encoding="utf-8")) or {}
+            PolicySchemaValidator().validate(policy)
+            policy_status = True
+            policy_detail = "valid"
+        except Exception as exc:  # noqa: BLE001 - CLI health command reports all validation failures.
+            policy_status = False
+            policy_detail = str(exc)
+        checks.append({"name": f"Policy file: {policy_file}", "status": policy_status, "detail": policy_detail})
+    report = {
+        "ok": all(
+            bool(item["status"])
+            for item in checks
+            if not str(item["name"]).startswith(("Optional extra", "Provider env"))
+        ),
+        "checks": checks,
+    }
+    if json_output:
+        console.print_json(data=report)
+        return
+    table = Table(title="PolicyAware Doctor")
+    table.add_column("Status")
+    table.add_column("Check")
+    table.add_column("Detail")
+    for item in checks:
+        status = "[green]PASS[/green]" if item["status"] else "[yellow]INFO[/yellow]"
+        if policy_file and str(item["name"]).startswith("Policy file") and not item["status"]:
+            status = "[red]FAIL[/red]"
+        table.add_row(status, str(item["name"]), str(item["detail"]))
+    console.print(table)
+    console.print("[dim]Provider checks only verify env var presence and never print secret values.[/dim]")
+
+
 @app.command("init")
 def init_policy(
     out: Path = typer.Option(
@@ -522,6 +779,160 @@ def list_guards(policy_file: Path) -> None:
     console.print(table)
 
 
+@integrations_app.command("list")
+def list_integrations(
+    json_output: bool = typer.Option(False, "--json", help="Print integrations as JSON."),
+) -> None:
+    """List available PolicyAware integrations, install extras, and examples."""
+    if json_output:
+        console.print_json(data={"integrations": INTEGRATIONS})
+        return
+    table = Table(title="PolicyAware Integrations")
+    table.add_column("Integration", style="bold")
+    table.add_column("Status")
+    table.add_column("Extra")
+    table.add_column("Install")
+    table.add_column("Example / Docs")
+    for item in INTEGRATIONS:
+        table.add_row(
+            item["name"],
+            item["status"],
+            item["extra"],
+            item["install"],
+            item["example"],
+        )
+    console.print(table)
+    console.print(
+        "[dim]PolicyAware keeps external frameworks optional. "
+        "Compatible integrations are not official endorsements unless stated.[/dim]"
+    )
+
+
+@integrations_app.command("recommend")
+def recommend_integrations(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Project folder or file to inspect for integration signals.",
+    ),
+    use_case: str | None = typer.Option(
+        None,
+        "--use-case",
+        help="Optional user hint, for example api, rag, agent, mcp, scan, compliance.",
+    ),
+    framework: str | None = typer.Option(
+        None,
+        "--framework",
+        help="Optional framework hint, for example fastapi, langchain, langgraph, llamaindex, haystack.",
+    ),
+    needs: str | None = typer.Option(
+        None,
+        "--needs",
+        help='Optional comma/space-separated needs, for example "pii audit citations tools cost".',
+    ),
+    top: int = typer.Option(3, "--top", help="Number of recommendations to show."),
+    json_output: bool = typer.Option(False, "--json", help="Print recommendation report as JSON."),
+    html_out: Path | None = typer.Option(
+        None,
+        "--html",
+        help="Optional HTML recommendation report output path.",
+    ),
+) -> None:
+    """Recommend the best PolicyAware integration from project signals and user hints."""
+    if not path.exists():
+        raise typer.BadParameter(f"Path does not exist: {path}")
+    report = IntegrationRecommender().recommend(
+        path,
+        use_case=use_case,
+        framework=framework,
+        needs=needs,
+    )
+    if json_output:
+        console.print_json(data=report.to_dict())
+        if html_out:
+            console.print(f"HTML report: {report.write_html(html_out)}")
+        return
+    if html_out:
+        console.print(f"[bold green]HTML report:[/bold green] {report.write_html(html_out)}")
+
+    signals = report.signals
+    console.print(
+        Panel(
+            (
+                f"[bold]Scanned:[/bold] {report.scanned_path}\n"
+                f"[bold]Files sampled:[/bold] {signals['files_sampled']}\n"
+                f"[bold]Hints:[/bold] use_case={signals['hints']['use_case'] or '-'}, "
+                f"framework={signals['hints']['framework'] or '-'}, "
+                f"needs={', '.join(signals['hints']['needs']) or '-'}"
+            ),
+            title="PolicyAware Integration Recommender",
+            border_style="cyan",
+        )
+    )
+
+    table = Table(title="Recommended Integrations", box=box.SIMPLE_HEAVY)
+    table.add_column("Rank", no_wrap=True)
+    table.add_column("Integration", style="bold")
+    table.add_column("Confidence", justify="right")
+    table.add_column("Why")
+    table.add_column("Install")
+    table.add_column("Example")
+    for index, item in enumerate(report.recommendations[:top], start=1):
+        table.add_row(
+            str(index),
+            item.name,
+            f"{item.confidence:.2f}",
+            "; ".join(item.reasons) or "Default recommendation.",
+            item.install,
+            item.example,
+        )
+    console.print(table)
+
+    if report.best:
+        steps = Table(title=f"Next Steps For {report.best.name}", box=box.SIMPLE)
+        steps.add_column("#", no_wrap=True)
+        steps.add_column("Step")
+        for index, step in enumerate(report.best.next_steps, start=1):
+            steps.add_row(str(index), step)
+        console.print(steps)
+        console.print(f"[bold]Docs:[/bold] {report.best.docs}")
+
+
+@examples_app.command("list")
+def list_examples(json_output: bool = typer.Option(False, "--json", help="Print examples as JSON.")) -> None:
+    """List bundled PolicyAware examples and runnable commands."""
+    if json_output:
+        console.print_json(data={"examples": EXAMPLES})
+        return
+    table = Table(title="PolicyAware Examples")
+    table.add_column("Example")
+    table.add_column("Command")
+    table.add_column("Description")
+    for item in EXAMPLES:
+        table.add_row(
+            str(item["id"]),
+            f"policyaware examples run {item['id']}",
+            str(item["description"]),
+        )
+    console.print(table)
+
+
+@examples_app.command("run")
+def run_example(example_id: str) -> None:
+    """Run a known bundled example from the local repository checkout."""
+    example = _example_by_id(example_id)
+    if example is None:
+        raise typer.BadParameter(f"Unknown example: {example_id}. Run `policyaware examples list`.")
+    examples_root = _examples_root()
+    example_dir = examples_root / str(example["id"])
+    if not example_dir.exists():
+        raise typer.BadParameter(f"Example folder not found: {example_dir}")
+    command = [sys.executable, *[str(part) for part in example["command"]]]
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])}
+    console.print(f"[bold]Running:[/bold] {' '.join(command)}")
+    result = subprocess.run(command, cwd=example_dir, env=env, check=False)
+    raise typer.Exit(code=result.returncode)
+
+
 @policy_app.command("validate")
 def validate_policy(policy_file: Path) -> None:
     """Validate a YAML policy file and print clear schema errors."""
@@ -537,6 +948,33 @@ def validate_policy(policy_file: Path) -> None:
             console.print(f"- {error}")
         raise typer.Exit(code=1) from exc
     console.print("[bold green]Policy validation passed[/bold green]")
+
+
+@policy_app.command("migrate")
+def migrate_policy(
+    policy_file: Path,
+    out: Path | None = typer.Option(None, "--out", "-o", help="Output path for migrated policy."),
+    to_version: str = typer.Option("0.3", "--to", help="Target schema version annotation."),
+    force: bool = typer.Option(False, "--force", help="Overwrite output file if it exists."),
+) -> None:
+    """Conservatively annotate and normalize a policy for a target schema version."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    target = out or policy_file.with_name(f"{policy_file.stem}.schema-{to_version}{policy_file.suffix}")
+    if target.exists() and not force:
+        raise typer.BadParameter(f"Output already exists: {target}. Use --force to overwrite.")
+    policy = yaml.safe_load(policy_file.read_text(encoding="utf-8")) or {}
+    if not isinstance(policy, dict):
+        raise typer.BadParameter("Policy file must contain a YAML mapping/object.")
+    migrated = _migrated_policy(policy, to_version)
+    target.write_text(yaml.safe_dump(migrated, sort_keys=False), encoding="utf-8")
+    console.print(f"[bold green]Migrated policy written:[/bold green] {target}")
+    console.print(
+        "Migration is conservative: schema_version/default/rules are normalized only. "
+        "Review before production."
+    )
+    console.print("Review the migration note and run:")
+    console.print(f"  policyaware policy validate {target}")
 
 
 @policy_app.command("test")

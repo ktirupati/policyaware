@@ -24,6 +24,11 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Local code scan | Scan repositories for AI governance, compliance, PII, PHI, secrets, model calls, tool use, RAG, data residency, and audit gaps | `LocalCodeScanner`, `ScanConfig`, `policyaware scan` |
 | Guardrails integrations | Orchestrate NeMo Guardrails, Guardrails AI, or custom validators as optional input/output guards | `NeMoGuardrailsAdapter`, `GuardrailsAIAdapter`, `GuardrailResult` |
 | Framework callbacks | Add lightweight LangChain and LlamaIndex callbacks for streamed-token aggregation, policy review, and output leakage checks | `PolicyAwareCallbackHandler`, `PolicyAwareCallbackResult` |
+| LangGraph integration | Add dependency-free node/state governance and tool-call checks to graph-based agents | `PolicyAwareNodeGuard`, `PolicyAwareNodeResult` |
+| Haystack integration | Add Haystack-style RAG query, output, and agent tool governance components | `PolicyAwareInputComponent`, `PolicyAwareOutputComponent`, `PolicyAwareToolGovernanceComponent` |
+| Microsoft AGT-style interop | Export PolicyAware policy, tool, gateway, and audit decisions as dependency-free agent-governance evidence JSON | `to_agt_decision`, `to_agt_tool_evidence`, `to_agt_gateway_evidence`, `to_agt_audit_evidence` |
+| Integration recommender | Recommend the best PolicyAware integration from project signals and user needs | `IntegrationRecommender`, `policyaware integrations recommend` |
+| CLI usability | Diagnose installs, run examples, create recommendation reports, and migrate policy files | `policyaware doctor`, `policyaware examples`, `policyaware policy migrate` |
 
 ## Capability Guides
 
@@ -48,6 +53,13 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Local Code Scan](local-code-scan.md)
 - [Guardrails Integrations](capabilities/guardrails-integrations.md)
 - [LangChain And LlamaIndex Callback Integrations](capabilities/integration-callbacks.md)
+- [LangGraph Integration](capabilities/langgraph-integration.md)
+- [Haystack Integration](capabilities/haystack-integration.md)
+- [Microsoft AGT-Style Interop](capabilities/microsoft-agt-interop.md)
+- [Integration Recommender](capabilities/integration-recommender.md)
+- [CLI Usability Commands](cli-usability.md)
+- [Integration Strategy](integrations-strategy.md)
+- [Lightweight Benchmarks](benchmarks.md)
 
 ## API Discovery Tables
 
@@ -65,6 +77,11 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Local Code Scan](local-code-scan.md) | Main APIs, `ScanFinding` fields, scan config YAML, CLI output formats |
 | [Guardrails Integrations](capabilities/guardrails-integrations.md) | Main APIs, `GuardrailResult` fields, optional extras, adapter examples |
 | [LangChain And LlamaIndex Callback Integrations](capabilities/integration-callbacks.md) | Main APIs, callback event methods, `PolicyAwareCallbackResult` fields, YAML example |
+| [LangGraph Integration](capabilities/langgraph-integration.md) | Main APIs, node/state guard examples, tool-call governance YAML |
+| [Haystack Integration](capabilities/haystack-integration.md) | Main APIs, RAG query guard, output evaluator, tool governance component, YAML example |
+| [Microsoft AGT-Style Interop](capabilities/microsoft-agt-interop.md) | Main APIs, evidence JSON fields, tool-governance YAML, agent evidence export example |
+| [Integration Recommender](capabilities/integration-recommender.md) | Main APIs, CLI examples, detected project signals, recommendation output schema |
+| [CLI Usability Commands](cli-usability.md) | Doctor checks, example runner, HTML recommendation report, conservative policy migration |
 
 ## Recommended Learning Path
 
