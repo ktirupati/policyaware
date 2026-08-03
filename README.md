@@ -24,10 +24,20 @@ Usage modes: [Gateway vs callbacks vs tool governance vs scan](https://github.co
 Enterprise readiness: [enterprise AI governance checklist](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-readiness.md)
 Limitations: [current scope and production validation notes](https://github.com/ktirupati/policyaware/blob/main/docs/limitations.md)
 Security model: [deny-by-default and layered AI governance](https://github.com/ktirupati/policyaware/blob/main/docs/security-model.md)
+Security boundaries: [SDK mode vs sidecar/gateway enforcement](https://github.com/ktirupati/policyaware/blob/main/docs/security-boundaries.md)
 Examples matrix: [choose the right runnable example](https://github.com/ktirupati/policyaware/blob/main/docs/examples-matrix.md)
 Compatibility: [Python, providers, extras, and integration status](https://github.com/ktirupati/policyaware/blob/main/docs/compatibility.md)
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
+Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
+HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
+Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
+Stateful session governance: [detect cumulative leakage and repeated tool activity across a session](https://github.com/ktirupati/policyaware/blob/main/docs/stateful-session-governance.md)
+Enterprise hardening: [SQLite session state, emergency revokes, checksum pinning, and signed audit traces](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-hardening.md)
+Policy rollout and trace correlation: [shadow policy evaluation, canary enforcement, parent traces, and dashboard](https://github.com/ktirupati/policyaware/blob/main/docs/policy-rollout-and-trace-correlation.md)
+Observability templates: [Grafana, Prometheus, and OpenTelemetry examples](https://github.com/ktirupati/policyaware/blob/main/docs/observability-templates.md)
+Policy contract checks: [prevent YAML/tool drift in CI](https://github.com/ktirupati/policyaware/blob/main/docs/policy-contract-checks.md)
+Runnable contract example: [`examples/policy-contract-checks`](https://github.com/ktirupati/policyaware/tree/main/examples/policy-contract-checks)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
 
@@ -58,6 +68,8 @@ Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/
 - **Haystack governance components:** Adds optional Haystack-style components for RAG query governance, output evaluation, and agent tool permission checks.
 - **Microsoft AGT-style evidence export:** Converts PolicyAware policy, tool, gateway, and audit decisions into dependency-free evidence JSON for enterprise agent governance workflows.
 - **Smart integration recommender:** Inspects project signals and user hints to recommend FastAPI, LangChain, LangGraph, Haystack, MCP/tool governance, privacy, guardrails, routing, audit, or scan entry points with reasons.
+- **Policy packs and sidecar mode:** Includes compliance-oriented starter policy packs and a lightweight HTTP sidecar so non-Python services can call PolicyAware.
+- **Policy/code contract checks:** Detects drift between tool-governance YAML and Python tool function signatures before production.
 
 ## Runtime Flow Summary
 
@@ -91,6 +103,9 @@ Read more: [Architecture](https://github.com/ktirupati/policyaware/blob/main/doc
 | Pre-deployment code governance scan | `policyaware scan ./app` |
 | Microsoft AGT-style evidence export | `to_agt_tool_evidence(...)` |
 | Find the best integration for a project | `policyaware integrations recommend .` |
+| Copy a compliance-oriented starter policy | `policyaware policy packs copy healthcare-hipaa --out policyaware.yaml` |
+| Use PolicyAware from non-Python services | `policyaware up --policy policyaware.yaml --port 8080` |
+| Prevent YAML/tool contract drift | `policyaware contract check ./src --policy tool-governance.yaml` |
 | Simple PII/PHI/secrets string check | `DataProtectionEngine.inspect(...)` |
 | YAML policy unit testing | `PolicyEngine.decide(...)` |
 
@@ -162,6 +177,10 @@ policyaware integrations recommend . --html integration-report.html
 policyaware doctor
 policyaware examples list
 policyaware examples run langgraph-agent-governance
+policyaware policy packs list
+policyaware policy packs copy healthcare-hipaa --out policyaware.yaml
+policyaware contract check ./src --policy tool-governance.yaml
+policyaware up --policy policyaware.yaml --port 8080
 policyaware init
 policyaware policy validate policyaware.yaml
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml

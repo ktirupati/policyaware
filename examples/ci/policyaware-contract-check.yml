@@ -1,0 +1,25 @@
+name: PolicyAware Governance Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  policyaware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PolicyAware
+        run: pip install policyaware
+      - name: Validate YAML policies
+        run: policyaware policy validate policyaware.yaml
+      - name: Check policy/tool contract drift
+        run: policyaware contract check ./src --policy tool-governance.yaml --fail-on high
+      - name: Scan code governance risks
+        run: policyaware scan ./src --format html,json,sarif,markdown --fail-on high
+

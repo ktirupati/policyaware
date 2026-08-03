@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from policyaware.integrity import IntegritySigner
 from policyaware.models import AuditTrace, GatewayRequest, GatewayResponse
 
 
@@ -14,8 +15,9 @@ def estimate_tokens(text: str) -> int:
 
 
 class AuditLogger:
-    def __init__(self, path: str | Path | None = None):
+    def __init__(self, path: str | Path | None = None, signer: IntegritySigner | None = None):
         self.path = Path(path) if path else None
+        self.signer = signer
 
     def record(self, request: GatewayRequest, response: GatewayResponse, started_at: float) -> AuditTrace:
         input_tokens = estimate_tokens(request.prompt_text)
@@ -23,6 +25,11 @@ class AuditLogger:
         model = response.route.model if response.route else None
         trace = AuditTrace(
             trace_id=response.trace_id,
+            parent_trace_id=request.metadata.get("parent_trace_id")
+            or request.context.get("parent_trace_id"),
+            session_id=request.metadata.get("session_id")
+            or request.context.get("session_id")
+            or request.context.get("conversation_id"),
             request_id=request.request_id,
             tenant=request.tenant,
             app=request.app,
@@ -47,12 +54,16 @@ class AuditLogger:
                 "policy": response.policy.model_dump(mode="json"),
                 "route": response.route.model_dump(mode="json") if response.route else None,
                 "evals": [result.model_dump(mode="json") for result in response.evals],
+                "metadata": response.metadata,
             },
         )
         if self.path:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("a", encoding="utf-8") as handle:
-                handle.write(trace.model_dump_json() + "\n")
+                payload = trace.model_dump(mode="json")
+                if self.signer:
+                    payload["integrity"] = self.signer.sign(payload).to_dict()
+                handle.write(json.dumps(payload) + "\n")
         return trace
 
     def export_jsonl(self, traces: list[AuditTrace], path: str | Path) -> None:
@@ -80,8 +91,8 @@ class AuditLogger:
 
 
 class SQLiteAuditLogger(AuditLogger):
-    def __init__(self, path: str | Path = ".policyaware/audit.db"):
-        super().__init__(None)
+    def __init__(self, path: str | Path = ".policyaware/audit.db", signer: IntegritySigner | None = None):
+        super().__init__(None, signer=signer)
         self.db_path = Path(path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
@@ -104,6 +115,9 @@ class SQLiteAuditLogger(AuditLogger):
 
     def record(self, request: GatewayRequest, response: GatewayResponse, started_at: float) -> AuditTrace:
         trace = super().record(request, response, started_at)
+        payload = trace.model_dump(mode="json")
+        if self.signer:
+            payload["integrity"] = self.signer.sign(payload).to_dict()
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -118,7 +132,7 @@ class SQLiteAuditLogger(AuditLogger):
                     trace.policy_decision,
                     trace.risk_tier,
                     trace.created_at.isoformat(),
-                    trace.model_dump_json(),
+                    json.dumps(payload),
                 ),
             )
         return trace

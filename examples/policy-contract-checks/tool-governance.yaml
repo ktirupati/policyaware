@@ -1,0 +1,18 @@
+default: deny
+connectors:
+  - id: crm
+    actions:
+      read_customer:
+        effect: allow
+        when:
+          role_in:
+            - support
+            - admin
+          arguments.customer_id: "cust_123"
+      update_customer:
+        effect: require_approval
+        when:
+          role_in:
+            - admin
+          arguments.customer_id: "cust_123"
+

@@ -1,0 +1,32 @@
+id: eu_ai_act_high_risk_governance
+schema_version: "0.3"
+default: deny
+
+rules:
+  - name: deny_secret_leakage
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: redact_personal_data
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+
+  - name: require_approval_for_high_risk_domain
+    effect: require_approval
+    when:
+      request.domain_in: ["employment", "education", "credit", "healthcare", "public_services"]
+
+  - name: require_approval_for_autonomous_action
+    effect: require_approval
+    when:
+      request.autonomy_in: ["agentic", "autonomous"]
+
+  - name: allow_documented_low_medium_risk_eu_work
+    effect: allow
+    when:
+      request.region_in: ["eu"]
+      risk.tier_in: ["low", "medium"]
+      user.role_in: ["developer", "risk_reviewer", "compliance_officer"]

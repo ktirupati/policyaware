@@ -1,0 +1,34 @@
+{
+  "title": "PolicyAware AI Governance",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Policy Decisions",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (decision) (policyaware_policy_decisions_total)"
+        }
+      ]
+    },
+    {
+      "title": "Risk Tiers",
+      "type": "barchart",
+      "targets": [
+        {
+          "expr": "sum by (risk_tier) (policyaware_requests_total)"
+        }
+      ]
+    },
+    {
+      "title": "Estimated Cost",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(policyaware_estimated_cost_usd_total)"
+        }
+      ]
+    }
+  ]
+}

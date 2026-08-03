@@ -2,7 +2,18 @@
 
 All notable PolicyAware changes are tracked here.
 
-## Unreleased
+## 0.4.0
+
+- Added policy rollout/shadow evaluation, canary enforcement, parent trace/session correlation, and a static governance dashboard.
+- Added enterprise hardening primitives: SQLite-backed session state, emergency revoke lists, policy checksum pinning, and optional signed audit traces.
+- Added stateful session governance for cumulative sensitive-data leakage and repeated MCP/tool activity across conversations or agent runs.
+- Added dynamic policy distribution from local, HTTP(S), AWS S3, Google Cloud Storage, or ADLS Gen2 sources with TTL refresh, last known-good cache support, fail-closed behavior, and `policyaware policy pull`.
+- Added sidecar bearer-token enforcement and security-boundary documentation for out-of-process enterprise deployments.
+- Added bundled policy packs for healthcare/HIPAA, finance, EU AI Act high-risk, and SOC 2 AI controls.
+- Added `policyaware policy packs list/show/copy` so users can start from policy templates instead of blank YAML.
+- Added lightweight dependency-free HTTP sidecar mode with `/health`, `/v1/check`, `/v1/tool/check`, `/v1/route`, and `/v1/evaluate`.
+- Added observability templates for Grafana, Prometheus, and OpenTelemetry collector workflows.
+- Added policy contract checks to detect drift between tool-governance YAML and Python tool signatures.
 
 ## 0.3.1
 

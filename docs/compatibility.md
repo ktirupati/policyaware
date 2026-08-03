@@ -11,7 +11,8 @@ PolicyAware keeps the default install lightweight and makes heavier provider, pr
 | Base install | `pip install policyaware` |
 | Base dependencies | `pydantic`, `PyYAML`, `typer`, `rich` |
 | Local execution | No network calls required for core policy, scan, data protection, routing abstractions, eval, and audit features |
-| Optional integrations | Installed only through extras such as `privacy`, `guardrails`, `providers`, `ml`, `onnx`, and `all` |
+| HTTP sidecar | Standard-library local HTTP service for non-Python applications |
+| Optional integrations | Installed only through extras such as `privacy`, `guardrails`, `providers`, `azure`, `gcp`, `ml`, `onnx`, and `all` |
 
 ## Optional Extras
 
@@ -20,7 +21,9 @@ PolicyAware keeps the default install lightweight and makes heavier provider, pr
 | `policyaware[privacy]` | Presidio Analyzer, Presidio Anonymizer, spaCy | Stronger PII detection and redaction workflows |
 | `policyaware[guardrails]` | NeMo Guardrails, Guardrails AI | Full-stack guardrail orchestration |
 | `policyaware[haystack]` | Haystack AI | Haystack RAG and agent integration environment |
-| `policyaware[providers]` | Provider helper dependencies such as `boto3` | Cloud provider adapters such as Bedrock |
+| `policyaware[providers]` | Provider helper dependencies such as `boto3` | Cloud provider adapters such as Bedrock and S3 dynamic policy distribution |
+| `policyaware[azure]` | Azure Identity and Azure Storage File Data Lake | ADLS Gen2 dynamic policy distribution through `abfs://` or `abfss://` paths |
+| `policyaware[gcp]` | Google Cloud Storage | GCS dynamic policy distribution through `gs://` paths |
 | `policyaware[ml]` | Transformers and Torch | Optional ML classifiers and prompt-injection/domain signals |
 | `policyaware[onnx]` | Transformers and ONNX runtime path dependencies | ONNX-friendly classifier execution |
 | `policyaware[all]` | All optional stacks | Full local experimentation environment |
@@ -56,6 +59,7 @@ Structural adapter means the class exists and follows the PolicyAware provider i
 | Haystack-style components | Available | Query governance, output evaluation, and tool-governance components expose `run(...)` methods without requiring Haystack at import time. |
 | Microsoft AGT-style evidence export | Available | Dependency-free JSON mapping helpers for policy, tool, gateway, and audit decisions. |
 | MCP/tool governance | Available | Use `ToolPolicyEngine` for connector/action permissions. |
+| HTTP sidecar gateway | Available | `policyaware up` exposes local HTTP endpoints for non-Python services. |
 
 ## Scan Coverage
 

@@ -8,13 +8,17 @@ from policyaware.approvals import ApprovalClient, NoopApprovalClient
 from policyaware.audit import AuditLogger
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.evals import RuntimeEvaluator
+from policyaware.emergency import EmergencyRevokeList
 from policyaware.guardrails import GuardrailAdapter, GuardrailResult, GuardrailsAIAdapter, NeMoGuardrailsAdapter
 from policyaware.ml import MLClassifier, NoopMLClassifier
 from policyaware.models import Decision, GatewayRequest, GatewayResponse, PolicyDecision
 from policyaware.policy import PolicyEngine
+from policyaware.policy_source import DynamicPolicyEngine, policy_source_from_uri
 from policyaware.providers import ModelProvider, ProviderRegistry, SimulatedProvider, default_provider_registry
 from policyaware.risk import RiskClassifier
 from policyaware.routing import ModelRouter
+from policyaware.rollout import PolicyRollout
+from policyaware.session_state import SessionStateMonitor
 
 
 class Gateway:
@@ -33,6 +37,9 @@ class Gateway:
         input_guards: list[GuardrailAdapter] | None = None,
         output_guards: list[GuardrailAdapter] | None = None,
         guard_registry: dict[str, GuardrailAdapter] | None = None,
+        session_monitor: SessionStateMonitor | None = None,
+        emergency_revoke: EmergencyRevokeList | None = None,
+        policy_rollout: PolicyRollout | None = None,
     ):
         self.policy_engine = policy_engine
         self.router = router or ModelRouter()
@@ -48,11 +55,41 @@ class Gateway:
         self.input_guards = list(input_guards or [])
         self.output_guards = list(output_guards or [])
         self.guard_registry = dict(guard_registry or {})
+        self.session_monitor = session_monitor
+        self.emergency_revoke = emergency_revoke
+        self.policy_rollout = policy_rollout
         self._configure_policy_guards()
 
     @classmethod
     def from_policy_file(cls, path: str | Path) -> "Gateway":
         return cls(policy_engine=PolicyEngine.from_file(path))
+
+    @classmethod
+    def from_policy_source(
+        cls,
+        source: str | Path,
+        *,
+        refresh_seconds: float = 60.0,
+        fail_closed: bool = True,
+        auth_token: str | None = None,
+        cache_file: str | Path | None = None,
+        timeout_seconds: float = 5.0,
+        expected_sha256: str | None = None,
+    ) -> "Gateway":
+        policy_source = policy_source_from_uri(
+            source,
+            auth_token=auth_token,
+            cache_file=cache_file,
+            timeout_seconds=timeout_seconds,
+            expected_sha256=expected_sha256,
+        )
+        return cls(
+            policy_engine=DynamicPolicyEngine(
+                policy_source,
+                refresh_seconds=refresh_seconds,
+                fail_closed=fail_closed,
+            )
+        )
 
     def add_input_guard(self, guard: GuardrailAdapter) -> "Gateway":
         self.guard_registry.setdefault(guard.name, guard)
@@ -71,7 +108,26 @@ class Gateway:
 
     def chat(self, request: GatewayRequest) -> GatewayResponse:
         started_at = time.perf_counter()
+        if self.emergency_revoke:
+            revoke_match = self.emergency_revoke.check_request(request)
+            if revoke_match.matched:
+                decision = self.emergency_revoke.deny_decision(revoke_match)
+                response = GatewayResponse(content="", policy=decision)
+                self.audit_logger.record(request, response, started_at)
+                return response
         findings = self.data_protection.redact(request.prompt_text)
+        session_signal = (
+            self.session_monitor.observe_request(request, findings) if self.session_monitor else None
+        )
+        if session_signal and not session_signal.allowed:
+            decision = self.session_monitor.deny_decision(session_signal)
+            response = GatewayResponse(
+                content="",
+                policy=decision,
+                metadata={"session": session_signal.state},
+            )
+            self.audit_logger.record(request, response, started_at)
+            return response
         ml_assessment = self.ml_classifier.classify(request.prompt_text, request)
         policy_request = request.model_copy(
             update={
@@ -82,11 +138,26 @@ class Gateway:
             }
         )
         risk = self.risk_classifier.classify(policy_request, findings)
-        decision = self.policy_engine.decide(policy_request, findings, risk)
+        primary_decision = self.policy_engine.decide(policy_request, findings, risk)
+        rollout_decision = (
+            self.policy_rollout.decide(policy_request, findings, risk)
+            if self.policy_rollout
+            else None
+        )
+        decision = (
+            rollout_decision
+            if rollout_decision
+            and self.policy_rollout
+            and self.policy_rollout.mode == "enforce"
+            else primary_decision
+        )
+        rollout_metadata = self._rollout_metadata(primary_decision, rollout_decision)
 
         if decision.decision == Decision.DENY:
             response = GatewayResponse(content="", policy=decision, risk=risk)
             response.metadata["ml"] = ml_assessment.model_dump(mode="json")
+            if rollout_metadata:
+                response.metadata["policy_rollout"] = rollout_metadata
             self.audit_logger.record(policy_request, response, started_at)
             return response
 
@@ -101,6 +172,8 @@ class Gateway:
                     "ml": ml_assessment.model_dump(mode="json"),
                 },
             )
+            if rollout_metadata:
+                response.metadata["policy_rollout"] = rollout_metadata
             self.audit_logger.record(policy_request, response, started_at)
             return response
 
@@ -160,9 +233,32 @@ class Gateway:
             response.metadata["audit"] = trace.model_dump(mode="json")
             return response
         output = self._output_with_guard_transforms(output, output_guard_results)
+        output_session_signal = (
+            self.session_monitor.observe_output(executable_request, output)
+            if self.session_monitor
+            else None
+        )
+        if output_session_signal and not output_session_signal.allowed:
+            session_decision = self.session_monitor.deny_decision(output_session_signal)
+            response = GatewayResponse(
+                content="",
+                policy=session_decision,
+                route=route,
+                risk=risk,
+                metadata={
+                    "ml": ml_assessment.model_dump(mode="json"),
+                    "session": output_session_signal.state,
+                },
+            )
+            self.audit_logger.record(executable_request, response, started_at)
+            return response
         evals = self.evaluator.evaluate(executable_request, output, decision)
         response = GatewayResponse(content=output, policy=decision, route=route, evals=evals, risk=risk)
         response.metadata["ml"] = ml_assessment.model_dump(mode="json")
+        if rollout_metadata:
+            response.metadata["policy_rollout"] = rollout_metadata
+        if output_session_signal:
+            response.metadata["session"] = output_session_signal.state
         response.metadata["guardrails"] = {
             "input": [result.__dict__ for result in input_guard_results],
             "output": [result.__dict__ for result in output_guard_results],
@@ -170,6 +266,23 @@ class Gateway:
         trace = self.audit_logger.record(executable_request, response, started_at)
         response.metadata["audit"] = trace.model_dump(mode="json")
         return response
+
+    def _rollout_metadata(
+        self,
+        primary_decision: PolicyDecision,
+        rollout_decision: PolicyDecision | None,
+    ) -> dict[str, Any] | None:
+        if not self.policy_rollout or not rollout_decision:
+            return None
+        return {
+            "name": self.policy_rollout.name,
+            "mode": self.policy_rollout.mode,
+            "percentage": self.policy_rollout.percentage,
+            "primary_decision": primary_decision.decision.value,
+            "candidate_decision": rollout_decision.decision.value,
+            "candidate_reason_codes": rollout_decision.reason_codes,
+            "changed": primary_decision.decision != rollout_decision.decision,
+        }
 
     def _run_input_guards(self, request: GatewayRequest) -> list[GuardrailResult]:
         return [

@@ -164,6 +164,8 @@ class GatewayResponse(BaseModel):
 class AuditTrace(BaseModel):
     schema_version: str = "0.2"
     trace_id: str
+    parent_trace_id: str | None = None
+    session_id: str | None = None
     request_id: str
     tenant: str
     app: str

@@ -15,20 +15,28 @@ from rich.panel import Panel
 from rich.table import Table
 
 from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger, TraceViewer
+from policyaware.contracts import PolicyContractChecker
 from policyaware.data_protection import DataProtectionEngine
+from policyaware.dashboard import GovernanceDashboard
 from policyaware.evals import EvalSuiteRunner
 from policyaware.gateway import Gateway
 from policyaware.integrations.recommender import IntegrationRecommender
 from policyaware.models import GatewayRequest, ToolCallRequest
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
 from policyaware.policy import PolicyEngine
+from policyaware.policy_pack_registry import copy_policy_pack, list_policy_packs, read_policy_pack
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
+from policyaware.policy_source import policy_source_from_uri
 from policyaware.risk import RiskClassifier
+from policyaware.rollout import PolicyRollout
 from policyaware.scanner import LocalCodeScanner, ScanConfig, git_changed_files
+from policyaware.session_state import SessionStateMonitor, SQLiteSessionStateStore
+from policyaware.sidecar import serve_sidecar
 from policyaware.tools import ToolPolicyEngine
 
 app = typer.Typer(help="PolicyAware AI Gateway CLI")
 policy_app = typer.Typer(help="Policy testing commands")
+policy_packs_app = typer.Typer(help="Policy pack commands")
 eval_app = typer.Typer(help="Evaluation commands")
 dev_app = typer.Typer(help="Local development commands")
 tools_app = typer.Typer(help="MCP and tool governance commands")
@@ -38,7 +46,9 @@ observability_app = typer.Typer(help="Metrics and trace export commands")
 guards_app = typer.Typer(help="Guardrails integration commands")
 integrations_app = typer.Typer(help="Integration discovery commands")
 examples_app = typer.Typer(help="Runnable example commands")
+contract_app = typer.Typer(help="Policy/code contract drift commands")
 app.add_typer(policy_app, name="policy")
+policy_app.add_typer(policy_packs_app, name="packs")
 app.add_typer(eval_app, name="eval")
 app.add_typer(dev_app, name="dev")
 app.add_typer(tools_app, name="tools")
@@ -48,6 +58,7 @@ app.add_typer(observability_app, name="observability")
 app.add_typer(guards_app, name="guards")
 app.add_typer(integrations_app, name="integrations")
 app.add_typer(examples_app, name="examples")
+app.add_typer(contract_app, name="contract")
 console = Console()
 
 PROJECT_URL = "https://github.com/ktirupati/policyaware"
@@ -388,6 +399,18 @@ def _should_fail_scan(fail_on: str, severity_counts: dict[str, int]) -> bool:
         raise typer.BadParameter("Use one of: critical, high, medium, low, none.")
     threshold = order[normalized]
     return any(count and order[severity] <= threshold for severity, count in severity_counts.items())
+
+
+def _contract_should_fail(fail_on: str, report) -> bool:
+    normalized = fail_on.strip().lower()
+    if normalized in {"", "none", "off", "never"}:
+        return False
+    severities = {finding.severity for finding in report.findings}
+    if normalized == "critical":
+        return "critical" in severities
+    if normalized == "high":
+        return bool(severities & {"critical", "high"})
+    raise typer.BadParameter("Use one of: high, critical, none.")
 
 
 def _load_ignore_patterns(path: Path | None) -> list[str]:
@@ -753,6 +776,197 @@ def init_policy(
     console.print(f"  policyaware policy explain {out} --prompt \"Email jane@example.com\"")
 
 
+@app.command("up")
+def up(
+    policy_file: Path | None = typer.Option(None, "--policy", "--config", help="PolicyAware YAML policy file."),
+    policy_url: str | None = typer.Option(
+        None,
+        "--policy-url",
+        help="Central policy source URI: HTTP(S), s3://, gs://, abfs://, or abfss://.",
+    ),
+    tool_policy_file: Path | None = typer.Option(
+        None,
+        "--tool-policy",
+        help="Optional MCP/tool governance YAML file.",
+    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface for the sidecar."),
+    port: int = typer.Option(8080, "--port", help="Port for the sidecar."),
+    auth_token: str | None = typer.Option(
+        None,
+        "--auth-token",
+        help="Optional bearer token required by POST endpoints. Prefer --auth-env in production.",
+    ),
+    auth_env: str = typer.Option(
+        "POLICYAWARE_SIDECAR_TOKEN",
+        "--auth-env",
+        help="Environment variable used for the sidecar bearer token.",
+    ),
+    require_auth: bool = typer.Option(
+        False,
+        "--require-auth",
+        help="Fail startup unless --auth-token or --auth-env provides a token.",
+    ),
+    policy_auth_token: str | None = typer.Option(
+        None,
+        "--policy-auth-token",
+        help="Optional bearer token used when fetching --policy-url.",
+    ),
+    policy_auth_env: str = typer.Option(
+        "POLICYAWARE_POLICY_TOKEN",
+        "--policy-auth-env",
+        help="Environment variable used for --policy-url bearer auth.",
+    ),
+    policy_cache: Path | None = typer.Option(
+        Path(".policyaware/policy-cache.yaml"),
+        "--policy-cache",
+        help="Last known-good policy cache for dynamic policy URLs.",
+    ),
+    policy_refresh_seconds: float = typer.Option(
+        60.0,
+        "--policy-refresh-seconds",
+        help="Refresh interval for dynamic policy sources.",
+    ),
+    fail_open: bool = typer.Option(
+        False,
+        "--fail-open",
+        help="Continue using the last loaded policy if dynamic refresh fails.",
+    ),
+    session_state: bool = typer.Option(
+        False,
+        "--session-state",
+        help="Enable stateful session inspection for cumulative leakage and repeated tool calls.",
+    ),
+    max_session_sensitive_findings: int = typer.Option(
+        10,
+        "--max-session-sensitive-findings",
+        help="Deny when cumulative sensitive findings in a session exceed this value.",
+    ),
+    max_session_tool_calls: int = typer.Option(
+        25,
+        "--max-session-tool-calls",
+        help="Deny when tool calls in a session exceed this value.",
+    ),
+    max_same_tool_action: int = typer.Option(
+        10,
+        "--max-same-tool-action",
+        help="Deny when the same connector/action repeats above this value in a session.",
+    ),
+    session_state_store: str = typer.Option(
+        "memory",
+        "--session-state-store",
+        help="Session state backend: memory or sqlite.",
+    ),
+    session_state_db: Path = typer.Option(
+        Path(".policyaware/session-state.db"),
+        "--session-state-db",
+        help="SQLite session-state database path when --session-state-store sqlite is used.",
+    ),
+    revoke_file: Path | None = typer.Option(
+        None,
+        "--revoke-file",
+        help="Emergency revoke YAML evaluated before normal policy/tool decisions.",
+    ),
+    policy_sha256: str | None = typer.Option(
+        None,
+        "--policy-sha256",
+        help="Expected SHA256 checksum for the dynamically loaded policy source.",
+    ),
+    audit_signing_secret: str | None = typer.Option(
+        None,
+        "--audit-signing-secret",
+        help="Optional HMAC secret used to sign JSONL audit trace payloads.",
+    ),
+    audit_signing_env: str = typer.Option(
+        "POLICYAWARE_AUDIT_SIGNING_SECRET",
+        "--audit-signing-env",
+        help="Environment variable used for audit trace signing.",
+    ),
+    rollout_policy: Path | None = typer.Option(
+        None,
+        "--rollout-policy",
+        help="Candidate policy YAML for shadow or canary rollout.",
+    ),
+    rollout_mode: str = typer.Option(
+        "shadow",
+        "--rollout-mode",
+        help="Rollout mode: shadow or enforce.",
+    ),
+    rollout_percentage: int = typer.Option(
+        100,
+        "--rollout-percentage",
+        help="Percentage of traffic selected for candidate policy evaluation.",
+    ),
+) -> None:
+    """Run a lightweight HTTP sidecar for non-Python services."""
+    policy_source = policy_url or policy_file
+    if policy_source is None:
+        raise typer.BadParameter("Provide --policy or --policy-url.")
+    if policy_url is None and policy_file and not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    if tool_policy_file and not tool_policy_file.exists():
+        raise typer.BadParameter(f"Tool policy file does not exist: {tool_policy_file}")
+    resolved_auth_token = auth_token or os.getenv(auth_env)
+    resolved_policy_auth_token = policy_auth_token or os.getenv(policy_auth_env)
+    resolved_audit_signing_secret = audit_signing_secret or os.getenv(audit_signing_env)
+    if require_auth and not resolved_auth_token:
+        raise typer.BadParameter(
+            f"Sidecar auth is required but no token was provided. Set {auth_env} or pass --auth-token."
+        )
+    console.print(f"[bold green]Starting PolicyAware sidecar[/bold green] http://{host}:{port}")
+    console.print(f"Auth: {'enabled' if resolved_auth_token else 'disabled'}")
+    if policy_url:
+        console.print(
+            f"Dynamic policy: enabled, refresh={policy_refresh_seconds}s, "
+            f"cache={policy_cache}, fail_closed={not fail_open}"
+        )
+    monitor = (
+        SessionStateMonitor(
+            max_sensitive_findings_per_session=max_session_sensitive_findings,
+            max_tool_calls_per_session=max_session_tool_calls,
+            max_same_tool_action_per_session=max_same_tool_action,
+            store=SQLiteSessionStateStore(session_state_db)
+            if session_state_store == "sqlite"
+            else None,
+        )
+        if session_state
+        else None
+    )
+    if session_state_store not in {"memory", "sqlite"}:
+        raise typer.BadParameter("Use --session-state-store memory or sqlite.")
+    if revoke_file and not revoke_file.exists():
+        raise typer.BadParameter(f"Emergency revoke file does not exist: {revoke_file}")
+    if rollout_policy and not rollout_policy.exists():
+        raise typer.BadParameter(f"Rollout policy file does not exist: {rollout_policy}")
+    if rollout_mode not in {"shadow", "enforce"}:
+        raise typer.BadParameter("Use --rollout-mode shadow or enforce.")
+    console.print(f"Session state: {'enabled' if monitor else 'disabled'}")
+    console.print(f"Audit signing: {'enabled' if resolved_audit_signing_secret else 'disabled'}")
+    console.print(f"Policy rollout: {'enabled' if rollout_policy else 'disabled'}")
+    console.print("Endpoints: GET /health, POST /v1/check, /v1/tool/check, /v1/route, /v1/evaluate")
+    serve_sidecar(
+        policy_source,
+        host=host,
+        port=port,
+        tool_policy_file=tool_policy_file,
+        auth_token=resolved_auth_token,
+        policy_auth_token=resolved_policy_auth_token,
+        policy_cache_file=policy_cache if policy_url else None,
+        policy_refresh_seconds=policy_refresh_seconds,
+        fail_closed=not fail_open,
+        session_monitor=monitor,
+        emergency_revoke_file=revoke_file,
+        policy_sha256=policy_sha256,
+        audit_signing_secret=resolved_audit_signing_secret,
+        policy_rollout=PolicyRollout.from_file(
+            rollout_policy,
+            mode=rollout_mode,  # type: ignore[arg-type]
+            percentage=rollout_percentage,
+        )
+        if rollout_policy
+        else None,
+    )
+
+
 @guards_app.command("list")
 def list_guards(policy_file: Path) -> None:
     """List guards declared in a PolicyAware YAML policy."""
@@ -933,6 +1147,103 @@ def run_example(example_id: str) -> None:
     raise typer.Exit(code=result.returncode)
 
 
+@contract_app.command("check")
+def contract_check(
+    path: Path = typer.Argument(..., help="Python source folder or file to scan."),
+    policy_file: Path = typer.Option(..., "--policy", help="Tool-governance YAML policy file."),
+    json_output: bool = typer.Option(False, "--json", help="Print contract report as JSON."),
+    fail_on: str = typer.Option("high", "--fail-on", help="Fail on severity: high, critical, none."),
+) -> None:
+    """Check YAML tool policies against Python function contracts."""
+    report = PolicyContractChecker().check(path, policy_file)
+    if json_output:
+        console.print_json(data=report.to_dict())
+    else:
+        table = Table(title="PolicyAware Contract Check")
+        table.add_column("Status")
+        table.add_column("Connector")
+        table.add_column("Action")
+        table.add_column("Finding")
+        table.add_column("Recommendation")
+        for finding in report.findings:
+            status = {
+                "critical": "[red]CRITICAL[/red]",
+                "high": "[red]HIGH[/red]",
+                "medium": "[yellow]MEDIUM[/yellow]",
+                "low": "[yellow]LOW[/yellow]",
+                "info": "[green]PASS[/green]",
+            }.get(finding.severity, finding.severity.upper())
+            table.add_row(
+                status,
+                finding.connector_id,
+                finding.action,
+                f"{finding.title} {finding.detail}",
+                finding.recommendation,
+            )
+        console.print(table)
+    if _contract_should_fail(fail_on, report):
+        raise typer.Exit(code=1)
+
+
+@contract_app.command("export")
+def contract_export(
+    path: Path = typer.Argument(..., help="Python source folder or file to scan."),
+    out: Path = typer.Option(Path("policyaware-tool-contracts.json"), "--out", "-o", help="Output JSON path."),
+) -> None:
+    """Export discovered Python tool contracts to JSON."""
+    written = PolicyContractChecker().export(path, out)
+    console.print(f"[bold green]Exported tool contracts:[/bold green] {written}")
+
+
+@policy_app.command("pull")
+def pull_policy(
+    source: str = typer.Argument(
+        ...,
+        help="Local path, HTTP(S), S3, GCS, or ADLS Gen2 URI to a PolicyAware YAML policy.",
+    ),
+    out: Path = typer.Option(Path("policyaware.yaml"), "--out", "-o", help="Output policy YAML path."),
+    auth_token: str | None = typer.Option(
+        None,
+        "--auth-token",
+        help="Optional bearer token or SAS token for remote policy sources.",
+    ),
+    auth_env: str = typer.Option(
+        "POLICYAWARE_POLICY_TOKEN",
+        "--auth-env",
+        help="Environment variable used for remote policy source auth.",
+    ),
+    cache: Path | None = typer.Option(
+        None,
+        "--cache",
+        help="Optional cache path used when HTTP(S) source is temporarily unavailable.",
+    ),
+    expected_sha256: str | None = typer.Option(
+        None,
+        "--sha256",
+        help="Expected SHA256 checksum for the policy source.",
+    ),
+    force: bool = typer.Option(False, "--force", help="Overwrite output file if it exists."),
+) -> None:
+    """Pull and validate a policy from a local file or central HTTP(S) source."""
+    if out.exists() and not force:
+        raise typer.BadParameter(f"Output already exists: {out}. Use --force to overwrite.")
+    resolved_auth_token = auth_token or os.getenv(auth_env)
+    policy_source = policy_source_from_uri(
+        source,
+        auth_token=resolved_auth_token,
+        cache_file=cache,
+        expected_sha256=expected_sha256,
+    )
+    snapshot = policy_source.load()
+    PolicyEngine(snapshot.policy)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(yaml.safe_dump(snapshot.policy, sort_keys=False), encoding="utf-8")
+    console.print(f"[bold green]Pulled policy:[/bold green] {snapshot.source}")
+    console.print(f"Version: {snapshot.version}")
+    console.print(f"SHA256: {snapshot.sha256}")
+    console.print(f"Written: {out.resolve()}")
+
+
 @policy_app.command("validate")
 def validate_policy(policy_file: Path) -> None:
     """Validate a YAML policy file and print clear schema errors."""
@@ -975,6 +1286,48 @@ def migrate_policy(
     )
     console.print("Review the migration note and run:")
     console.print(f"  policyaware policy validate {target}")
+
+
+@policy_packs_app.command("list")
+def list_packs(json_output: bool = typer.Option(False, "--json", help="Print policy packs as JSON.")) -> None:
+    """List bundled compliance-oriented starter policy packs."""
+    packs = list_policy_packs()
+    if json_output:
+        console.print_json(data={"policy_packs": [pack.__dict__ for pack in packs]})
+        return
+    table = Table(title="PolicyAware Policy Packs")
+    table.add_column("Pack")
+    table.add_column("Description")
+    table.add_column("Compliance Note")
+    for pack in packs:
+        table.add_row(pack.id, pack.description, pack.compliance_note)
+    console.print(table)
+
+
+@policy_packs_app.command("show")
+def show_pack(pack_id: str) -> None:
+    """Print a bundled policy pack YAML template."""
+    try:
+        console.print(read_policy_pack(pack_id))
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@policy_packs_app.command("copy")
+def copy_pack(
+    pack_id: str,
+    out: Path = typer.Option(Path("policyaware.yaml"), "--out", "-o", help="Output policy YAML path."),
+    force: bool = typer.Option(False, "--force", help="Overwrite the output file if it exists."),
+) -> None:
+    """Copy a bundled starter policy pack to a local YAML file."""
+    try:
+        written = copy_policy_pack(pack_id, out, force=force)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    except FileExistsError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"[bold green]Copied policy pack:[/bold green] {pack_id} -> {written}")
+    console.print(f"Validate it with: policyaware policy validate {written}")
 
 
 @policy_app.command("test")
@@ -1120,6 +1473,28 @@ def audit_view_sqlite(
     """Generate a static HTML trace viewer from SQLite audit storage."""
     traces = SQLiteAuditLogger(db).read_traces()
     output = TraceViewer().write_html(traces, out)
+    console.print(str(output))
+
+
+@audit_app.command("dashboard")
+def audit_dashboard(
+    traces_file: Path = typer.Argument(Path(".policyaware/traces.jsonl")),
+    out: Path = Path(".policyaware/governance-dashboard.html"),
+) -> None:
+    """Generate a static governance dashboard from JSONL audit traces."""
+    traces = AuditLogger(traces_file).read_traces()
+    output = GovernanceDashboard().write_html(traces, out)
+    console.print(str(output))
+
+
+@audit_app.command("dashboard-sqlite")
+def audit_dashboard_sqlite(
+    db: Path = Path(".policyaware/audit.db"),
+    out: Path = Path(".policyaware/governance-dashboard.html"),
+) -> None:
+    """Generate a static governance dashboard from SQLite audit storage."""
+    traces = SQLiteAuditLogger(db).read_traces()
+    output = GovernanceDashboard().write_html(traces, out)
     console.print(str(output))
 
 

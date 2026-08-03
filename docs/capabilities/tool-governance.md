@@ -118,3 +118,15 @@ policyaware tools check examples/policies/tool-governance.yaml \
   --action create_pr \
   --role developer
 ```
+
+## Prevent Policy Drift
+
+Tool governance YAML should be checked against the actual tool code in CI.
+
+```bash
+policyaware contract check ./src --policy examples/policies/tool-governance.yaml
+```
+
+This detects stale YAML references such as `arguments.customer_id` when the Python function now accepts `account_id`.
+
+Read more: [Policy Contract Checks](../policy-contract-checks.md)

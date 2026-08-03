@@ -1,0 +1,33 @@
+id: finance_ai_governance
+schema_version: "0.3"
+default: deny
+
+rules:
+  - name: deny_secret_leakage
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: redact_customer_pii
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role_not_in: ["fraud_analyst", "compliance_officer"]
+
+  - name: require_approval_for_money_movement
+    effect: require_approval
+    when:
+      request.action_type_in: ["payment", "refund", "wire_transfer", "account_change"]
+
+  - name: require_approval_for_high_risk_finance
+    effect: require_approval
+    when:
+      risk.tier_in: ["high", "critical"]
+
+  - name: allow_finance_read_workflows
+    effect: allow
+    when:
+      user.role_in: ["analyst", "fraud_analyst", "compliance_officer"]
+      request.region_in: ["us", "eu"]
+      risk.tier_in: ["low", "medium"]

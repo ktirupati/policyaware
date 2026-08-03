@@ -1,0 +1,33 @@
+id: soc2_ai_controls
+schema_version: "0.3"
+default: deny
+
+rules:
+  - name: deny_secret_leakage
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: redact_pii_for_non_privileged_roles
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role_not_in: ["security_engineer", "compliance_officer"]
+
+  - name: require_approval_for_production_changes
+    effect: require_approval
+    when:
+      request.environment_in: ["production"]
+      request.action_type_in: ["deploy", "delete", "permission_change", "external_send"]
+
+  - name: require_approval_for_high_risk
+    effect: require_approval
+    when:
+      risk.tier_in: ["high", "critical"]
+
+  - name: allow_internal_low_medium_work
+    effect: allow
+    when:
+      user.role_in: ["developer", "security_engineer", "compliance_officer"]
+      risk.tier_in: ["low", "medium"]

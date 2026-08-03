@@ -29,6 +29,15 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Microsoft AGT-style interop | Export PolicyAware policy, tool, gateway, and audit decisions as dependency-free agent-governance evidence JSON | `to_agt_decision`, `to_agt_tool_evidence`, `to_agt_gateway_evidence`, `to_agt_audit_evidence` |
 | Integration recommender | Recommend the best PolicyAware integration from project signals and user needs | `IntegrationRecommender`, `policyaware integrations recommend` |
 | CLI usability | Diagnose installs, run examples, create recommendation reports, and migrate policy files | `policyaware doctor`, `policyaware examples`, `policyaware policy migrate` |
+| Policy packs | Copy compliance-oriented starter policies for common governance profiles | `policyaware policy packs`, `copy_policy_pack` |
+| HTTP sidecar | Let non-Python services call PolicyAware over local HTTP | `policyaware up`, `PolicyAwareSidecar` |
+| Sidecar auth and security boundaries | Run PolicyAware as an authenticated out-of-process control point | `policyaware up --require-auth` |
+| Dynamic policy distribution | Load central policies from file, HTTP(S), AWS S3, Google Cloud Storage, or ADLS Gen2, refresh on a TTL, cache last known-good policy, and fail closed | `Gateway.from_policy_source`, `policyaware policy pull` |
+| Stateful session governance | Track cumulative sensitive data and repeated tool calls across a conversation or agent run | `SessionStateMonitor`, `policyaware up --session-state` |
+| Enterprise hardening | Add SQLite state, emergency revoke lists, checksum pinning, and signed audit traces | `SQLiteSessionStateStore`, `EmergencyRevokeList`, `IntegritySigner` |
+| Policy rollout and trace correlation | Shadow/canary candidate policies, parent trace IDs, session IDs, and governance dashboards | `PolicyRollout`, `GovernanceDashboard` |
+| Observability templates | Connect PolicyAware outputs to Grafana, Prometheus, OTel, SIEM, and GRC workflows | `examples/observability` |
+| Policy contract checks | Prevent drift between YAML tool policy and Python tool signatures | `PolicyContractChecker`, `policyaware contract check` |
 
 ## Capability Guides
 
@@ -44,6 +53,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Enterprise Readiness](enterprise-readiness.md)
 - [Limitations And Scope](limitations.md)
 - [Security Model](security-model.md)
+- [Security Boundaries](security-boundaries.md)
 - [Examples Matrix](examples-matrix.md)
 - [Compatibility And Integration Status](compatibility.md)
 - [Tool Governance](capabilities/tool-governance.md)
@@ -58,6 +68,14 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Microsoft AGT-Style Interop](capabilities/microsoft-agt-interop.md)
 - [Integration Recommender](capabilities/integration-recommender.md)
 - [CLI Usability Commands](cli-usability.md)
+- [Policy Packs](policy-packs.md)
+- [HTTP Sidecar Gateway](sidecar-http-gateway.md)
+- [Dynamic Policy Distribution](dynamic-policy-distribution.md)
+- [Stateful Session Governance](stateful-session-governance.md)
+- [Enterprise Hardening](enterprise-hardening.md)
+- [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md)
+- [Observability Templates](observability-templates.md)
+- [Policy Contract Checks](policy-contract-checks.md)
 - [Integration Strategy](integrations-strategy.md)
 - [Lightweight Benchmarks](benchmarks.md)
 
@@ -82,6 +100,15 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Microsoft AGT-Style Interop](capabilities/microsoft-agt-interop.md) | Main APIs, evidence JSON fields, tool-governance YAML, agent evidence export example |
 | [Integration Recommender](capabilities/integration-recommender.md) | Main APIs, CLI examples, detected project signals, recommendation output schema |
 | [CLI Usability Commands](cli-usability.md) | Doctor checks, example runner, HTML recommendation report, conservative policy migration |
+| [Policy Packs](policy-packs.md) | Pack list/copy/show commands, included starter policies, Python API |
+| [HTTP Sidecar Gateway](sidecar-http-gateway.md) | Endpoints, curl examples, non-Python service pattern |
+| [Security Boundaries](security-boundaries.md) | Embedded SDK vs authenticated sidecar/gateway deployment guidance |
+| [Dynamic Policy Distribution](dynamic-policy-distribution.md) | Central file, HTTP(S), S3, GCS, or ADLS Gen2 policy source, refresh interval, cache, and emergency revoke pattern |
+| [Stateful Session Governance](stateful-session-governance.md) | Cumulative leakage and repeated tool-call detection across a session |
+| [Enterprise Hardening](enterprise-hardening.md) | SQLite state, emergency revokes, checksum pinning, signed audit traces |
+| [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md) | Shadow/canary rollout, parent trace/session IDs, dashboard |
+| [Observability Templates](observability-templates.md) | Grafana, Prometheus, OpenTelemetry, SIEM/GRC export pattern |
+| [Policy Contract Checks](policy-contract-checks.md) | Contract drift checks, naming conventions, CI gate examples |
 
 ## Recommended Learning Path
 

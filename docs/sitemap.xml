@@ -101,6 +101,42 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/policy-packs.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/sidecar-http-gateway.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/dynamic-policy-distribution.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/stateful-session-governance.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/enterprise-hardening.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/policy-rollout-and-trace-correlation.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/observability-templates.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/policy-contract-checks.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/security-boundaries.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/local-code-scan.md</loc>
     <priority>0.9</priority>
   </url>

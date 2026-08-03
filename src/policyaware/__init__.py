@@ -1,5 +1,7 @@
 from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger, TraceViewer
+from policyaware.contracts import ContractCheckReport, ContractFinding, PolicyContractChecker, ToolContract
 from policyaware.data_protection import DataProtectionEngine
+from policyaware.dashboard import GovernanceDashboard
 from policyaware.evals import EvalSuiteRunner, RuntimeEvaluator
 from policyaware.gateway import Gateway
 from policyaware.guardrails import (
@@ -29,6 +31,8 @@ from policyaware.integrations.recommender import (
     IntegrationRecommendationReport,
     IntegrationRecommender,
 )
+from policyaware.emergency import EmergencyRevokeList, EmergencyRevokeMatch
+from policyaware.integrity import IntegritySignature, IntegritySigner
 from policyaware.models import (
     AuditTrace,
     DataFindings,
@@ -58,6 +62,27 @@ from policyaware.ml import (
     TransformersDomainRiskClassifier,
 )
 from policyaware.policy import PolicyEngine, PolicyRule
+from policyaware.policy_pack_registry import (
+    PolicyPack,
+    copy_policy_pack,
+    list_policy_packs,
+    read_policy_pack,
+)
+from policyaware.policy_source import (
+    AzureDataLakePolicySource,
+    DynamicPolicyEngine,
+    FilePolicySource,
+    GoogleCloudStoragePolicySource,
+    HttpPolicySource,
+    PolicySource,
+    PolicySourceError,
+    PolicySourceSnapshot,
+    S3PolicySource,
+    parse_adls_uri,
+    parse_gcs_uri,
+    parse_s3_uri,
+    policy_source_from_uri,
+)
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
 from policyaware.providers import (
     AnthropicProvider,
@@ -72,6 +97,7 @@ from policyaware.providers import (
     default_provider_registry,
 )
 from policyaware.risk import RiskClassifier
+from policyaware.rollout import PolicyRollout
 from policyaware.routing import ModelRouter
 from policyaware.scanner import (
     ScanConfig,
@@ -84,22 +110,38 @@ from policyaware.scanner import (
     ScanSarifReportWriter,
     git_changed_files,
 )
+from policyaware.session_state import (
+    InMemorySessionStateStore,
+    SQLiteSessionStateStore,
+    SessionSignal,
+    SessionState,
+    SessionStateMonitor,
+)
+from policyaware.sidecar import PolicyAwareSidecar
 from policyaware.tools import ToolPolicyEngine, ToolRegistry
 
 __all__ = [
     "AuditBundleWriter",
     "AuditLogger",
     "AuditTrace",
+    "AzureDataLakePolicySource",
+    "ContractCheckReport",
+    "ContractFinding",
     "DataFindings",
     "DataProtectionEngine",
     "Decision",
     "DecisionExplanation",
+    "DynamicPolicyEngine",
+    "EmergencyRevokeList",
+    "EmergencyRevokeMatch",
     "EvalReport",
     "EvalResult",
     "EvalSuiteRunner",
     "Gateway",
     "GatewayRequest",
     "GatewayResponse",
+    "GovernanceDashboard",
+    "GoogleCloudStoragePolicySource",
     "BaseGuardrailAdapter",
     "BasePolicyAwareCallbackHandler",
     "GuardrailAdapter",
@@ -108,6 +150,8 @@ __all__ = [
     "IntegrationRecommendation",
     "IntegrationRecommendationReport",
     "IntegrationRecommender",
+    "IntegritySignature",
+    "IntegritySigner",
     "MLAssessment",
     "MLSignal",
     "CompositeMLClassifier",
@@ -126,8 +170,18 @@ __all__ = [
     "PolicyAwareNodeResult",
     "PolicyAwareOutputComponent",
     "PolicyAwareToolGovernanceComponent",
+    "PolicyAwareSidecar",
+    "PolicyContractChecker",
+    "PolicyPack",
+    "PolicySource",
+    "PolicySourceError",
+    "PolicySourceSnapshot",
+    "parse_adls_uri",
+    "parse_gcs_uri",
+    "parse_s3_uri",
     "PolicyEngine",
     "PolicyRule",
+    "PolicyRollout",
     "PolicySchemaValidator",
     "PolicyValidationError",
     "PresidioPIIClassifier",
@@ -136,6 +190,12 @@ __all__ = [
     "RiskClassifier",
     "RouteDecision",
     "RuntimeEvaluator",
+    "S3PolicySource",
+    "InMemorySessionStateStore",
+    "SQLiteSessionStateStore",
+    "SessionSignal",
+    "SessionState",
+    "SessionStateMonitor",
     "ScanConfig",
     "LocalCodeScanner",
     "ScanFinding",
@@ -145,6 +205,10 @@ __all__ = [
     "ScanReport",
     "ScanSarifReportWriter",
     "git_changed_files",
+    "copy_policy_pack",
+    "list_policy_packs",
+    "read_policy_pack",
+    "policy_source_from_uri",
     "SQLiteAuditLogger",
     "StaticMLClassifier",
     "TraceViewer",
@@ -158,9 +222,12 @@ __all__ = [
     "VLLMProvider",
     "ProviderRegistry",
     "default_provider_registry",
+    "FilePolicySource",
+    "HttpPolicySource",
     "SimulatedProvider",
     "ToolDecision",
     "ToolCallRequest",
+    "ToolContract",
     "ToolPolicyEngine",
     "ToolRegistry",
     "to_agt_audit_evidence",
