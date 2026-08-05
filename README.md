@@ -192,6 +192,7 @@ policyaware scan ./mylocalfolder --sarif policyaware.sarif
 policyaware scan ./mylocalfolder --markdown policyaware-scan-report.md
 policyaware scan ./mylocalfolder --baseline policyaware-baseline.json
 policyaware scan ./mylocalfolder --config examples/policyaware-scan.yaml
+policyaware scan ./mylocalfolder --ruleset ai-agent-security
 policyaware scan ./mylocalfolder --diff --diff-base origin/main
 policyaware scan ./mylocalfolder --format html,json,sarif,markdown
 policyaware guards list examples/full-stack-guardrails/policy.yaml
@@ -244,6 +245,8 @@ policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sa
 For copy-pasteable end-to-end examples, see [Working Examples](https://github.com/ktirupati/policyaware/blob/main/docs/working-examples.md).
 
 Local code scan docs: [policyaware scan](https://github.com/ktirupati/policyaware/blob/main/docs/local-code-scan.md)
+
+Official GitHub integration: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action)
 
 CLI usability docs: [doctor, examples, migration, recommendation reports](https://github.com/ktirupati/policyaware/blob/main/docs/cli-usability.md)
 

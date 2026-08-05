@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from fnmatch import fnmatch
 from hashlib import sha256
 from pathlib import Path
-from typing import Iterable
+from typing import ClassVar, Iterable
 
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
@@ -125,6 +125,41 @@ class ScanConfig:
     ignore_patterns: tuple[str, ...] = ()
     max_file_size_bytes: int | None = None
     max_findings_per_file: int | None = None
+
+    BUILTIN_RULESETS: ClassVar[dict[str, frozenset[str] | None]] = {
+        "all": None,
+        "ai-agent-security": frozenset(
+            {
+                "Prompt Safety", "Secrets", "PII", "PHI", "Tool Governance",
+                "Agent Tool Governance", "Autonomous Agent Governance", "LLM Governance",
+                "RAG Governance", "Provider Governance",
+            }
+        ),
+        "prompt-injection": frozenset({"Prompt Safety"}),
+        "secrets": frozenset({"Secrets", "PII", "PHI"}),
+        "mcp-security": frozenset(
+            {
+                "Tool Governance", "Agent Tool Governance",
+                "Autonomous Agent Governance", "Configuration Governance",
+            }
+        ),
+        "enterprise-governance": frozenset(
+            {
+                "Auditability", "Configuration Governance", "Cost Governance",
+                "Data Pipeline Governance", "Data Residency", "Guardrails Integration",
+                "LLM Governance", "Policy YAML", "Provider Governance", "RAG Governance",
+                "Tool Governance",
+            }
+        ),
+    }
+
+    @classmethod
+    def for_ruleset(cls, name: str) -> "ScanConfig":
+        normalized = name.strip().lower()
+        if normalized not in cls.BUILTIN_RULESETS:
+            choices = ", ".join(cls.BUILTIN_RULESETS)
+            raise ValueError(f"unknown ruleset {name!r}; choose one of: {choices}")
+        return cls(enabled_categories=cls.BUILTIN_RULESETS[normalized])
 
     @classmethod
     def from_file(cls, path: Path) -> "ScanConfig":

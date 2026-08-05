@@ -2,6 +2,12 @@
 
 All notable PolicyAware changes are tracked here.
 
+## Unreleased
+
+- Added CLI-native scan rulesets through `policyaware scan --ruleset`, keeping
+  scanner categories and presets in the PolicyAware package as the single
+  source of truth for local and CI integrations.
+
 ## 0.4.0
 
 - Added policy rollout/shadow evaluation, canary enforcement, parent trace/session correlation, and a static governance dashboard.

@@ -1612,6 +1612,14 @@ def scan_code(
         "--config",
         help="Optional PolicyAware scan config YAML file.",
     ),
+    ruleset: str = typer.Option(
+        "all",
+        "--ruleset",
+        help=(
+            "Built-in focus preset: all, ai-agent-security, prompt-injection, "
+            "secrets, mcp-security, or enterprise-governance."
+        ),
+    ),
     diff: bool = typer.Option(
         False,
         "--diff",
@@ -1661,7 +1669,12 @@ def scan_code(
     exclude_dirs.update(_parse_csv(exclude) or [])
     default_ignore = path / ".policyawareignore" if path.is_dir() else path.parent / ".policyawareignore"
     ignore_patterns = _load_ignore_patterns(ignore_file or default_ignore)
-    config = ScanConfig.from_file(config_file) if config_file else ScanConfig()
+    if config_file and ruleset != "all":
+        raise typer.BadParameter("--config and a non-default --ruleset cannot be used together")
+    try:
+        config = ScanConfig.from_file(config_file) if config_file else ScanConfig.for_ruleset(ruleset)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     requested_formats = {item.lower() for item in (_parse_csv(formats) or ["html"])}
     if "json" in requested_formats and json_out is None:
         json_out = out.with_suffix(".json")

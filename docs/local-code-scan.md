@@ -78,6 +78,28 @@ Use a scan config file:
 policyaware scan ./mylocalfolder --config policyaware-scan.yaml
 ```
 
+## Built-in rulesets
+
+Use a built-in focus preset without maintaining a separate configuration file:
+
+```bash
+policyaware scan . --ruleset ai-agent-security
+```
+
+Supported values are:
+
+| Ruleset | Focus |
+| --- | --- |
+| `all` | Complete scanner coverage; default. |
+| `ai-agent-security` | Prompt, sensitive data, tools, agents, models, providers, and RAG. |
+| `prompt-injection` | Prompt-safety findings only. |
+| `secrets` | Secrets, PII, and PHI. |
+| `mcp-security` | MCP, tool, autonomous-agent, and configuration governance. |
+| `enterprise-governance` | Audit, configuration, cost, data, provider, RAG, tool, and policy controls. |
+
+`--config` and a non-default `--ruleset` are mutually exclusive so scan behavior
+has one unambiguous source of truth.
+
 Scan only changed files:
 
 ```bash
