@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "policyaware"
-version = "0.4.0"
+version = "0.4.1"
 description = "Policy-aware AI gateway and agent control plane for enterprise LLM, RAG, MCP tool, and AI agent applications."
 readme = "README.md"
 requires-python = ">=3.10"

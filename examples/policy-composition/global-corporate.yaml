@@ -1,0 +1,21 @@
+id: global_corporate_policy
+default: deny
+
+rules:
+  - name: deny_secret_leakage
+    effect: deny
+    when:
+      data.contains_secrets: true
+
+  - name: deny_phi_to_external_models
+    effect: deny
+    when:
+      data.contains_phi: true
+      request.model_scope: external
+
+  - name: require_approval_for_high_risk
+    effect: require_approval
+    when:
+      risk.tier_in:
+        - high
+        - critical

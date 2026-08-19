@@ -1,0 +1,12 @@
+layers:
+  - name: corporate
+    level: global
+    path: global-corporate.yaml
+
+  - name: claims_app
+    level: app
+    path: app-service.yaml
+
+  - name: unsafe_local_experiment
+    level: local_override
+    path: local-experiment.yaml

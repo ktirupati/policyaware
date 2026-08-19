@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 ~$*.docx
+~$*.pptx
+~$*.xlsx
 .pytest_cache/
 .ruff_cache/
 .policyaware/
@@ -14,3 +16,5 @@ release-dist-*/
 build/
 *.egg-info/
 policyaware-scan-report.*
+deliverables/
+tmp_policyaware_talk/

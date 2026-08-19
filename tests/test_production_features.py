@@ -4,7 +4,7 @@ from policyaware.audit import SQLiteAuditLogger, TraceViewer
 from policyaware.evals import EvalSuiteRunner
 from policyaware.gateway import Gateway
 from policyaware.models import GatewayRequest
-from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
+from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter, RuntimeTelemetryCollector
 from policyaware.providers import ProviderRegistry, SimulatedProvider
 
 
@@ -44,7 +44,32 @@ def test_observability_exporters() -> None:
     otel = OpenTelemetryJsonExporter().export(traces)
 
     assert "policyaware_requests_total 1" in prometheus
+    assert 'policyaware_policy_decisions_total{decision="allow"} 1' in prometheus
     assert otel[0]["name"] == "policyaware.gateway.request"
+
+
+def test_runtime_telemetry_collector_records_gateway_metrics() -> None:
+    telemetry = RuntimeTelemetryCollector()
+    gateway = Gateway.from_policy_file("examples/policies/basic.yaml")
+    gateway.telemetry = telemetry
+
+    gateway.chat(
+        GatewayRequest(
+            tenant="acme",
+            app="telemetry-test",
+            user={"id": "u1", "role": "support_agent"},
+            context={"region": "us", "risk": "low", "task_type": "support"},
+            messages=[{"role": "user", "content": "Email jane@example.com about the ticket."}],
+        )
+    )
+
+    metrics = telemetry.prometheus_text()
+    events = telemetry.otel_events()
+
+    assert "policyaware_requests_total 1" in metrics
+    assert "policyaware_redactions_total" in metrics
+    assert 'app="telemetry-test"' in metrics
+    assert events[0]["name"] == "policyaware.gateway.request"
 
 
 def test_executable_golden_eval() -> None:
@@ -64,4 +89,3 @@ def test_provider_registry_returns_registered_provider() -> None:
     provider = registry.for_model(Gateway.from_policy_file("examples/policies/basic.yaml").router.models[0])
 
     assert isinstance(provider, SimulatedProvider)
-

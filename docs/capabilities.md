@@ -20,6 +20,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Evaluation | Check leakage, citations, policy consistency, golden datasets | `RuntimeEvaluator`, `EvalSuiteRunner` |
 | Audit | Persist traces, replay requests, generate evidence bundles | `AuditLogger`, `SQLiteAuditLogger`, `AuditBundleWriter`, `TraceViewer` |
 | Observability | Export local traces as Prometheus or OpenTelemetry-shaped data | `PrometheusExporter`, `OpenTelemetryJsonExporter` |
+| Blocked-action handshakes | Preserve structured denial and approval payloads for API routers, logs, and traces | `PolicyAwareRejection`, `policy_rejection`, `tool_rejection` |
 | ML-assisted signals | Add optional PII, prompt-injection, domain/risk classifier signals | `CompositeMLClassifier`, `MLSignal`, ML adapters |
 | Local code scan | Scan repositories for AI governance, compliance, PII, PHI, secrets, model calls, tool use, RAG, data residency, and audit gaps | `LocalCodeScanner`, `ScanConfig`, `policyaware scan` |
 | Guardrails integrations | Orchestrate NeMo Guardrails, Guardrails AI, or custom validators as optional input/output guards | `NeMoGuardrailsAdapter`, `GuardrailsAIAdapter`, `GuardrailResult` |
@@ -33,6 +34,8 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | HTTP sidecar | Let non-Python services call PolicyAware over local HTTP | `policyaware up`, `PolicyAwareSidecar` |
 | Sidecar auth and security boundaries | Run PolicyAware as an authenticated out-of-process control point | `policyaware up --require-auth` |
 | Dynamic policy distribution | Load central policies from file, HTTP(S), AWS S3, Google Cloud Storage, or ADLS Gen2, refresh on a TTL, cache last known-good policy, and fail closed | `Gateway.from_policy_source`, `policyaware policy pull` |
+| Dynamic policy retry protection | Prevent central policy retry storms with fetch timeouts, exponential backoff, and jitter | `DynamicPolicyEngine`, `policyaware up --policy-timeout-seconds` |
+| Policy composition | Compose global, compliance, region, tenant, app, and local policy layers with deny-wins override semantics | `PolicyComposer`, `policyaware policy compose` |
 | Stateful session governance | Track cumulative sensitive data and repeated tool calls across a conversation or agent run | `SessionStateMonitor`, `policyaware up --session-state` |
 | Enterprise hardening | Add SQLite state, emergency revoke lists, checksum pinning, and signed audit traces | `SQLiteSessionStateStore`, `EmergencyRevokeList`, `IntegritySigner` |
 | Policy rollout and trace correlation | Shadow/canary candidate policies, parent trace IDs, session IDs, and governance dashboards | `PolicyRollout`, `GovernanceDashboard` |
@@ -71,6 +74,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Policy Packs](policy-packs.md)
 - [HTTP Sidecar Gateway](sidecar-http-gateway.md)
 - [Dynamic Policy Distribution](dynamic-policy-distribution.md)
+- [Policy Composition](policy-composition.md)
 - [Stateful Session Governance](stateful-session-governance.md)
 - [Enterprise Hardening](enterprise-hardening.md)
 - [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md)
@@ -90,7 +94,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Model Routing And Providers](capabilities/model-routing-providers.md) | Main APIs, `ModelCandidate` fields, `RouteDecision` result fields, provider names |
 | [Tool Governance](capabilities/tool-governance.md) | Main APIs, `ToolCallRequest` fields, `ToolDecision` result fields |
 | [Evaluation](capabilities/evaluation.md) | Main APIs, `EvalResult` fields, `EvalReport` fields, eval case YAML fields |
-| [Audit And Observability](capabilities/audit-observability.md) | Main APIs, `AuditTrace` fields, exporter APIs |
+| [Audit And Observability](capabilities/audit-observability.md) | Main APIs, `AuditTrace` fields, exporter APIs, blocked-action telemetry attributes |
 | [ML-Assisted Signals](capabilities/ml-assisted-signals.md) | Main APIs, `MLSignal` fields, YAML policy fields |
 | [Local Code Scan](local-code-scan.md) | Main APIs, `ScanFinding` fields, scan config YAML, CLI output formats |
 | [Guardrails Integrations](capabilities/guardrails-integrations.md) | Main APIs, `GuardrailResult` fields, optional extras, adapter examples |
@@ -101,9 +105,10 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Integration Recommender](capabilities/integration-recommender.md) | Main APIs, CLI examples, detected project signals, recommendation output schema |
 | [CLI Usability Commands](cli-usability.md) | Doctor checks, example runner, HTML recommendation report, conservative policy migration |
 | [Policy Packs](policy-packs.md) | Pack list/copy/show commands, included starter policies, Python API |
-| [HTTP Sidecar Gateway](sidecar-http-gateway.md) | Endpoints, curl examples, non-Python service pattern |
+| [HTTP Sidecar Gateway](sidecar-http-gateway.md) | Endpoints, curl examples, non-Python service pattern, structured rejection payloads |
 | [Security Boundaries](security-boundaries.md) | Embedded SDK vs authenticated sidecar/gateway deployment guidance |
 | [Dynamic Policy Distribution](dynamic-policy-distribution.md) | Central file, HTTP(S), S3, GCS, or ADLS Gen2 policy source, refresh interval, cache, and emergency revoke pattern |
+| [Policy Composition](policy-composition.md) | Hierarchical policy layers, explicit deny-wins behavior, and time-bound local exceptions |
 | [Stateful Session Governance](stateful-session-governance.md) | Cumulative leakage and repeated tool-call detection across a session |
 | [Enterprise Hardening](enterprise-hardening.md) | SQLite state, emergency revokes, checksum pinning, signed audit traces |
 | [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md) | Shadow/canary rollout, parent trace/session IDs, dashboard |
@@ -118,7 +123,9 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 4. Add `RiskClassifier`, `ModelRouter`, and audit storage.
 5. Add tool governance for agents.
 6. Run `policyaware scan .` to find governance and compliance gaps in local code.
-7. Add optional ML signals only after the rules-based path is understood.
+7. Use policy packs and policy composition when multiple teams own different policy layers.
+8. Add dynamic policy distribution when many services need central policy updates.
+9. Add optional ML signals only after the rules-based path is understood.
 
 ## Feedback And User Stories
 

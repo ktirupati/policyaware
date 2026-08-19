@@ -12,6 +12,7 @@ from policyaware.emergency import EmergencyRevokeList
 from policyaware.guardrails import GuardrailAdapter, GuardrailResult, GuardrailsAIAdapter, NeMoGuardrailsAdapter
 from policyaware.ml import MLClassifier, NoopMLClassifier
 from policyaware.models import Decision, GatewayRequest, GatewayResponse, PolicyDecision
+from policyaware.observability import RuntimeTelemetryCollector
 from policyaware.policy import PolicyEngine
 from policyaware.policy_source import DynamicPolicyEngine, policy_source_from_uri
 from policyaware.providers import ModelProvider, ProviderRegistry, SimulatedProvider, default_provider_registry
@@ -40,6 +41,7 @@ class Gateway:
         session_monitor: SessionStateMonitor | None = None,
         emergency_revoke: EmergencyRevokeList | None = None,
         policy_rollout: PolicyRollout | None = None,
+        telemetry: RuntimeTelemetryCollector | None = None,
     ):
         self.policy_engine = policy_engine
         self.router = router or ModelRouter()
@@ -58,6 +60,7 @@ class Gateway:
         self.session_monitor = session_monitor
         self.emergency_revoke = emergency_revoke
         self.policy_rollout = policy_rollout
+        self.telemetry = telemetry or RuntimeTelemetryCollector()
         self._configure_policy_guards()
 
     @classmethod
@@ -75,6 +78,10 @@ class Gateway:
         cache_file: str | Path | None = None,
         timeout_seconds: float = 5.0,
         expected_sha256: str | None = None,
+        fallback_policy_file: str | Path | None = None,
+        retry_base_seconds: float = 1.0,
+        retry_max_seconds: float = 60.0,
+        retry_jitter_seconds: float = 0.25,
     ) -> "Gateway":
         policy_source = policy_source_from_uri(
             source,
@@ -82,12 +89,16 @@ class Gateway:
             cache_file=cache_file,
             timeout_seconds=timeout_seconds,
             expected_sha256=expected_sha256,
+            fallback_policy_file=fallback_policy_file,
         )
         return cls(
             policy_engine=DynamicPolicyEngine(
                 policy_source,
                 refresh_seconds=refresh_seconds,
                 fail_closed=fail_closed,
+                retry_base_seconds=retry_base_seconds,
+                retry_max_seconds=retry_max_seconds,
+                retry_jitter_seconds=retry_jitter_seconds,
             )
         )
 
@@ -113,7 +124,7 @@ class Gateway:
             if revoke_match.matched:
                 decision = self.emergency_revoke.deny_decision(revoke_match)
                 response = GatewayResponse(content="", policy=decision)
-                self.audit_logger.record(request, response, started_at)
+                self._record_audit_and_telemetry(request, response, started_at)
                 return response
         findings = self.data_protection.redact(request.prompt_text)
         session_signal = (
@@ -126,7 +137,7 @@ class Gateway:
                 policy=decision,
                 metadata={"session": session_signal.state},
             )
-            self.audit_logger.record(request, response, started_at)
+            self._record_audit_and_telemetry(request, response, started_at)
             return response
         ml_assessment = self.ml_classifier.classify(request.prompt_text, request)
         policy_request = request.model_copy(
@@ -158,7 +169,7 @@ class Gateway:
             response.metadata["ml"] = ml_assessment.model_dump(mode="json")
             if rollout_metadata:
                 response.metadata["policy_rollout"] = rollout_metadata
-            self.audit_logger.record(policy_request, response, started_at)
+            self._record_audit_and_telemetry(policy_request, response, started_at)
             return response
 
         if decision.decision == Decision.REQUIRE_APPROVAL:
@@ -174,7 +185,7 @@ class Gateway:
             )
             if rollout_metadata:
                 response.metadata["policy_rollout"] = rollout_metadata
-            self.audit_logger.record(policy_request, response, started_at)
+            self._record_audit_and_telemetry(policy_request, response, started_at)
             return response
 
         executable_request = policy_request
@@ -201,7 +212,7 @@ class Gateway:
                     "guardrails": [result.__dict__ for result in input_guard_results],
                 },
             )
-            self.audit_logger.record(executable_request, response, started_at)
+            self._record_audit_and_telemetry(executable_request, response, started_at)
             return response
         executable_request = self._request_with_guard_transforms(executable_request, input_guard_results)
 
@@ -229,7 +240,7 @@ class Gateway:
                     },
                 },
             )
-            trace = self.audit_logger.record(executable_request, response, started_at)
+            trace = self._record_audit_and_telemetry(executable_request, response, started_at)
             response.metadata["audit"] = trace.model_dump(mode="json")
             return response
         output = self._output_with_guard_transforms(output, output_guard_results)
@@ -250,7 +261,7 @@ class Gateway:
                     "session": output_session_signal.state,
                 },
             )
-            self.audit_logger.record(executable_request, response, started_at)
+            self._record_audit_and_telemetry(executable_request, response, started_at)
             return response
         evals = self.evaluator.evaluate(executable_request, output, decision)
         response = GatewayResponse(content=output, policy=decision, route=route, evals=evals, risk=risk)
@@ -263,9 +274,19 @@ class Gateway:
             "input": [result.__dict__ for result in input_guard_results],
             "output": [result.__dict__ for result in output_guard_results],
         }
-        trace = self.audit_logger.record(executable_request, response, started_at)
+        trace = self._record_audit_and_telemetry(executable_request, response, started_at)
         response.metadata["audit"] = trace.model_dump(mode="json")
         return response
+
+    def _record_audit_and_telemetry(
+        self,
+        request: GatewayRequest,
+        response: GatewayResponse,
+        started_at: float,
+    ):
+        trace = self.audit_logger.record(request, response, started_at)
+        self.telemetry.record_trace(trace.model_dump(mode="json"))
+        return trace
 
     def _rollout_metadata(
         self,

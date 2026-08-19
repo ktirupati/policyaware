@@ -32,7 +32,12 @@ policyaware up \
   --policy-url https://policy.internal.example.com/policyaware.yaml \
   --tool-policy tool-governance.yaml \
   --policy-refresh-seconds 30 \
+  --policy-timeout-seconds 5 \
+  --policy-retry-base-seconds 1 \
+  --policy-retry-max-seconds 60 \
+  --policy-retry-jitter-seconds 0.25 \
   --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
   --require-auth
 ```
 
@@ -45,6 +50,7 @@ policyaware up \
   --policy-url abfss://policy-configs@acmeai.dfs.core.windows.net/prod/policyaware.yaml \
   --policy-refresh-seconds 30 \
   --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
   --require-auth
 ```
 
@@ -57,6 +63,7 @@ policyaware up \
   --policy-url s3://policy-configs/prod/policyaware.yaml \
   --policy-refresh-seconds 30 \
   --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
   --require-auth
 ```
 
@@ -69,6 +76,7 @@ policyaware up \
   --policy-url gs://policy-configs/prod/policyaware.yaml \
   --policy-refresh-seconds 30 \
   --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
   --require-auth
 ```
 
@@ -78,11 +86,25 @@ Health check:
 curl http://127.0.0.1:8080/health
 ```
 
+Prometheus metrics:
+
+```bash
+curl http://127.0.0.1:8080/metrics
+```
+
+With sidecar auth:
+
+```bash
+curl http://127.0.0.1:8080/metrics \
+  -H "Authorization: Bearer replace-with-secret-token"
+```
+
 ## Endpoints
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /health` | Liveness check. |
+| `GET /metrics` | Prometheus-compatible runtime policy and tool-governance metrics. |
 | `POST /v1/check` | Run prompt/context through PolicyAware Gateway. |
 | `POST /v1/tool/check` | Check MCP-style connector/action permissions. |
 | `POST /v1/route` | Return policy-aware route decision. |
@@ -96,7 +118,64 @@ When `POLICYAWARE_SIDECAR_TOKEN` or `--auth-token` is set, all `POST` endpoints 
 Authorization: Bearer replace-with-secret-token
 ```
 
-`GET /health` remains unauthenticated so container orchestrators and service meshes can perform liveness checks. Use `--require-auth` in production-like environments so the sidecar fails startup if no token is configured.
+`GET /health` remains unauthenticated so container orchestrators and service meshes can perform liveness checks. `GET /metrics` uses the same bearer token when sidecar auth is enabled. Use `--require-auth` in production-like environments so the sidecar fails startup if no token is configured.
+
+## Runtime Metrics
+
+The sidecar records live metrics for prompt checks and tool checks. These metrics
+are designed for Prometheus, Grafana, OpenTelemetry Collector Prometheus
+receivers, Datadog Agent OpenMetrics checks, SIEM pipelines, or GRC reporting.
+
+Important metrics:
+
+```text
+policyaware_requests_total
+policyaware_policy_decisions_total{decision="deny"}
+policyaware_policy_denied_total
+policyaware_approval_required_total
+policyaware_redactions_total
+policyaware_model_route_total
+policyaware_tool_decisions_total
+policyaware_tool_denied_total
+policyaware_tool_approval_required_total
+policyaware_eval_failures_total
+```
+
+Example Prometheus scrape config:
+
+```yaml
+scrape_configs:
+  - job_name: policyaware-sidecar
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["127.0.0.1:8080"]
+```
+
+## Cold-Start Fallback Policy
+
+For dynamic policy URLs, use a cache and a restrictive local fallback policy:
+
+```bash
+policyaware up \
+  --policy-url s3://policy-configs/prod/policyaware.yaml \
+  --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
+  --require-auth
+```
+
+Startup resolution order:
+
+```text
+remote source -> last known-good cache -> local emergency fallback -> fail closed
+```
+
+The fallback policy should deny by default and only contain emergency-safe rules.
+The bundled `examples/policies/emergency-fallback-deny.yaml` denies all requests
+if neither the remote policy nor the last known-good cache can be loaded.
+
+Dynamic policy refreshes also use strict fetch timeouts and exponential backoff
+with jitter. This prevents many sidecar replicas from retrying a slow HTTP/S3/GCS
+or ADLS policy source on every request.
 
 ## Prompt Check
 
@@ -127,6 +206,96 @@ curl -X POST http://127.0.0.1:8080/v1/tool/check \
     "user": {"role": "support_agent"},
     "arguments": {"customer_id": "cust_123"}
   }'
+```
+
+## Blocked Action Rejection Handshake
+
+When PolicyAware denies a request or requires approval, the sidecar keeps the
+normal response fields and also adds a structured `rejection` object. API
+routers should log this object to tracing/SIEM and return it to the caller
+instead of replacing it with a vague `403 Forbidden`.
+
+Example denied prompt response:
+
+```json
+{
+  "allowed": false,
+  "decision": "deny",
+  "reason": "Matched rule block_secrets",
+  "reason_codes": ["DATA.SECRETS_DETECTED"],
+  "matched_rules": ["block_secrets"],
+  "risk_tier": "high",
+  "trace_id": "trc_123",
+  "content": "",
+  "rejection": {
+    "schema_version": "0.4",
+    "blocked": true,
+    "status_code": 403,
+    "decision": "deny",
+    "reason": "Matched rule block_secrets",
+    "reason_codes": ["DATA.SECRETS_DETECTED"],
+    "matched_rules": ["block_secrets"],
+    "trace_id": "trc_123",
+    "risk_tier": "high",
+    "approval_required": false
+  }
+}
+```
+
+Example approval-gated tool response:
+
+```json
+{
+  "allowed": false,
+  "decision": "require_approval",
+  "approval_required": true,
+  "connector_id": "github",
+  "action": "create_pr",
+  "rejection": {
+    "blocked": true,
+    "status_code": 202,
+    "decision": "require_approval",
+    "connector_id": "github",
+    "action": "create_pr",
+    "approval_required": true,
+    "matched_rules": ["github.create_pr"]
+  }
+}
+```
+
+FastAPI route pattern:
+
+```python
+import logging
+
+from fastapi import FastAPI
+from policyaware import Gateway, GatewayRequest, policy_rejection
+
+app = FastAPI()
+gateway = Gateway.from_policy_file("policyaware.yaml")
+logger = logging.getLogger("policyaware")
+
+
+@app.post("/chat")
+def chat(body: dict):
+    response = gateway.chat(
+        GatewayRequest(
+            tenant=body.get("tenant", "default"),
+            app="support-api",
+            user=body.get("user", {"role": "anonymous"}),
+            context=body.get("context", {}),
+            messages=[{"role": "user", "content": body["prompt"]}],
+        )
+    )
+    rejection = policy_rejection(response)
+    if rejection:
+        # Send this object to OpenTelemetry, SIEM, or your central logger.
+        logger.warning("policyaware_rejection", extra=rejection.model_dump(mode="json"))
+        return {
+            "error": "policyaware_rejection",
+            "rejection": rejection.model_dump(mode="json"),
+        }
+    return {"content": response.content, "trace_id": response.trace_id}
 ```
 
 ## Python API

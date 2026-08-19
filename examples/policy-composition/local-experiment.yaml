@@ -1,0 +1,10 @@
+id: local_experiment_policy
+default: deny
+
+rules:
+  - name: allow_external_phi_experiment
+    effect: allow
+    when:
+      data.contains_phi: true
+      request.model_scope: external
+      user.role: researcher

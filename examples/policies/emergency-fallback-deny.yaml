@@ -1,0 +1,8 @@
+id: emergency_fallback_deny_policy
+schema_version: "0.4"
+default: deny
+
+rules:
+  - name: deny_all_when_remote_policy_unavailable
+    effect: deny
+    when: {}

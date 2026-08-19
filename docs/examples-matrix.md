@@ -21,6 +21,7 @@ Use this table to pick the fastest PolicyAware example for your use case.
 | Local code scan | `docs/local-code-scan.md` | `policyaware scan ./my-ai-app --format html,json,sarif,markdown` | Scan a repository for AI governance and compliance gaps. |
 | Enterprise AI control plane | `examples/enterprise-ai-control-plane` | `python control_plane_demo.py` | Show prompt governance, routing, tool policy, evals, audit, and evidence export together. |
 | Policy packs | `examples/policy-packs` | `policyaware policy packs list` | Start from healthcare, finance, EU AI Act, or SOC 2 policy templates. |
+| Policy composition | `examples/policy-composition` | `policyaware policy compose-check examples/policy-composition/policy-stack-safe.yaml` | Compose global, compliance, app, and local policy layers with explicit deny-wins behavior. |
 | Observability templates | `examples/observability` | `policyaware observability prometheus` | Connect audit traces to Prometheus, Grafana, OTel, SIEM, or GRC workflows. |
 | Policy contract checks | `docs/policy-contract-checks.md` | `policyaware contract check ./src --policy tool-governance.yaml` | Prevent YAML/tool signature drift before production. |
 | Runnable contract checks | `examples/policy-contract-checks` | `policyaware contract check examples/policy-contract-checks --policy examples/policy-contract-checks/tool-governance.yaml` | Test that MCP/tool YAML still matches Python function signatures. |

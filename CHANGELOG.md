@@ -4,9 +4,31 @@ All notable PolicyAware changes are tracked here.
 
 ## Unreleased
 
+- No unreleased changes yet.
+
+## 0.4.1
+
 - Added CLI-native scan rulesets through `policyaware scan --ruleset`, keeping
   scanner categories and presets in the PolicyAware package as the single
   source of truth for local and CI integrations.
+- Added hierarchical policy composition for global, compliance, region, tenant,
+  app, and local policy layers with deny-wins conflict handling.
+- Added runtime telemetry and sidecar `/metrics` for Prometheus-compatible
+  policy, tool, approval, latency, and routing metrics.
+- Added cold-start fallback policy support for dynamic policy sources so remote
+  source outages resolve as remote source -> last known-good cache -> local
+  emergency fallback -> fail closed.
+- Hardened dynamic policy refresh with lock-protected atomic swaps so in-flight
+  requests do not mix old and new policy engine state.
+- Added structured blocked-action rejection payloads for prompt and tool
+  decisions, plus telemetry attributes that preserve deny/approval reason codes,
+  matched rules, trace IDs, and connector/action context.
+- Added remote policy timeout and retry-storm protection with exponential
+  backoff, jitter, and SDK timeout propagation for HTTP, S3, GCS, and ADLS
+  dynamic policy sources.
+- Hardened checksum-pinned remote policy refreshes so checksum mismatches log a
+  critical alert, reject the downloaded policy, avoid poisoning the cache, and
+  fall back to the last known-good cache when available.
 
 ## 0.4.0
 

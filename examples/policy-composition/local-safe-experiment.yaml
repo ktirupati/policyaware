@@ -1,0 +1,10 @@
+id: local_safe_experiment_policy
+default: deny
+
+rules:
+  - name: allow_internal_low_risk_research
+    effect: allow
+    when:
+      request.model_scope: internal
+      user.role: researcher
+      risk.tier: low

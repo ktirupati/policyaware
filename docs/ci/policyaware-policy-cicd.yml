@@ -1,0 +1,57 @@
+name: PolicyAware Policy CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  policyaware-policy-cicd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PolicyAware
+        run: python -m pip install policyaware
+
+      - name: Validate policy
+        if: ${{ hashFiles('policyaware.yaml') != '' }}
+        run: policyaware policy validate policyaware.yaml
+
+      - name: Check policy composition
+        if: ${{ hashFiles('policy-stack.yaml') != '' }}
+        run: policyaware policy compose-check policy-stack.yaml
+
+      - name: Compile policy bundle
+        if: ${{ hashFiles('policy-stack.yaml') != '' }}
+        run: policyaware policy compose policy-stack.yaml --out policyaware.composed.yaml
+
+      - name: Validate composed policy
+        if: ${{ hashFiles('policyaware.composed.yaml') != '' }}
+        run: policyaware policy validate policyaware.composed.yaml
+
+      - name: Check policy/tool contract drift
+        if: ${{ hashFiles('tool-governance.yaml') != '' }}
+        run: policyaware contract check ./src --policy tool-governance.yaml --fail-on high
+
+      - name: Run PolicyAware scan
+        run: |
+          policyaware scan . \
+            --out policyaware-scan-report.html \
+            --format html,json,sarif,markdown \
+            --fail-on high
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: policyaware-scan-report
+          path: |
+            policyaware-scan-report.html
+            policyaware-scan-report.json
+            policyaware-scan-report.md
+            policyaware-scan-report.sarif

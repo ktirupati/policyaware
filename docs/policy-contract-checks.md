@@ -92,6 +92,10 @@ The checker reads the decorator statically. The decorator does not need to execu
 
 ## CI Workflow Example
 
+For GitHub-native pull-request scanning, use the official
+[`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action).
+For deeper policy CI/CD, combine the action with the CLI commands below.
+
 Copy `examples/ci/policyaware-contract-check.yml` into `.github/workflows/policyaware-contract-check.yml` and adjust file paths for your project:
 
 ```yaml
@@ -119,6 +123,15 @@ jobs:
 ```
 
 This makes YAML policy drift a normal pull-request failure, not a production surprise.
+
+For hierarchical policies, add composition checks before publishing a policy
+bundle to central storage:
+
+```bash
+policyaware policy compose-check policy-stack.yaml
+policyaware policy compose policy-stack.yaml --out policyaware.composed.yaml
+policyaware policy validate policyaware.composed.yaml
+```
 
 ## What It Checks
 

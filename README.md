@@ -36,7 +36,9 @@ Stateful session governance: [detect cumulative leakage and repeated tool activi
 Enterprise hardening: [SQLite session state, emergency revokes, checksum pinning, and signed audit traces](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-hardening.md)
 Policy rollout and trace correlation: [shadow policy evaluation, canary enforcement, parent traces, and dashboard](https://github.com/ktirupati/policyaware/blob/main/docs/policy-rollout-and-trace-correlation.md)
 Observability templates: [Grafana, Prometheus, and OpenTelemetry examples](https://github.com/ktirupati/policyaware/blob/main/docs/observability-templates.md)
+Official GitHub Action: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action) for PolicyAware pull-request scans, annotations, SARIF, and report artifacts
 Policy contract checks: [prevent YAML/tool drift in CI](https://github.com/ktirupati/policyaware/blob/main/docs/policy-contract-checks.md)
+Policy composition: [hierarchical global, compliance, tenant, app, and local overrides](https://github.com/ktirupati/policyaware/blob/main/docs/policy-composition.md)
 Runnable contract example: [`examples/policy-contract-checks`](https://github.com/ktirupati/policyaware/tree/main/examples/policy-contract-checks)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
@@ -61,7 +63,9 @@ Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/
 ### 4. Observability, Audit, And Local Code Scanning
 
 - **Audit-ready traces:** Records structured policy decisions, risk tiers, reason codes, model choices, evaluation scores, token estimates, and request/response snapshots.
-- **Observability exporters:** Provides Prometheus-style and OpenTelemetry-shaped exports for integration with monitoring and compliance workflows.
+- **Observability exporters:** Provides live sidecar `/metrics`, Prometheus-style metrics, OpenTelemetry-shaped events, and audit-trace exports for monitoring and compliance workflows.
+- **Structured rejection handshakes:** Returns canonical blocked-action payloads with decision, reason codes, matched rules, trace IDs, remediation, and telemetry fields so API wrappers do not swallow governance context.
+- **Dynamic policy retry protection:** Applies strict fetch timeouts, refresh TTLs, exponential backoff, jitter, last known-good cache, and emergency fallback policies for central HTTP/S3/GCS/ADLS policy sources.
 - **PolicyAware Scan CLI:** Scans local codebases for PII, PHI, secrets, direct LLM calls, missing tool governance, weak routing controls, audit gaps, and configuration risks, then generates developer-friendly HTML, JSON, SARIF, and Markdown reports.
 - **Framework callbacks:** Includes lightweight LangChain and LlamaIndex callback handlers that aggregate streamed tokens and report policy, risk, leakage, eval, and token-accounting results.
 - **LangGraph node guard:** Adds dependency-free node/state and tool-call governance for graph-based AI agents.
@@ -104,6 +108,8 @@ Read more: [Architecture](https://github.com/ktirupati/policyaware/blob/main/doc
 | Microsoft AGT-style evidence export | `to_agt_tool_evidence(...)` |
 | Find the best integration for a project | `policyaware integrations recommend .` |
 | Copy a compliance-oriented starter policy | `policyaware policy packs copy healthcare-hipaa --out policyaware.yaml` |
+| Compose global, compliance, app, and local policies | `policyaware policy compose policy-stack.yaml` |
+| GitHub pull-request scan gate | `ktirupati/policyaware-action@v1` |
 | Use PolicyAware from non-Python services | `policyaware up --policy policyaware.yaml --port 8080` |
 | Prevent YAML/tool contract drift | `policyaware contract check ./src --policy tool-governance.yaml` |
 | Simple PII/PHI/secrets string check | `DataProtectionEngine.inspect(...)` |
@@ -179,8 +185,11 @@ policyaware examples list
 policyaware examples run langgraph-agent-governance
 policyaware policy packs list
 policyaware policy packs copy healthcare-hipaa --out policyaware.yaml
+policyaware policy compose-check examples/policy-composition/policy-stack-safe.yaml
+policyaware policy compose examples/policy-composition/policy-stack-safe.yaml --out policyaware.composed.yaml
 policyaware contract check ./src --policy tool-governance.yaml
 policyaware up --policy policyaware.yaml --port 8080
+policyaware up --policy-url s3://policy-configs/prod/policyaware.yaml --policy-cache .policyaware/policy-cache.yaml --fallback-policy examples/policies/emergency-fallback-deny.yaml --require-auth
 policyaware init
 policyaware policy validate policyaware.yaml
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
@@ -197,6 +206,17 @@ policyaware scan ./mylocalfolder --diff --diff-base origin/main
 policyaware scan ./mylocalfolder --format html,json,sarif,markdown
 policyaware guards list examples/full-stack-guardrails/policy.yaml
 ```
+
+For GitHub pull-request checks, use the official action:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: ktirupati/policyaware-action@v1
+```
+
+Advanced CI/CD flows can combine the action with `policyaware policy validate`,
+`policyaware policy compose-check`, `policyaware policy compose`,
+`policyaware contract check`, and SARIF-producing `policyaware scan` commands.
 
 ## Installation Profiles
 
@@ -247,6 +267,8 @@ For copy-pasteable end-to-end examples, see [Working Examples](https://github.co
 Local code scan docs: [policyaware scan](https://github.com/ktirupati/policyaware/blob/main/docs/local-code-scan.md)
 
 Official GitHub integration: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action)
+
+GitHub Action docs: [PolicyAware policy CI/CD with GitHub Actions](https://github.com/ktirupati/policyaware/blob/main/docs/github-action.md)
 
 CLI usability docs: [doctor, examples, migration, recommendation reports](https://github.com/ktirupati/policyaware/blob/main/docs/cli-usability.md)
 

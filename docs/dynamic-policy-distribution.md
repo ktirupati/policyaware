@@ -4,6 +4,12 @@ YAML policies work well as policy-as-code, but large organizations often need a 
 
 PolicyAware supports dynamic policy sources so applications and sidecars can load policies from a local file, central HTTP(S) location, AWS S3, Google Cloud Storage, or ADLS Gen2 path, refresh them on an interval, cache the last known-good version, and fail closed when required.
 
+For multi-layer enterprise stacks, combine dynamic policy distribution with
+[policy composition](policy-composition.md). Composition defines predictable
+hierarchy and override behavior across global, compliance, region, tenant, app,
+and local policy layers. Explicit deny rules remain deny-first, and local
+broadening exceptions must be time-bound and auditable.
+
 ## When To Use This
 
 Use dynamic policy distribution when you have:
@@ -25,7 +31,12 @@ policyaware up \
   --policy-url https://policy.internal.example.com/policyaware.yaml \
   --tool-policy tool-governance.yaml \
   --policy-refresh-seconds 30 \
+  --policy-timeout-seconds 5 \
+  --policy-retry-base-seconds 1 \
+  --policy-retry-max-seconds 60 \
+  --policy-retry-jitter-seconds 0.25 \
   --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
   --require-auth
 ```
 
@@ -97,9 +108,14 @@ from policyaware import Gateway
 gateway = Gateway.from_policy_source(
     "abfss://policy-configs@acmeai.dfs.core.windows.net/prod/policyaware.yaml",
     refresh_seconds=30,
+    timeout_seconds=5,
     cache_file=".policyaware/policy-cache.yaml",
+    fallback_policy_file="examples/policies/emergency-fallback-deny.yaml",
     auth_token="replace-with-sas-token-if-needed",
     fail_closed=True,
+    retry_base_seconds=1,
+    retry_max_seconds=60,
+    retry_jitter_seconds=0.25,
 )
 ```
 
@@ -109,8 +125,12 @@ Behavior:
 
 - the sidecar fetches the central policy before serving requests
 - every request can trigger a refresh after the configured TTL
+- HTTP, S3, GCS, and ADLS fetches use a strict timeout
+- failed refreshes use exponential backoff with jitter to reduce retry storms
 - the policy is schema-validated before becoming active
+- refreshed policies are built first and then atomically swapped into the active in-memory engine
 - the last known-good policy can be cached locally
+- a restrictive local fallback policy can be used during cold-start outages
 - default behavior is fail-closed if refresh fails before a policy is loaded
 
 ## Python SDK With Dynamic Source
@@ -121,13 +141,66 @@ from policyaware import Gateway
 gateway = Gateway.from_policy_source(
     "https://policy.internal.example.com/policyaware.yaml",
     refresh_seconds=30,
+    timeout_seconds=5,
     cache_file=".policyaware/policy-cache.yaml",
+    fallback_policy_file="examples/policies/emergency-fallback-deny.yaml",
     auth_token="replace-with-policy-source-token",
     fail_closed=True,
+    retry_base_seconds=1,
+    retry_max_seconds=60,
+    retry_jitter_seconds=0.25,
 )
 ```
 
 The rest of your application can continue using normal `Gateway.chat(...)`.
+
+## Thread-Safe Refresh Behavior
+
+Dynamic policy refreshes do not mutate the active policy engine in place.
+PolicyAware loads the source, validates the YAML, constructs a new `PolicyEngine`,
+and then swaps the active snapshot and engine under a lock.
+
+This means an in-flight request uses one complete policy engine object. It does
+not mix rules from the old policy and the new policy during refresh.
+
+The swap also avoids long-lived references from audit or telemetry paths back to
+old policy engines. Audit traces and runtime telemetry store serialized request,
+response, decision, reason-code, and matched-rule fields. They do not retain the
+previous `PolicyEngine` object, so after in-flight requests finish, Python can
+garbage-collect the old parsed policy.
+
+## Timeout And Retry-Storm Protection
+
+Remote policy distribution should not turn a slow policy endpoint into an
+internal outage. PolicyAware protects dynamic refreshes with:
+
+- strict fetch timeout, default `5` seconds
+- refresh TTL, default `60` seconds
+- exponential backoff after failed refreshes
+- jitter to avoid synchronized retries across many replicas
+- last known-good cache
+- restrictive emergency fallback policy
+- fail-closed behavior when no valid policy can be loaded
+
+Recommended sidecar settings:
+
+```bash
+policyaware up \
+  --policy-url https://policy.internal.example.com/policyaware.yaml \
+  --policy-refresh-seconds 30 \
+  --policy-timeout-seconds 5 \
+  --policy-retry-base-seconds 1 \
+  --policy-retry-max-seconds 60 \
+  --policy-retry-jitter-seconds 0.25 \
+  --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
+  --require-auth
+```
+
+If a refresh fails, PolicyAware does not immediately retry on every request. It
+schedules the next attempt using exponential backoff and jitter, while continuing
+to use the active policy when one is already loaded. In fail-closed mode, if no
+valid policy exists, requests are denied rather than running without governance.
 
 ## Pull A Policy In CI/CD
 
@@ -206,10 +279,34 @@ rules:
 Default recommendation:
 
 ```bash
-policyaware up --policy-url https://policy.internal.example.com/policyaware.yaml --require-auth
+policyaware up \
+  --policy-url https://policy.internal.example.com/policyaware.yaml \
+  --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
+  --require-auth
 ```
 
-This fails closed if no valid policy can be loaded.
+This startup order is:
+
+```text
+remote source -> last known-good cache -> local emergency fallback -> fail closed
+```
+
+The fallback policy should be highly restrictive. A safe starter example is:
+
+```yaml
+id: emergency_fallback_deny_policy
+schema_version: "0.4"
+default: deny
+
+rules:
+  - name: deny_all_when_remote_policy_unavailable
+    effect: deny
+    when: {}
+```
+
+This prevents a container cold start from running without governance when S3,
+GCS, ADLS Gen2, HTTP policy storage, or the network is temporarily unavailable.
 
 For availability-first internal environments, use:
 
@@ -217,6 +314,7 @@ For availability-first internal environments, use:
 policyaware up \
   --policy-url https://policy.internal.example.com/policyaware.yaml \
   --policy-cache .policyaware/policy-cache.yaml \
+  --fallback-policy examples/policies/emergency-fallback-deny.yaml \
   --fail-open
 ```
 
@@ -243,6 +341,12 @@ policyaware policy pull \
   --out policyaware.yaml \
   --force
 ```
+
+If a remote policy fails checksum validation, PolicyAware rejects the downloaded
+policy, emits a `CRITICAL` log on the `policyaware.policy_source` logger, and
+attempts to use the last known-good cache. The invalid policy is not written to
+the cache. If no valid cached policy or fallback policy exists, the dynamic
+engine fails closed instead of running without governance.
 
 ## What This Does Not Provide
 

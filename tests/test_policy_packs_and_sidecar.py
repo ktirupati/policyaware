@@ -5,10 +5,11 @@ from pathlib import Path
 import yaml
 from typer.testing import CliRunner
 
-from policyaware import Gateway, GatewayRequest, PolicyAwareSidecar
+from policyaware import Gateway, GatewayRequest, PolicyAwareSidecar, ToolCallRequest
 from policyaware.cli import app
 from policyaware.policy_pack_registry import copy_policy_pack, list_policy_packs, read_policy_pack
 from policyaware.policy_schema import PolicySchemaValidator
+from policyaware.rejections import policy_rejection, tool_rejection
 from policyaware.tools import ToolPolicyEngine
 
 
@@ -68,6 +69,35 @@ def test_sidecar_check_endpoint() -> None:
     assert "trace_id" in payload
 
 
+def test_sidecar_check_endpoint_returns_structured_rejection() -> None:
+    gateway = Gateway.from_policy_file(ROOT / "examples" / "policies" / "basic.yaml")
+    sidecar = PolicyAwareSidecar(gateway)
+
+    status, payload = sidecar.handle(
+        "POST",
+        "/v1/check",
+        {
+            "tenant": "acme",
+            "app": "sidecar-test",
+            "user": {"role": "support_agent"},
+            "context": {"region": "us", "risk": "low", "task_type": "support"},
+            "prompt": "Use this API key: secret_api_key_abcdefghijklmnop",
+        },
+    )
+
+    assert status == 200
+    assert payload["allowed"] is False
+    assert payload["decision"] == "deny"
+    assert payload["rejection"]["blocked"] is True
+    assert payload["rejection"]["status_code"] == 403
+    assert payload["rejection"]["matched_rules"] == ["block_secrets"]
+    assert payload["rejection"]["trace_id"] == payload["trace_id"]
+
+    events = gateway.telemetry.otel_events()
+    assert events[-1]["attributes"]["policyaware.blocked"] is True
+    assert events[-1]["attributes"]["policyaware.matched_rules"] == ["block_secrets"]
+
+
 def test_sidecar_tool_check_endpoint() -> None:
     sidecar = PolicyAwareSidecar(
         Gateway.from_policy_file(ROOT / "examples" / "policies" / "basic.yaml"),
@@ -88,6 +118,48 @@ def test_sidecar_tool_check_endpoint() -> None:
     assert status == 200
     assert payload["decision"] == "require_approval"
     assert payload["approval_required"] is True
+    assert payload["rejection"]["blocked"] is True
+    assert payload["rejection"]["status_code"] == 202
+    assert payload["rejection"]["connector_id"] == "github"
+    assert payload["rejection"]["action"] == "create_pr"
+
+    metrics_status, metrics = sidecar.handle("GET", "/metrics")
+
+    assert metrics_status == 200
+    assert isinstance(metrics, str)
+    assert "policyaware_tool_decisions_total" in metrics
+    assert "policyaware_tool_approval_required_total" in metrics
+    assert 'connector_id="github"' in metrics
+
+    events = sidecar.gateway.telemetry.otel_events()
+    assert events[-1]["attributes"]["policyaware.blocked"] is True
+    assert events[-1]["attributes"]["policyaware.connector_id"] == "github"
+
+
+def test_rejection_helpers_return_none_for_allowed_actions() -> None:
+    gateway = Gateway.from_policy_file(ROOT / "examples" / "policies" / "basic.yaml")
+    response = gateway.chat(
+        GatewayRequest(
+            tenant="acme",
+            app="rejection-helper-test",
+            user={"role": "support_agent"},
+            context={"region": "us", "risk": "low", "task_type": "support"},
+            messages=[{"role": "user", "content": "Summarize this public ticket."}],
+        )
+    )
+    tool_decision = ToolPolicyEngine.from_file(
+        ROOT / "examples" / "policies" / "tool-governance.yaml"
+    ).decide(
+        ToolCallRequest(
+            agent_id="code_assistant",
+            connector_id="github",
+            action="read_file",
+            user={"role": "developer"},
+        )
+    )
+
+    assert policy_rejection(response) is None
+    assert tool_rejection(tool_decision) is None
 
 
 def test_sidecar_route_and_evaluate_endpoints() -> None:
@@ -132,6 +204,7 @@ def test_sidecar_bearer_auth_protects_policy_endpoints() -> None:
     )
 
     health_status, _ = sidecar.handle("GET", "/health")
+    metrics_missing_status, metrics_missing_payload = sidecar.handle("GET", "/metrics")
     missing_status, missing_payload = sidecar.handle("POST", "/v1/check", {"prompt": "hello"})
     wrong_status, _ = sidecar.handle(
         "POST",
@@ -145,10 +218,20 @@ def test_sidecar_bearer_auth_protects_policy_endpoints() -> None:
         {"prompt": "hello"},
         headers={"Authorization": "Bearer secret-token"},
     )
+    metrics_status, metrics_payload = sidecar.handle(
+        "GET",
+        "/metrics",
+        headers={"Authorization": "Bearer secret-token"},
+    )
 
     assert health_status == 200
+    assert metrics_missing_status == 401
+    assert isinstance(metrics_missing_payload, dict)
     assert missing_status == 401
     assert missing_payload["error"] == "unauthorized"
     assert wrong_status == 401
     assert ok_status == 200
     assert ok_payload["decision"] in {"allow", "conditional_allow"}
+    assert metrics_status == 200
+    assert isinstance(metrics_payload, str)
+    assert "policyaware_requests_total" in metrics_payload

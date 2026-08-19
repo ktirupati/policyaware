@@ -24,6 +24,7 @@ from policyaware.integrations.recommender import IntegrationRecommender
 from policyaware.models import GatewayRequest, ToolCallRequest
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
 from policyaware.policy import PolicyEngine
+from policyaware.policy_composition import PolicyComposer, PolicyCompositionError, load_policy_layers
 from policyaware.policy_pack_registry import copy_policy_pack, list_policy_packs, read_policy_pack
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
 from policyaware.policy_source import policy_source_from_uri
@@ -345,6 +346,37 @@ def _project_links_table(title: str) -> Table:
     table.add_row("Testimonials / Show and Tell", TESTIMONIALS_URL)
     table.add_row("Maintainer LinkedIn", LINKEDIN_URL)
     return table
+
+
+def _render_policy_composition_report(report) -> None:
+    table = Table(title="Policy Composition Report")
+    table.add_column("Layer Order")
+    table.add_column("Status")
+    table.add_row(" -> ".join(report.layers), "errors" if report.has_errors else "ok")
+    console.print(table)
+
+    findings = Table(title="Hierarchy Findings")
+    findings.add_column("Severity")
+    findings.add_column("Code")
+    findings.add_column("Layer")
+    findings.add_column("Rule")
+    findings.add_column("Message")
+    if not report.findings:
+        findings.add_row("info", "POLICY_COMPOSITION.OK", "-", "-", "No hierarchy conflicts detected.")
+    for finding in report.findings:
+        style = "red" if finding.severity == "error" else "yellow" if finding.severity == "warning" else "cyan"
+        findings.add_row(
+            f"[{style}]{finding.severity}[/{style}]",
+            finding.code,
+            finding.layer or "-",
+            finding.rule or "-",
+            finding.message,
+        )
+    console.print(findings)
+    console.print(
+        "Precedence: emergency > global > compliance > region > tenant > app > local_override. "
+        "Explicit deny remains deny-first in the composed policy."
+    )
 
 
 def _examples_root() -> Path:
@@ -826,6 +858,26 @@ def up(
         "--policy-refresh-seconds",
         help="Refresh interval for dynamic policy sources.",
     ),
+    policy_timeout_seconds: float = typer.Option(
+        5.0,
+        "--policy-timeout-seconds",
+        help="Strict timeout for HTTP/S3/GCS/ADLS policy fetches.",
+    ),
+    policy_retry_base_seconds: float = typer.Option(
+        1.0,
+        "--policy-retry-base-seconds",
+        help="Initial exponential backoff delay after a failed dynamic policy refresh.",
+    ),
+    policy_retry_max_seconds: float = typer.Option(
+        60.0,
+        "--policy-retry-max-seconds",
+        help="Maximum exponential backoff delay after repeated dynamic policy refresh failures.",
+    ),
+    policy_retry_jitter_seconds: float = typer.Option(
+        0.25,
+        "--policy-retry-jitter-seconds",
+        help="Random jitter added to dynamic policy retry delays to reduce retry storms.",
+    ),
     fail_open: bool = typer.Option(
         False,
         "--fail-open",
@@ -871,6 +923,11 @@ def up(
         "--policy-sha256",
         help="Expected SHA256 checksum for the dynamically loaded policy source.",
     ),
+    fallback_policy: Path | None = typer.Option(
+        None,
+        "--fallback-policy",
+        help="Restrictive local fallback policy used when --policy-url and cache are unavailable.",
+    ),
     audit_signing_secret: str | None = typer.Option(
         None,
         "--audit-signing-secret",
@@ -912,12 +969,18 @@ def up(
         raise typer.BadParameter(
             f"Sidecar auth is required but no token was provided. Set {auth_env} or pass --auth-token."
         )
+    if policy_timeout_seconds <= 0:
+        raise typer.BadParameter("--policy-timeout-seconds must be greater than zero.")
+    if policy_retry_base_seconds < 0 or policy_retry_max_seconds < 0 or policy_retry_jitter_seconds < 0:
+        raise typer.BadParameter("Policy retry backoff values must be zero or greater.")
+    if policy_retry_max_seconds and policy_retry_base_seconds > policy_retry_max_seconds:
+        raise typer.BadParameter("--policy-retry-base-seconds cannot exceed --policy-retry-max-seconds.")
     console.print(f"[bold green]Starting PolicyAware sidecar[/bold green] http://{host}:{port}")
     console.print(f"Auth: {'enabled' if resolved_auth_token else 'disabled'}")
     if policy_url:
         console.print(
             f"Dynamic policy: enabled, refresh={policy_refresh_seconds}s, "
-            f"cache={policy_cache}, fail_closed={not fail_open}"
+            f"timeout={policy_timeout_seconds}s, cache={policy_cache}, fail_closed={not fail_open}"
         )
     monitor = (
         SessionStateMonitor(
@@ -935,12 +998,15 @@ def up(
         raise typer.BadParameter("Use --session-state-store memory or sqlite.")
     if revoke_file and not revoke_file.exists():
         raise typer.BadParameter(f"Emergency revoke file does not exist: {revoke_file}")
+    if fallback_policy and not fallback_policy.exists():
+        raise typer.BadParameter(f"Fallback policy file does not exist: {fallback_policy}")
     if rollout_policy and not rollout_policy.exists():
         raise typer.BadParameter(f"Rollout policy file does not exist: {rollout_policy}")
     if rollout_mode not in {"shadow", "enforce"}:
         raise typer.BadParameter("Use --rollout-mode shadow or enforce.")
     console.print(f"Session state: {'enabled' if monitor else 'disabled'}")
     console.print(f"Audit signing: {'enabled' if resolved_audit_signing_secret else 'disabled'}")
+    console.print(f"Fallback policy: {fallback_policy if fallback_policy else 'disabled'}")
     console.print(f"Policy rollout: {'enabled' if rollout_policy else 'disabled'}")
     console.print("Endpoints: GET /health, POST /v1/check, /v1/tool/check, /v1/route, /v1/evaluate")
     serve_sidecar(
@@ -952,10 +1018,15 @@ def up(
         policy_auth_token=resolved_policy_auth_token,
         policy_cache_file=policy_cache if policy_url else None,
         policy_refresh_seconds=policy_refresh_seconds,
+        policy_timeout_seconds=policy_timeout_seconds,
+        policy_retry_base_seconds=policy_retry_base_seconds,
+        policy_retry_max_seconds=policy_retry_max_seconds,
+        policy_retry_jitter_seconds=policy_retry_jitter_seconds,
         fail_closed=not fail_open,
         session_monitor=monitor,
         emergency_revoke_file=revoke_file,
         policy_sha256=policy_sha256,
+        fallback_policy_file=fallback_policy,
         audit_signing_secret=resolved_audit_signing_secret,
         policy_rollout=PolicyRollout.from_file(
             rollout_policy,
@@ -1286,6 +1357,69 @@ def migrate_policy(
     )
     console.print("Review the migration note and run:")
     console.print(f"  policyaware policy validate {target}")
+
+
+@policy_app.command("compose")
+def compose_policy(
+    manifest: Path = typer.Argument(..., help="Policy composition manifest YAML."),
+    out: Path = typer.Option(
+        Path("policyaware.composed.yaml"),
+        "--out",
+        "-o",
+        help="Output path for the composed policy.",
+    ),
+    strict: bool = typer.Option(
+        True,
+        "--strict/--no-strict",
+        help="Fail when lower-precedence broadening conflicts are detected.",
+    ),
+    force: bool = typer.Option(False, "--force", help="Overwrite output file if it exists."),
+    json_output: bool = typer.Option(False, "--json", help="Print composition report as JSON."),
+) -> None:
+    """Compose global, compliance, tenant, app, and local policy layers deterministically."""
+    if not manifest.exists():
+        raise typer.BadParameter(f"Manifest does not exist: {manifest}")
+    if out.exists() and not force:
+        raise typer.BadParameter(f"Output already exists: {out}. Use --force to overwrite.")
+    try:
+        report = PolicyComposer(strict=strict).compose(load_policy_layers(manifest))
+    except PolicyCompositionError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if json_output:
+        console.print_json(data=report.to_dict())
+    else:
+        _render_policy_composition_report(report)
+    if report.has_errors:
+        raise typer.Exit(code=1)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(yaml.safe_dump(report.composed_policy, sort_keys=False), encoding="utf-8")
+    console.print(f"[bold green]Composed policy written:[/bold green] {out.resolve()}")
+    console.print(f"Validate it with: policyaware policy validate {out}")
+
+
+@policy_app.command("compose-check")
+def compose_check_policy(
+    manifest: Path = typer.Argument(..., help="Policy composition manifest YAML."),
+    strict: bool = typer.Option(
+        True,
+        "--strict/--no-strict",
+        help="Report lower-precedence broadening conflicts as errors.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print composition report as JSON."),
+) -> None:
+    """Validate policy hierarchy and override conflicts without writing a composed policy."""
+    if not manifest.exists():
+        raise typer.BadParameter(f"Manifest does not exist: {manifest}")
+    try:
+        report = PolicyComposer(strict=strict).compose(load_policy_layers(manifest))
+    except PolicyCompositionError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if json_output:
+        console.print_json(data=report.to_dict())
+    else:
+        _render_policy_composition_report(report)
+    if report.has_errors:
+        raise typer.Exit(code=1)
 
 
 @policy_packs_app.command("list")

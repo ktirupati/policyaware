@@ -18,8 +18,9 @@ PolicyAware is an open-source framework that enterprise teams can embed, extend,
 | Guardrail orchestration | Optional adapters for NeMo Guardrails, Guardrails AI, and custom input/output validators. |
 | Runtime evaluation | Leakage checks, citation checks, policy consistency scoring, and golden dataset execution support. |
 | Auditability | JSONL and SQLite audit storage, replay-ready traces, trace viewer, and audit bundle generation. |
-| Observability | Prometheus-style and OpenTelemetry-shaped exports for monitoring workflows. |
+| Observability | Live sidecar `/metrics`, Prometheus-style metrics, OpenTelemetry-shaped events, and audit-trace exports for monitoring workflows. |
 | Local code governance | `policyaware scan` for repository-level governance and compliance findings with HTML, JSON, SARIF, and Markdown outputs. |
+| Policy CI/CD | Official `ktirupati/policyaware-action` for GitHub pull-request scans, annotations, SARIF, and report artifacts, plus CLI commands for policy validation, composition checks, and contract drift detection. |
 | Developer adoption | Python SDK, CLI, FastAPI/Flask shims, LangChain/LlamaIndex callbacks, copy-paste YAML policies, and runnable examples. |
 
 ## Enterprise Deployment Pattern
@@ -46,7 +47,10 @@ flowchart TD
 - Store policies in source control and review them like application code.
 - Use separate policies for development, staging, regulated workloads, and production.
 - Use `policyaware scan` in CI before release.
+- Use the official [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action) for GitHub pull-request checks.
+- Run `policyaware policy validate`, `policyaware policy compose-check`, and `policyaware contract check` before publishing policy bundles.
 - Export SARIF scan results to GitHub code scanning or compatible security tools.
+- Scrape sidecar `/metrics` or export trace-derived metrics into Prometheus, Grafana, OpenTelemetry Collector, Datadog, SIEM, or GRC workflows.
 - Use audit storage for production traces and evidence retention.
 - Require approval for high-risk, regulated, destructive, or autonomous tool actions.
 - Keep optional ML/guardrail integrations behind explicit extras so the base package remains lightweight.
@@ -67,6 +71,7 @@ PolicyAware can generate or support the following review artifacts:
 - eval reports
 - YAML policy templates
 - reason-code explanations
+- GitHub Action annotations and CI artifacts
 
 These artifacts help reviewers understand what was checked, which policy matched, what was blocked or transformed, and what remediation is recommended.
 

@@ -23,7 +23,13 @@ It records:
 ## Imports
 
 ```python
-from policyaware import AuditLogger, SQLiteAuditLogger, TraceViewer, AuditBundleWriter
+from policyaware import (
+    AuditBundleWriter,
+    AuditLogger,
+    RuntimeTelemetryCollector,
+    SQLiteAuditLogger,
+    TraceViewer,
+)
 ```
 
 ## Main APIs
@@ -38,6 +44,7 @@ from policyaware import AuditLogger, SQLiteAuditLogger, TraceViewer, AuditBundle
 | `AuditBundleWriter().write(...)` | method | Generates compliance evidence artifacts for a trace. |
 | `PrometheusExporter` | class | Exports trace metrics in Prometheus format. |
 | `OpenTelemetryJsonExporter` | class | Exports OpenTelemetry-shaped JSON from traces. |
+| `RuntimeTelemetryCollector` | class | Records live request and tool-governance metrics for runtime dashboards. |
 
 ## `AuditTrace` Fields
 
@@ -121,4 +128,72 @@ policyaware audit view .policyaware/traces.jsonl --out .policyaware/trace-viewer
 policyaware audit bundle trc_example --traces-file .policyaware/traces.jsonl
 policyaware observability prometheus .policyaware/traces.jsonl
 policyaware observability otel-json .policyaware/traces.jsonl
+```
+
+## Runtime Metrics
+
+PolicyAware also records live runtime telemetry in the gateway and sidecar. This
+is useful when compliance, platform, or security teams want dashboard-ready
+signals without parsing JSONL logs across many clusters.
+
+```python
+from policyaware import Gateway, GatewayRequest, RuntimeTelemetryCollector
+
+telemetry = RuntimeTelemetryCollector()
+gateway = Gateway.from_policy_file("examples/policies/basic.yaml")
+gateway.telemetry = telemetry
+
+gateway.chat(
+    GatewayRequest(
+        tenant="acme",
+        app="support-copilot",
+        user={"id": "u1", "role": "support_agent"},
+        context={"region": "us", "risk": "low", "task_type": "support"},
+        messages=[{"role": "user", "content": "Email jane@example.com"}],
+    )
+)
+
+print(telemetry.prometheus_text())
+print(telemetry.otel_events())
+```
+
+OpenTelemetry-shaped runtime events include blocked-action attributes such as:
+
+```json
+{
+  "name": "policyaware.gateway.request",
+  "attributes": {
+    "policyaware.decision": "deny",
+    "policyaware.blocked": true,
+    "policyaware.reason_codes": ["DATA.SECRETS_DETECTED"],
+    "policyaware.matched_rules": ["block_secrets"],
+    "policyaware.trace_id": "trc_123"
+  }
+}
+```
+
+Tool-governance events also include `policyaware.connector_id`,
+`policyaware.action`, `policyaware.approval_required`, and
+`policyaware.blocked`. Use these fields for alerts such as "blocked tool call",
+"approval required", or "secret leakage attempt".
+
+The HTTP sidecar exposes the same metrics at:
+
+```bash
+curl http://127.0.0.1:8080/metrics
+```
+
+Important metric names:
+
+```text
+policyaware_requests_total
+policyaware_policy_decisions_total
+policyaware_policy_denied_total
+policyaware_approval_required_total
+policyaware_redactions_total
+policyaware_model_route_total
+policyaware_tool_decisions_total
+policyaware_tool_denied_total
+policyaware_tool_approval_required_total
+policyaware_eval_failures_total
 ```

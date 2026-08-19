@@ -1,0 +1,21 @@
+id: claims_assistant_app_policy
+default: deny
+
+rules:
+  - name: allow_support_summaries
+    effect: allow
+    when:
+      user.role_in:
+        - support_agent
+        - claims_adjuster
+      request.task_type: summarization
+      risk.tier_in:
+        - low
+        - medium
+
+  - name: redact_pii_for_support
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+      user.role: support_agent
