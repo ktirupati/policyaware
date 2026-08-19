@@ -11,6 +11,9 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Category | Capability | Primary APIs |
 | --- | --- | --- |
 | Data protection | Detect and redact PII, PHI, secrets, and sensitive strings | `DataProtectionEngine`, `PresidioPIIClassifier` |
+| AI firewall and zero-trust agent governance | Block unsafe prompts, tools, autonomous actions, and runaway loops with deny-by-default controls | `Gateway`, `ToolPolicyEngine`, `RiskClassifier` |
+| AI GitOps and policy-as-code | Validate, compose, scan, distribute, and fail closed on YAML governance policies | `PolicySchemaValidator`, `PolicyComposer`, `DynamicPolicyEngine` |
+| Data protection and FinOps | Redact sensitive data, enforce token budgets, route by risk, and export blocked-action telemetry | `DataProtectionEngine`, `ModelRouter`, `RuntimeTelemetryCollector` |
 | Policy enforcement | Decide allow, deny, conditional allow, or approval required | `PolicyEngine`, `PolicySchemaValidator` |
 | Gateway orchestration | Run request through data checks, risk, policy, routing, eval, audit | `Gateway`, `GatewayRequest` |
 | Risk classification | Score requests as low, medium, high, or critical | `RiskClassifier` |
@@ -44,6 +47,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 
 ## Capability Guides
 
+- [Use-Case Guides](use-cases/README.md)
 - [Data Protection](capabilities/data-protection.md)
 - [Ready-To-Use YAML Policies](capabilities/ready-to-use-yaml.md)
 - [YAML Policy Templates](yaml-policy-templates.md)

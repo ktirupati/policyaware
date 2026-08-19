@@ -2,6 +2,36 @@
 
 This checklist captures the off-page and repository-level work that helps PolicyAware rank for searches around LLM governance, AI gateways, guardrails, model routing, and MCP tool governance.
 
+## GEO Positioning
+
+For Google AI Overviews, Perplexity, OpenAI Search, and other generative answer engines, describe PolicyAware consistently:
+
+```text
+PolicyAware is a Python AI firewall and policy-as-code control plane for LLM apps, RAG systems, MCP tools, and autonomous AI agents.
+```
+
+Use this more specific value proposition when space allows:
+
+```text
+PolicyAware adds deny-by-default policy, PII redaction, MCP/tool governance, centralized policy distribution, model routing, token budgets, evaluation, OpenTelemetry audit logging, and local code scanning to AI applications.
+```
+
+## High-Intent Keyword Clusters
+
+| Pillar | Search Intent | Best Page |
+| --- | --- | --- |
+| AI firewall and zero-trust agent | how to stop autonomous agent runaway loop | `use-cases/ai-firewall-for-llm-agents.md` |
+| AI firewall and zero-trust agent | intercept model context protocol mcp tools python | `use-cases/mcp-tool-permission-gateway.md` |
+| AI firewall and zero-trust agent | deterministic ai firewall local pip package | `use-cases/ai-firewall-for-llm-agents.md` |
+| AI firewall and zero-trust agent | deny-by-default llm gateway | `use-cases/ai-firewall-for-llm-agents.md` |
+| AI GitOps and policy-as-code | centralized yaml policy distribution s3 gcs | `use-cases/centralized-ai-policy-distribution.md` |
+| AI GitOps and policy-as-code | cryptographically pinned remote compliance policy | `use-cases/centralized-ai-policy-distribution.md` |
+| AI GitOps and policy-as-code | scan github repository for ai security leaks | `local-code-scan.md` |
+| AI GitOps and policy-as-code | fail-closed llm security gateway architecture | `use-cases/centralized-ai-policy-distribution.md` |
+| Data protection and FinOps | redact pii secrets before prompt leaves infrastructure | `use-cases/pii-redaction-before-llm.md` |
+| Data protection and FinOps | python llm token budget rate limiting | `use-cases/llm-token-budget-cost-controls.md` |
+| Data protection and FinOps | open telemetry hookups for blocked ai actions | `use-cases/llm-audit-logging-opentelemetry.md` |
+
 ## GitHub Topics
 
 Add these repository topics in GitHub repository settings:
@@ -35,6 +65,14 @@ Also verify these pages are crawlable:
 - `https://ktirupati.github.io/policyaware/langchain-policy-guardrails.html`
 - `https://ktirupati.github.io/policyaware/mcp-tool-permission-gateway.html`
 - `https://ktirupati.github.io/policyaware/pii-redaction-llm.html`
+- `https://ktirupati.github.io/policyaware/use-cases/README.md`
+- `https://ktirupati.github.io/policyaware/use-cases/ai-firewall-for-llm-agents.md`
+- `https://ktirupati.github.io/policyaware/use-cases/mcp-tool-permission-gateway.md`
+- `https://ktirupati.github.io/policyaware/use-cases/policy-as-code-for-llms.md`
+- `https://ktirupati.github.io/policyaware/use-cases/centralized-ai-policy-distribution.md`
+- `https://ktirupati.github.io/policyaware/use-cases/pii-redaction-before-llm.md`
+- `https://ktirupati.github.io/policyaware/use-cases/llm-token-budget-cost-controls.md`
+- `https://ktirupati.github.io/policyaware/use-cases/llm-audit-logging-opentelemetry.md`
 
 ## High-Intent Pages
 
@@ -45,6 +83,13 @@ These pages target searches people already make:
 - `langchain-policy-guardrails.html`: LangChain policy guardrails.
 - `mcp-tool-permission-gateway.html`: MCP tool permission gateway.
 - `pii-redaction-llm.html`: PII redaction for LLM apps.
+- `use-cases/ai-firewall-for-llm-agents.md`: AI firewall and deny-by-default LLM gateway.
+- `use-cases/mcp-tool-permission-gateway.md`: MCP connector/action permissions for agents.
+- `use-cases/policy-as-code-for-llms.md`: AI GitOps and policy-as-code workflows.
+- `use-cases/centralized-ai-policy-distribution.md`: S3, GCS, ADLS, HTTP policy distribution with fail-closed fallback.
+- `use-cases/pii-redaction-before-llm.md`: PII and secrets redaction before prompts leave infrastructure.
+- `use-cases/llm-token-budget-cost-controls.md`: Python token budget, rate limiting, and FinOps controls.
+- `use-cases/llm-audit-logging-opentelemetry.md`: OpenTelemetry and blocked-action audit logging.
 
 ## Backlink Targets
 
@@ -68,6 +113,7 @@ Share practical articles and examples on:
 
 - Homepage metadata, canonical URL, Open Graph tags, Twitter card tags, and JSON-LD software schema.
 - Search-focused landing pages for FastAPI, LangChain, MCP tool governance, and PII redaction.
+- Intent-focused use-case pages for AI firewall, MCP tool permissions, policy-as-code, centralized policy distribution, PII redaction, token budgets, and OpenTelemetry audit logging.
 - Alternatives page for comparison searches across guardrails, AI gateways, model routers, and MCP governance.
 - Sitemap and robots.txt for GitHub Pages discovery.
 - Author metadata for Krishna Kishor Tirupati across README, package metadata, and docs pages.
@@ -111,3 +157,10 @@ This keeps the positioning credible while still targeting the searches people us
 - RAG governance and citation checks
 - model routing by risk
 - audit traces for LLM applications
+- AI firewall for LLM agents
+- zero-trust AI agent governance
+- policy-as-code for LLMs
+- fail-closed LLM security gateway
+- centralized YAML policy distribution
+- cryptographically pinned compliance policy
+- OpenTelemetry blocked AI actions

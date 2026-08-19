@@ -37,6 +37,38 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/README.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/ai-firewall-for-llm-agents.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/mcp-tool-permission-gateway.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/policy-as-code-for-llms.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/centralized-ai-policy-distribution.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/pii-redaction-before-llm.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/llm-token-budget-cost-controls.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/use-cases/llm-audit-logging-opentelemetry.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/capabilities.md</loc>
     <priority>0.9</priority>
   </url>

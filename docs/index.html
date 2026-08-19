@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PolicyAware AI Gateway & Agent Control Plane - Open-Source LLM Governance</title>
-  <meta name="description" content="PolicyAware is an open-source AI gateway and agent control plane for Python. Add deny-by-default policy, PII redaction, MCP tool governance, model routing, evaluation, local code scanning, and audit traces to LLM, RAG, and AI agent apps.">
-  <meta name="keywords" content="PolicyAware, AI gateway, agent control plane, LLM governance, LLM guardrails, RAG governance, MCP tool governance, prompt injection protection, PII redaction, model routing, AI audit traces, Python AI framework, local code scan">
+  <meta name="description" content="PolicyAware is an open-source Python AI firewall and policy-as-code control plane for LLM apps, RAG systems, MCP tools, and autonomous agents. Add deny-by-default policy, PII redaction, centralized policy distribution, token budgets, model routing, OpenTelemetry audit logging, and local code scanning.">
+  <meta name="keywords" content="PolicyAware, AI firewall, zero trust AI agent, policy-as-code for LLMs, deny-by-default LLM gateway, MCP tool permission gateway, centralized YAML policy distribution, S3 GCS ADLS policy source, cryptographically pinned compliance policy, fail-closed LLM security gateway, PII redaction before LLM, secrets redaction, LLM token budget rate limiting, OpenTelemetry blocked AI actions, AI gateway, agent control plane, LLM governance, RAG governance, local code scan">
   <meta name="author" content="Krishna Kishor Tirupati">
   <link rel="canonical" href="https://ktirupati.github.io/policyaware/">
   <meta property="og:type" content="website">
@@ -25,7 +25,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "PolicyAware AI Gateway & Agent Control Plane",
-    "description": "An open-source AI gateway and agent control plane for governed AI execution. Enforce deny-by-default policy, PII redaction, MCP tool governance, model routing, runtime evaluation, local code scanning, and audit traces for LLM, RAG, and AI agent applications.",
+    "description": "An open-source Python AI firewall and policy-as-code control plane for governed AI execution. Enforce deny-by-default policy, PII redaction, MCP tool governance, centralized policy distribution, model routing, token budgets, runtime evaluation, OpenTelemetry audit logging, local code scanning, and audit traces for LLM, RAG, and AI agent applications.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "All",
     "programmingLanguage": "Python",
@@ -146,6 +146,14 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
 
         <h3>Search-Friendly Guides</h3>
         <ul>
+          <li><a href="use-cases/README.md">PolicyAware use-case guide index</a></li>
+          <li><a href="use-cases/ai-firewall-for-llm-agents.md">AI firewall for LLM agents</a></li>
+          <li><a href="use-cases/mcp-tool-permission-gateway.md">MCP tool permission gateway</a></li>
+          <li><a href="use-cases/policy-as-code-for-llms.md">Policy-as-code for LLMs</a></li>
+          <li><a href="use-cases/centralized-ai-policy-distribution.md">Centralized YAML policy distribution with S3, GCS, ADLS, and HTTP</a></li>
+          <li><a href="use-cases/pii-redaction-before-llm.md">PII redaction before LLM calls</a></li>
+          <li><a href="use-cases/llm-token-budget-cost-controls.md">LLM token budget and cost controls</a></li>
+          <li><a href="use-cases/llm-audit-logging-opentelemetry.md">LLM audit logging and OpenTelemetry</a></li>
           <li><a href="fastapi-llm-policy-middleware.html">FastAPI LLM policy middleware guide</a></li>
           <li><a href="langchain-policy-guardrails.html">LangChain policy guardrails guide</a></li>
           <li><a href="mcp-tool-permission-gateway.html">MCP tool permission gateway guide</a></li>

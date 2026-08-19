@@ -17,6 +17,7 @@ Deployment model: PolicyAware is an adoption-ready open-source framework that te
 Documentation site: https://ktirupati.github.io/policyaware/
 
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
+Use-case guides: [AI firewall, MCP tool gateway, policy-as-code, centralized policy distribution, PII redaction, token budgets, and OpenTelemetry audit logging](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/README.md)
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
 Alternatives guide: [PolicyAware alternatives for guardrails, AI gateways, model routers, and MCP governance](https://ktirupati.github.io/policyaware/alternatives.html)
@@ -42,6 +43,18 @@ Policy composition: [hierarchical global, compliance, tenant, app, and local ove
 Runnable contract example: [`examples/policy-contract-checks`](https://github.com/ktirupati/policyaware/tree/main/examples/policy-contract-checks)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
+
+## Search-Friendly Use Cases
+
+| Developer Search | Start Here |
+| --- | --- |
+| AI firewall for LLM agents | [AI Firewall For LLM Agents](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/ai-firewall-for-llm-agents.md) |
+| Intercept MCP tools in Python | [MCP Tool Permission Gateway](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/mcp-tool-permission-gateway.md) |
+| Policy-as-code for LLMs | [Policy-As-Code For LLMs](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/policy-as-code-for-llms.md) |
+| Centralized YAML policy distribution with S3, GCS, ADLS, or HTTP | [Centralized AI Policy Distribution](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/centralized-ai-policy-distribution.md) |
+| Redact PII and secrets before a prompt leaves infrastructure | [PII Redaction Before LLM Calls](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/pii-redaction-before-llm.md) |
+| Python LLM token budget and rate limiting | [LLM Token Budget And Cost Controls](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/llm-token-budget-cost-controls.md) |
+| OpenTelemetry hooks for blocked AI actions | [LLM Audit Logging And OpenTelemetry](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/llm-audit-logging-opentelemetry.md) |
 
 ## Enterprise Core Capabilities
 
