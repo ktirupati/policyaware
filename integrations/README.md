@@ -23,8 +23,8 @@ policyaware integrations recommend .
 | Tool | Folder | Purpose |
 | --- | --- | --- |
 | Codex | [codex](codex/README.md) | Local Codex plugin and workflow instructions. |
-| Antigravity | [antigravity](antigravity/README.md) | Agent instruction pack for PolicyAware repo scanning and governance fixes. |
-| Claude Code | [claude](claude/README.md) | `CLAUDE.md` instructions for using PolicyAware in Claude Code sessions. |
+| Antigravity | [antigravity](antigravity/README.md) | Native-style plugin package candidate with skills, rules, and repo scanning guidance. |
+| Claude Code | [claude](claude/README.md) | `CLAUDE.md` instructions plus a native-style plugin package with skill and command files. |
 | Cursor | [cursor](cursor/README.md) | Cursor rule file for PolicyAware governance workflows. |
 | Windsurf | [windsurf](windsurf/README.md) | Windsurf rule file for PolicyAware governance workflows. |
 

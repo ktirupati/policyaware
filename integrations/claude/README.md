@@ -4,6 +4,22 @@ Use this pack to guide Claude Code toward PolicyAware governance workflows for L
 
 Copy [CLAUDE.md](CLAUDE.md) into a repository or reference it during Claude Code sessions.
 
+For a native-style Claude plugin package, see:
+
+```text
+plugin/
+```
+
+It contains:
+
+```text
+plugin/plugin.json
+plugin/skills/policyaware/SKILL.md
+plugin/commands/scan.md
+plugin/commands/init.md
+plugin/assets/policyaware-icon.svg
+```
+
 ## First Prompt
 
 ```text

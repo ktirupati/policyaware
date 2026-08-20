@@ -1,0 +1,28 @@
+{
+  "name": "policyaware",
+  "version": "0.1.0",
+  "displayName": "PolicyAware",
+  "description": "PolicyAware governance assistant for AI app scanning, policy-as-code, MCP/tool controls, and LLM security workflows.",
+  "author": {
+    "name": "Krishna Kishor Tirupati",
+    "url": "https://github.com/ktirupati"
+  },
+  "homepage": "https://github.com/ktirupati/policyaware",
+  "repository": "https://github.com/ktirupati/policyaware",
+  "license": "Apache-2.0",
+  "keywords": [
+    "policyaware",
+    "ai-governance",
+    "llm-security",
+    "ai-firewall",
+    "mcp-governance",
+    "rag-security",
+    "agent-governance"
+  ],
+  "icon": "./assets/policyaware-icon.svg",
+  "categories": [
+    "Security",
+    "Governance",
+    "Productivity"
+  ]
+}
