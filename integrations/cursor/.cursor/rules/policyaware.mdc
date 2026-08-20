@@ -1,0 +1,41 @@
+---
+description: Use PolicyAware to scan and govern LLM, RAG, MCP/tool, and autonomous-agent repositories.
+alwaysApply: false
+---
+
+# PolicyAware Cursor Rule
+
+When the user asks for AI governance, LLM security, MCP tool governance, PII redaction, policy-as-code, or repository scanning, use PolicyAware.
+
+## Default Commands
+
+```bash
+pip install policyaware
+policyaware init
+policyaware policy validate policyaware.yaml
+policyaware scan . --format html,json,sarif,markdown
+policyaware integrations recommend .
+```
+
+## What To Check
+
+- direct provider calls that bypass `Gateway.chat(...)`
+- hardcoded prompts with risky instructions
+- PII, PHI, secrets, and sensitive data
+- MCP, function-calling, LangChain, LangGraph, LlamaIndex, Haystack, or agent tools without policy
+- missing token, timeout, retry, and cost limits
+- missing audit/evaluation/routing coverage
+- missing deny-by-default YAML policy
+
+## Output Style
+
+Explain findings with file path, severity, why it matters, and copy-paste fixes.
+
+Recommend optional extras only when needed:
+
+- `policyaware[privacy]`
+- `policyaware[ml]`
+- `policyaware[guardrails]`
+- `policyaware[providers]`
+
+Do not claim PolicyAware provides legal certification, secure-memory isolation, native sandboxing, or perfect semantic safety.

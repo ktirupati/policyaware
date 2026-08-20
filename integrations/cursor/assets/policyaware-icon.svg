@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">PolicyAware icon</title>
+  <desc id="desc">A blue and teal shield with a check mark and policy nodes for PolicyAware AI governance.</desc>
+  <circle cx="256" cy="256" r="236" fill="#ffffff"/>
+  <path d="M112 80h288l-20 260-124 112-124-112z" fill="#1f6feb"/>
+  <path d="M256 80h144l-20 260-124 112z" fill="#16a3b8"/>
+  <path d="M158 132h196l-14 178-84 76-84-76z" fill="#ffffff"/>
+  <circle cx="200" cy="178" r="13" fill="#0d253f"/>
+  <circle cx="256" cy="164" r="13" fill="#0d253f"/>
+  <circle cx="312" cy="178" r="13" fill="#0d253f"/>
+  <path d="M196 252l46 46 86-96" fill="none" stroke="#0d253f" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

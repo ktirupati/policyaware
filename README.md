@@ -20,6 +20,7 @@ Documentation site: https://ktirupati.github.io/policyaware/
 
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
 Branding: [standard PolicyAware icon and positioning](https://github.com/ktirupati/policyaware/blob/main/docs/branding.md)
+Coding-agent integrations: [Codex, Antigravity, Claude Code, Cursor, and Windsurf workflow packs](https://github.com/ktirupati/policyaware/tree/main/integrations)
 Use-case guides: [AI firewall, MCP tool gateway, policy-as-code, centralized policy distribution, PII redaction, token budgets, and OpenTelemetry audit logging](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/README.md)
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
@@ -46,6 +47,18 @@ Policy composition: [hierarchical global, compliance, tenant, app, and local ove
 Runnable contract example: [`examples/policy-contract-checks`](https://github.com/ktirupati/policyaware/tree/main/examples/policy-contract-checks)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
+
+## Coding-Agent Integration Packs
+
+PolicyAware includes lightweight workflow packs for coding-agent tools. These packs help agents scan repositories, create `policyaware.yaml`, add CI scan workflows, explain findings, and recommend the right PolicyAware integration path.
+
+| Tool | Integration Pack |
+| --- | --- |
+| Codex | [integrations/codex](https://github.com/ktirupati/policyaware/tree/main/integrations/codex) |
+| Antigravity | [integrations/antigravity](https://github.com/ktirupati/policyaware/tree/main/integrations/antigravity) |
+| Claude Code | [integrations/claude](https://github.com/ktirupati/policyaware/tree/main/integrations/claude) |
+| Cursor | [integrations/cursor](https://github.com/ktirupati/policyaware/tree/main/integrations/cursor) |
+| Windsurf | [integrations/windsurf](https://github.com/ktirupati/policyaware/tree/main/integrations/windsurf) |
 
 ## Search-Friendly Use Cases
 

@@ -63,3 +63,15 @@ Use the docs site as the documentation URL when a separate docs field is availab
 ```text
 https://ktirupati.github.io/policyaware/
 ```
+
+## Current Integration Packs
+
+The repository includes starter packs that reuse this icon and positioning:
+
+| Tool | Folder |
+| --- | --- |
+| Codex | `integrations/codex` |
+| Antigravity | `integrations/antigravity` |
+| Claude Code | `integrations/claude` |
+| Cursor | `integrations/cursor` |
+| Windsurf | `integrations/windsurf` |
