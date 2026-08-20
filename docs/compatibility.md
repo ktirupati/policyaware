@@ -30,6 +30,40 @@ PolicyAware keeps the default install lightweight and makes heavier provider, pr
 
 Backward-compatible aliases include `presidio`, `nemo`, `guardrails-ai`, and `full`.
 
+## Dependency Footprint Guidance
+
+The default install is intentionally small:
+
+```bash
+pip install policyaware
+```
+
+Use the base package when you need deterministic governance features such as:
+
+- RBAC and context-aware policy checks
+- explicit prompt filtering
+- PII/PHI/secrets pattern detection
+- MCP/tool permission checks
+- model routing abstractions
+- token and cost controls
+- audit traces
+- `policyaware scan` for offline repository checks
+
+Install optional extras only when the use case requires them:
+
+| Need | Recommended Install | Footprint Note |
+| --- | --- | --- |
+| Basic policy, scan, routing, audit, and tool governance | `pip install policyaware` | Smallest runtime footprint. |
+| Stronger PII detection and anonymization | `pip install "policyaware[privacy]"` | Adds Presidio and spaCy, which increase image size. |
+| Prompt-injection or semantic ML signals | `pip install "policyaware[ml]"` | Adds Transformers and Torch, usually the heaviest local dependency path. |
+| ONNX-friendly classifier execution | `pip install "policyaware[onnx]"` | Adds ONNX runtime tooling; still heavier than base. |
+| NeMo Guardrails or Guardrails AI orchestration | `pip install "policyaware[guardrails]"` | Adds guardrail framework dependencies and their transitive packages. |
+| Full experimentation environment | `pip install "policyaware[all]"` | Convenient for demos and labs, but not recommended as the default production image. |
+
+For production containers, prefer installing only the extras required by that service. For example, a CI scanner image may only need `policyaware`, a privacy-heavy support copilot may need `policyaware[privacy]`, and an agent safety evaluation service may need `policyaware[ml]` or `policyaware[guardrails]`.
+
+This split is intentional: PolicyAware keeps everyday policy enforcement fast and clean, while deeper semantic anonymization or ML safety checks remain opt-in.
+
 ## Provider Adapter Status
 
 | Provider Adapter | Status | Notes |

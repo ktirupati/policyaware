@@ -1,5 +1,7 @@
 # PolicyAware AI Gateway & Agent Control Plane
 
+![PolicyAware icon](https://raw.githubusercontent.com/ktirupati/policyaware/main/docs/assets/policyaware-icon.svg)
+
 PyPI: [policyaware](https://pypi.org/project/policyaware/) |
 Downloads: [Pepy stats](https://pepy.tech/project/policyaware) |
 Python: 3.10+ |
@@ -17,6 +19,7 @@ Deployment model: PolicyAware is an adoption-ready open-source framework that te
 Documentation site: https://ktirupati.github.io/policyaware/
 
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
+Branding: [standard PolicyAware icon and positioning](https://github.com/ktirupati/policyaware/blob/main/docs/branding.md)
 Use-case guides: [AI firewall, MCP tool gateway, policy-as-code, centralized policy distribution, PII redaction, token budgets, and OpenTelemetry audit logging](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/README.md)
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
@@ -79,7 +82,7 @@ Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/
 - **Observability exporters:** Provides live sidecar `/metrics`, Prometheus-style metrics, OpenTelemetry-shaped events, and audit-trace exports for monitoring and compliance workflows.
 - **Structured rejection handshakes:** Returns canonical blocked-action payloads with decision, reason codes, matched rules, trace IDs, remediation, and telemetry fields so API wrappers do not swallow governance context.
 - **Dynamic policy retry protection:** Applies strict fetch timeouts, refresh TTLs, exponential backoff, jitter, last known-good cache, and emergency fallback policies for central HTTP/S3/GCS/ADLS policy sources.
-- **PolicyAware Scan CLI:** Scans local codebases for PII, PHI, secrets, direct LLM calls, missing tool governance, weak routing controls, audit gaps, and configuration risks, then generates developer-friendly HTML, JSON, SARIF, and Markdown reports.
+- **Offline AI governance linter:** `policyaware scan` runs locally or in CI before deployment to find PII/PHI/secrets, direct LLM calls, unmapped MCP tools, missing tool governance, weak routing controls, audit gaps, and policy YAML issues. GitHub Actions can block pull requests before unvetted AI tools or prompts reach production.
 - **Framework callbacks:** Includes lightweight LangChain and LlamaIndex callback handlers that aggregate streamed tokens and report policy, risk, leakage, eval, and token-accounting results.
 - **LangGraph node guard:** Adds dependency-free node/state and tool-call governance for graph-based AI agents.
 - **Haystack governance components:** Adds optional Haystack-style components for RAG query governance, output evaluation, and agent tool permission checks.
@@ -140,7 +143,15 @@ Use PolicyAware when AI requests and agent actions need governance: user/tenant/
 
 Short version: **use PolicyAware when AI actions need governance, not just generation.**
 
+PolicyAware is intentionally focused on AI systems. For ordinary web APIs or microservices that do not use LLMs, RAG, MCP tools, or autonomous agents, standard API security controls are usually a better first layer. For deeper ML-based detection or conversational safety, PolicyAware keeps the base install lightweight and lets teams opt into Presidio, ProtectAI/Transformers, NeMo Guardrails, Guardrails AI, Haystack, and provider extras. Runtime overhead should be benchmarked in your own request path, especially when optional ML or external guardrail engines are enabled.
+
 ## Scan Report Preview
+
+`policyaware scan` is one of PolicyAware's highest-utility differentiators: it works as an offline AI governance linter for repositories. Most runtime guardrails only discover policy gaps when the application executes. PolicyAware can catch structural AI governance risks during local development or CI/CD.
+
+```bash
+policyaware scan . --format html,json,sarif,markdown --fail-on high
+```
 
 ![PolicyAware scan terminal dashboard](https://raw.githubusercontent.com/ktirupati/policyaware/main/docs/assets/scan-terminal-preview.svg)
 
@@ -250,6 +261,8 @@ pip install "policyaware[ml]"          # Transformers/Torch classifiers
 pip install "policyaware[onnx]"        # ONNX runtime path for supported classifiers
 pip install "policyaware[all]"         # All optional integrations
 ```
+
+For production containers, install only the extras that service needs. The base package stays lightweight; privacy, ML, provider, and guardrail extras add larger third-party dependency stacks.
 
 Backward-compatible aliases are also available:
 

@@ -44,6 +44,7 @@ flowchart TD
 ## Recommended Enterprise Controls
 
 - Keep `default: deny` in production policies.
+- Use PolicyAware where AI execution needs governance: LLM calls, RAG, MCP/tool actions, autonomous agents, local AI code scans, model routing, and audit evidence. For ordinary non-AI APIs, keep using standard API gateways, WAFs, auth middleware, and secrets scanners.
 - Store policies in source control and review them like application code.
 - Use separate policies for development, staging, regulated workloads, and production.
 - Use `policyaware scan` in CI before release.
@@ -53,9 +54,12 @@ flowchart TD
 - Scrape sidecar `/metrics` or export trace-derived metrics into Prometheus, Grafana, OpenTelemetry Collector, Datadog, SIEM, or GRC workflows.
 - Use audit storage for production traces and evidence retention.
 - Require approval for high-risk, regulated, destructive, or autonomous tool actions.
+- Treat memory containment and sandboxing as execution-plane controls. Use short-lived credentials, secret managers, process/container isolation, dependency scanning, least-privilege identities, and sandboxed tool runtimes for high-risk systems.
+- Treat `require_approval` as a governance decision and connect it to durable workflow state before resuming an agent. Capture approver identity, trace ID, timeout behavior, escalation, and final approve/deny outcome.
+- Use optional semantic classifiers, guardrail adapters, golden datasets, and human review for subtle prompt-injection, social-engineering, hallucination, or domain-risk cases that deterministic rules may not fully capture.
 - Keep optional ML/guardrail integrations behind explicit extras so the base package remains lightweight.
 - Live-test provider adapters in your own environment because cloud credentials, endpoints, and quotas are enterprise-specific.
-- Benchmark latency in representative request paths, especially when optional ML classifiers or external guardrail engines are enabled.
+- Benchmark latency in representative request paths. Cached policy loading keeps the normal rules path lightweight, while optional ML classifiers, external guardrail engines, and very large policy stacks should be measured before production rollout.
 - Decide whether PolicyAware audit traces are enough for your retention needs or whether they should be exported to enterprise storage, SIEM, or GRC systems.
 
 ## Evidence Artifacts

@@ -2,6 +2,8 @@
 
 `policyaware scan` scans a local folder quickly and generates a Rich terminal dashboard plus a user-friendly HTML report with findings, recommendations, and PolicyAware documentation links.
 
+It also works as an offline AI governance linter for local development and CI/CD. Instead of waiting for runtime failures, teams can block pull requests that introduce unvetted LLM calls, unmapped MCP tools, missing PII protection, unsafe autonomous-agent loops, missing token budgets, or weak audit coverage.
+
 It is designed for developers who want to answer:
 
 > What AI governance risks exist in my local app, and how do I fix them with PolicyAware?
@@ -147,6 +149,46 @@ Fail CI when high or critical findings exist:
 
 ```bash
 policyaware scan ./mylocalfolder --fail-on high
+```
+
+## Offline AI Governance Linter
+
+PolicyAware scan is useful before deployment because it checks repository structure, not just live traffic. That gives security and platform teams a CI gate for AI governance regressions.
+
+Use it to catch:
+
+- direct LLM provider calls that bypass `Gateway.chat(...)`
+- MCP, function-calling, LangChain tool, or agent tool definitions without connector/action policy
+- hardcoded prompts containing unsafe instructions or sensitive examples
+- PII, PHI, secrets, and sensitive data patterns before prompts reach a model
+- missing token, timeout, retry, and cost limits around model or agent calls
+- YAML policy schema problems and missing deny-by-default behavior
+- missing audit, trace, evaluation, or routing coverage
+
+Minimal GitHub Actions gate:
+
+```yaml
+name: PolicyAware Scan
+
+on:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install policyaware
+      - run: policyaware scan . --format html,json,sarif,markdown --fail-on high
+```
+
+For the shortest setup, use the official action:
+
+```yaml
+- uses: ktirupati/policyaware-action@v1
 ```
 
 Control scan scope:

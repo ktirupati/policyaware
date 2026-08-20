@@ -48,6 +48,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 ## Capability Guides
 
 - [Use-Case Guides](use-cases/README.md)
+- [Branding And Standard Icon](branding.md)
 - [Data Protection](capabilities/data-protection.md)
 - [Ready-To-Use YAML Policies](capabilities/ready-to-use-yaml.md)
 - [YAML Policy Templates](yaml-policy-templates.md)

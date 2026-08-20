@@ -7,6 +7,8 @@ Use it when you want GitHub-native pull-request checks for local code scanning,
 governance findings, GitHub annotations, SARIF output, and report artifacts
 without writing a full workflow by hand.
 
+The action turns `policyaware scan` into an offline AI governance linter. It can block pull requests that introduce unvetted LLM provider calls, unmapped MCP tools, missing PII protection, missing token budgets, weak audit coverage, or policy YAML mistakes before the application is deployed.
+
 Repository: <https://github.com/ktirupati/policyaware-action>
 
 ## Recommended PR Gate
@@ -88,6 +90,12 @@ jobs:
 This pattern catches YAML syntax mistakes, hierarchical policy conflicts,
 tool/action drift, hardcoded sensitive data, missing governance wrappers, and
 scan findings before they reach production.
+
+## Why This Matters
+
+Many AI safety and gateway tools only run at application runtime. That is useful, but it means teams may discover policy gaps only after an application path is live.
+
+PolicyAware adds a pre-deployment control: repository scanning. A pull request can fail before it introduces a new autonomous tool, direct model call, hardcoded prompt, plaintext secret, missing budget, or unreviewed policy change.
 
 ## Which CI Option Should I Use?
 
