@@ -45,6 +45,7 @@ from policyaware import (
 | `PrometheusExporter` | class | Exports trace metrics in Prometheus format. |
 | `OpenTelemetryJsonExporter` | class | Exports OpenTelemetry-shaped JSON from traces. |
 | `RuntimeTelemetryCollector` | class | Records live request and tool-governance metrics for runtime dashboards. |
+| `RuntimeTelemetryCollector.record_governance_event(...)` | method | Records advanced governance events such as jury vetoes, trajectory mutation, synthetic redaction, retrieval sanitization, and circuit-breaker pauses. |
 
 ## `AuditTrace` Fields
 
@@ -157,6 +158,22 @@ print(telemetry.prometheus_text())
 print(telemetry.otel_events())
 ```
 
+Record an advanced governance event:
+
+```python
+telemetry.record_governance_event(
+    event_type="trajectory_mutation",
+    tenant="acme",
+    app="agent-platform",
+    decision="conditional_allow",
+    blocked=False,
+    attributes={
+        "policyaware.mutation": "safe_rewrite",
+        "policyaware.reason": "removed sensitive instruction",
+    },
+)
+```
+
 OpenTelemetry-shaped runtime events include blocked-action attributes such as:
 
 ```json
@@ -196,4 +213,6 @@ policyaware_tool_decisions_total
 policyaware_tool_denied_total
 policyaware_tool_approval_required_total
 policyaware_eval_failures_total
+policyaware_governance_events_total
+policyaware_governance_blocked_total
 ```

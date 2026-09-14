@@ -2,6 +2,36 @@
 
 PolicyAware includes commands that help developers diagnose their setup, discover examples, run examples, migrate policy files, and create integration recommendation reports.
 
+## Performance Diagnostics
+
+Check whether PolicyAware is running with the lightweight pure-Python runtime or
+a future optional native accelerator:
+
+```bash
+policyaware performance status
+policyaware performance status --json
+```
+
+The base install intentionally stays pure Python. This command gives platform
+teams a startup diagnostic they can capture in logs without adding heavy native
+dependencies.
+
+## Visual Policy Simulator
+
+Generate a local HTML report explaining one policy decision:
+
+```bash
+policyaware dashboard simulate examples/policies/basic.yaml \
+  --prompt "Email jane@example.com about this claim" \
+  --role support_agent \
+  --tenant acme \
+  --risk low \
+  --out .policyaware/policy-simulator.html
+```
+
+Use this when a developer asks why a prompt, action, or agent state was allowed,
+denied, redacted, or routed for approval.
+
 ## Doctor
 
 Check local installation health:

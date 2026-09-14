@@ -150,6 +150,50 @@ class RuntimeTelemetryCollector:
                 )
             )
 
+    def record_governance_event(
+        self,
+        *,
+        event_type: str,
+        tenant: str = "unknown",
+        app: str = "unknown",
+        decision: str = "observed",
+        blocked: bool = False,
+        value: float = 1.0,
+        attributes: dict[str, Any] | None = None,
+    ) -> None:
+        """Record semantic telemetry for advanced governance events.
+
+        Use this for trajectory mutations, synthetic redactions, jury vetoes,
+        retrieval sanitization, circuit-breaker pauses, and other controls that
+        are not plain gateway requests or tool decisions.
+        """
+        normalized_type = event_type.strip().lower().replace(" ", "_") or "unknown"
+        labels = {
+            "tenant": tenant,
+            "app": app,
+            "event_type": normalized_type,
+            "decision": decision,
+        }
+        attrs = dict(attributes or {})
+        with self._lock:
+            self._inc_locked("policyaware_governance_events_total", labels, value)
+            if blocked:
+                self._inc_locked("policyaware_governance_blocked_total", labels, value)
+            self._events.append(
+                TelemetryEvent(
+                    name=f"policyaware.governance.{normalized_type}",
+                    attributes={
+                        "policyaware.tenant": tenant,
+                        "policyaware.app": app,
+                        "policyaware.event_type": normalized_type,
+                        "policyaware.decision": decision,
+                        "policyaware.blocked": blocked,
+                        **attrs,
+                    },
+                    value=value,
+                )
+            )
+
     def prometheus_text(self) -> str:
         with self._lock:
             counters = dict(self._counters)
@@ -182,6 +226,10 @@ class RuntimeTelemetryCollector:
             "# TYPE policyaware_tool_approval_required_total counter",
             "# HELP policyaware_tool_reason_codes_total Tool reason-code counts.",
             "# TYPE policyaware_tool_reason_codes_total counter",
+            "# HELP policyaware_governance_events_total Advanced governance events by type.",
+            "# TYPE policyaware_governance_events_total counter",
+            "# HELP policyaware_governance_blocked_total Advanced governance events that blocked or paused execution.",
+            "# TYPE policyaware_governance_blocked_total counter",
         ]
         for (name, label_items), value in sorted(counters.items()):
             lines.append(f"{name}{_labels(dict(label_items))} {value:g}")

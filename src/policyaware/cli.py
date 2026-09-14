@@ -32,6 +32,7 @@ from policyaware.integrity import IntegritySigner
 from policyaware.mcp_proxy import MCPPolicyProxy
 from policyaware.mcp_stdio import MCPStdioPolicyProxy, MCPStdioProxyConfig
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
+from policyaware.performance import performance_status
 from policyaware.plan import PlanPreflightChecker
 from policyaware.policy import PolicyEngine
 from policyaware.policy_composition import PolicyComposer, PolicyCompositionError, load_policy_layers
@@ -46,6 +47,7 @@ from policyaware.rollout import PolicyRollout
 from policyaware.scanner import LocalCodeScanner, ScanConfig, git_changed_files
 from policyaware.session_state import SessionStateMonitor, SQLiteSessionStateStore
 from policyaware.sidecar import serve_sidecar
+from policyaware.simulator import VisualPolicySimulator
 from policyaware.tools import ToolPolicyEngine
 
 app = typer.Typer(help="PolicyAware AI Gateway CLI")
@@ -58,6 +60,8 @@ mcp_app = typer.Typer(help="MCP JSON-RPC policy proxy commands")
 audit_app = typer.Typer(help="Audit and replay commands")
 risk_app = typer.Typer(help="Risk classification commands")
 observability_app = typer.Typer(help="Metrics and trace export commands")
+dashboard_app = typer.Typer(help="Visual policy simulator and dashboard commands")
+performance_app = typer.Typer(help="Runtime performance and accelerator commands")
 guards_app = typer.Typer(help="Guardrails integration commands")
 integrations_app = typer.Typer(help="Integration discovery commands")
 examples_app = typer.Typer(help="Runnable example commands")
@@ -80,6 +84,8 @@ app.add_typer(mcp_app, name="mcp")
 app.add_typer(audit_app, name="audit")
 app.add_typer(risk_app, name="risk")
 app.add_typer(observability_app, name="observability")
+app.add_typer(dashboard_app, name="dashboard")
+app.add_typer(performance_app, name="performance")
 app.add_typer(guards_app, name="guards")
 app.add_typer(integrations_app, name="integrations")
 app.add_typer(examples_app, name="examples")
@@ -2186,6 +2192,68 @@ def export_otel_json(
     traces = AuditLogger(traces_file).read_traces()
     output = OpenTelemetryJsonExporter().write(traces, out)
     console.print(str(output))
+
+
+@dashboard_app.command("simulate")
+def dashboard_simulate(
+    policy_file: Path = typer.Argument(..., help="Policy YAML file to test."),
+    prompt: str = typer.Option(..., "--prompt", help="Prompt or message to evaluate."),
+    out: Path = typer.Option(
+        Path(".policyaware/policy-simulator.html"),
+        "--out",
+        help="HTML simulator report output path.",
+    ),
+    role: str = typer.Option("developer", "--role", help="User role."),
+    tenant: str = typer.Option("default", "--tenant", help="Tenant id."),
+    app_name: str = typer.Option("policy-simulator", "--app", help="Application name."),
+    risk: str = typer.Option("low", "--risk", help="Risk tier to place in request context."),
+    open_report: bool = typer.Option(False, "--open", help="Open the simulator report in a browser."),
+) -> None:
+    """Generate a visual one-request policy simulator HTML report."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    simulator = VisualPolicySimulator()
+    response = simulator.simulate(
+        policy_file,
+        prompt=prompt,
+        role=role,
+        tenant=tenant,
+        app=app_name,
+        risk=risk,
+    )
+    output = simulator.write_html(response, out, prompt=prompt, policy_file=policy_file)
+    console.print(str(output))
+    if open_report:
+        import webbrowser
+
+        webbrowser.open(output.resolve().as_uri())
+
+
+@performance_app.command("status")
+def performance_runtime_status(
+    prefer_native: bool = typer.Option(
+        True,
+        "--prefer-native/--python-only",
+        help="Check for an optional native accelerator before reporting runtime mode.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print status as JSON."),
+) -> None:
+    """Show whether PolicyAware is using pure Python or an optional fast core."""
+    status = performance_status(prefer_native=prefer_native)
+    payload = {
+        "backend": status.backend,
+        "native_available": status.native_available,
+        "reason": status.reason,
+    }
+    if json_output:
+        console.print_json(data=payload)
+        return
+    table = Table(title="PolicyAware Performance Runtime")
+    table.add_column("Field")
+    table.add_column("Value")
+    for key, value in payload.items():
+        table.add_row(key, str(value))
+    console.print(table)
 
 
 @app.command("chat")

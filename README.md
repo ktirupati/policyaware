@@ -41,6 +41,7 @@ Stateful session governance: [detect cumulative leakage and repeated tool activi
 Enterprise hardening: [SQLite session state, emergency revokes, checksum pinning, and signed audit traces](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-hardening.md)
 Policy rollout and trace correlation: [shadow policy evaluation, canary enforcement, parent traces, and dashboard](https://github.com/ktirupati/policyaware/blob/main/docs/policy-rollout-and-trace-correlation.md)
 Observability templates: [Grafana, Prometheus, and OpenTelemetry examples](https://github.com/ktirupati/policyaware/blob/main/docs/observability-templates.md)
+Performance and visual simulation: [fast-core boundary, semantic telemetry, and simulator reports](https://github.com/ktirupati/policyaware/blob/main/docs/performance-observability-simulator.md)
 Official GitHub Action: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action) for PolicyAware pull-request scans, annotations, SARIF, and report artifacts
 Policy contract checks: [prevent YAML/tool drift in CI](https://github.com/ktirupati/policyaware/blob/main/docs/policy-contract-checks.md)
 Policy composition: [hierarchical global, compliance, tenant, app, and local overrides](https://github.com/ktirupati/policyaware/blob/main/docs/policy-composition.md)
@@ -98,6 +99,7 @@ PolicyAware includes lightweight workflow packs for coding-agent tools. These pa
 
 - **Audit-ready traces:** Records structured policy decisions, risk tiers, reason codes, model choices, evaluation scores, token estimates, and request/response snapshots.
 - **Observability exporters:** Provides live sidecar `/metrics`, Prometheus-style metrics, OpenTelemetry-shaped events, and audit-trace exports for monitoring and compliance workflows.
+- **Performance and policy debugging:** Provides a lightweight fast-core runtime boundary, semantic governance metrics, and a visual policy simulator for explaining blocked or mutated agent actions.
 - **Structured rejection handshakes:** Returns canonical blocked-action payloads with decision, reason codes, matched rules, trace IDs, remediation, and telemetry fields so API wrappers do not swallow governance context.
 - **Dynamic policy retry protection:** Applies strict fetch timeouts, refresh TTLs, exponential backoff, jitter, last known-good cache, and emergency fallback policies for central HTTP/S3/GCS/ADLS policy sources.
 - **Offline AI governance linter:** `policyaware scan` runs locally or in CI before deployment to find PII/PHI/secrets, direct LLM calls, unmapped MCP tools, missing tool governance, weak routing controls, audit gaps, and policy YAML issues. GitHub Actions can block pull requests before unvetted AI tools or prompts reach production.

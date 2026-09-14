@@ -181,6 +181,10 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/performance-observability-simulator.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/policy-contract-checks.md</loc>
     <priority>0.8</priority>
   </url>

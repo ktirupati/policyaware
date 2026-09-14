@@ -6,6 +6,14 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.3
+
+- Added `FastCoreRuntime` and `policyaware performance status` as a stable fast-core boundary for future optional native acceleration while keeping the base package pure Python and lightweight.
+- Added semantic governance telemetry with `RuntimeTelemetryCollector.record_governance_event(...)` for jury vetoes, trajectory mutation, synthetic redaction, retrieval sanitization, circuit breakers, and other advanced controls.
+- Added `VisualPolicySimulator` and `policyaware dashboard simulate` to generate a local HTML explanation for one policy decision, including matched rules, reason codes, remediation, and model-safe output.
+- Added documentation for performance diagnostics, Prometheus/OpenTelemetry export patterns, and visual policy simulation.
+- Added regression tests for the performance facade, advanced telemetry counters, and simulator report generation.
+
 ## 0.4.2
 
 - Added first-class MCP JSON-RPC policy proxy support for `tools/call` isolation, sensitive argument redaction, structured JSON-RPC block responses, and live stdio MCP server wrapping with `policyaware mcp proxy`.

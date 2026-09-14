@@ -43,6 +43,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Stateful session governance | Track cumulative sensitive data and repeated tool calls across a conversation or agent run | `SessionStateMonitor`, `policyaware up --session-state` |
 | Enterprise hardening | Add SQLite state, emergency revoke lists, checksum pinning, and signed audit traces | `SQLiteSessionStateStore`, `EmergencyRevokeList`, `IntegritySigner` |
 | Policy rollout and trace correlation | Shadow/canary candidate policies, parent trace IDs, session IDs, and governance dashboards | `PolicyRollout`, `GovernanceDashboard` |
+| Performance, telemetry, and simulation | Check runtime backend, emit semantic governance events, and generate visual policy simulator reports | `FastCoreRuntime`, `RuntimeTelemetryCollector`, `VisualPolicySimulator` |
 | Observability templates | Connect PolicyAware outputs to Grafana, Prometheus, OTel, SIEM, and GRC workflows | `examples/observability` |
 | Policy contract checks | Prevent drift between YAML tool policy and Python tool signatures | `PolicyContractChecker`, `policyaware contract check` |
 | Adaptive governance | Generate policies from scan findings, synthesize sensitive values, safely rewrite risky trajectories, preflight agent plans, and detect shadow AI patterns | `PolicySuggester`, `PlanPreflightChecker`, `DataProtectionEngine.synthesize`, `safe_rewrite` |
@@ -90,6 +91,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Enterprise Hardening](enterprise-hardening.md)
 - [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md)
 - [Observability Templates](observability-templates.md)
+- [Performance, Telemetry, And Visual Simulation](performance-observability-simulator.md)
 - [Policy Contract Checks](policy-contract-checks.md)
 - [Adaptive Governance](adaptive-governance.md)
 - [Enterprise Structural Layers](enterprise-structural-layers.md)
@@ -128,6 +130,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Enterprise Hardening](enterprise-hardening.md) | SQLite state, emergency revokes, checksum pinning, signed audit traces |
 | [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md) | Shadow/canary rollout, parent trace/session IDs, dashboard |
 | [Observability Templates](observability-templates.md) | Grafana, Prometheus, OpenTelemetry, SIEM/GRC export pattern |
+| [Performance, Telemetry, And Visual Simulation](performance-observability-simulator.md) | Fast-core boundary, semantic governance events, and visual simulator CLI |
 | [Policy Contract Checks](policy-contract-checks.md) | Contract drift checks, naming conventions, CI gate examples |
 | [Adaptive Governance](adaptive-governance.md) | Policy suggestion, synthetic redaction, safe rewrite, plan preflight, and shadow AI scan examples |
 | [Enterprise Structural Layers](enterprise-structural-layers.md) | Jury consensus, retrieval-hook defense, tamper-evident audit chains, circuit breaker examples |

@@ -90,6 +90,7 @@ from policyaware.ml import (
     TransformersDomainRiskClassifier,
 )
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter, RuntimeTelemetryCollector
+from policyaware.performance import FastCoreRuntime, PerformanceBackendStatus, performance_status
 from policyaware.plan import PlanCheckReport, PlanFinding, PlanPreflightChecker, PlanStep
 from policyaware.policy import PolicyEngine, PolicyRule
 from policyaware.policy_composition import (
@@ -174,6 +175,7 @@ from policyaware.session_state import (
     SessionStateMonitor,
 )
 from policyaware.sidecar import PolicyAwareSidecar
+from policyaware.simulator import VisualPolicySimulator
 from policyaware.tools import ToolPolicyEngine, ToolRegistry
 from policyaware.trajectory import safe_rewrite_state
 
@@ -210,6 +212,7 @@ __all__ = [
     "FairnessGroupMetric",
     "FairnessMonitor",
     "FairnessReport",
+    "FastCoreRuntime",
     "Gateway",
     "GatewayRequest",
     "GatewayResponse",
@@ -258,6 +261,7 @@ __all__ = [
     "PolicyAwareRejection",
     "PolicyAwareToolGovernanceComponent",
     "PolicyAwareSidecar",
+    "PerformanceBackendStatus",
     "PolicyContractChecker",
     "PolicyComposer",
     "PolicyCompositionError",
@@ -317,6 +321,7 @@ __all__ = [
     "read_policy_pack",
     "read_mcp_message",
     "policy_source_from_uri",
+    "performance_status",
     "policy_rejection",
     "rejection_event_attributes",
     "rejection_status_code",
@@ -339,6 +344,7 @@ __all__ = [
     "FilePolicySource",
     "HttpPolicySource",
     "SimulatedProvider",
+    "VisualPolicySimulator",
     "ToolDecision",
     "ToolCallRequest",
     "ToolContract",
