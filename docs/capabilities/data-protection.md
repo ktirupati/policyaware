@@ -28,6 +28,7 @@ from policyaware import DataProtectionEngine
 | `DataProtectionEngine()` | class | Creates the built-in rules-based sensitive-data detector. |
 | `engine.inspect(text)` | method | Detects sensitive data and returns a `DataFindings` result. |
 | `engine.redact(text)` | method | Detects sensitive data and returns redacted text in `redacted_text`. |
+| `engine.synthesize(text)` | method | Replaces sensitive data with structurally useful synthetic values and returns a local synthetic map. |
 | `PresidioPIIClassifier` | optional ML class | Adds Microsoft Presidio-based PII/NLP detection when installed. |
 
 ## `DataFindings` Result Fields
@@ -82,6 +83,32 @@ Expected:
 Email [REDACTED_EMAIL] or call [REDACTED_PHONE].
 ```
 
+## Synthetic Redaction
+
+Synthetic redaction keeps prompt utility by replacing sensitive values with realistic fake values instead of generic placeholders.
+
+```python
+result = engine.synthesize("Email jane@example.com or call 212-555-7890.")
+
+print(result.synthetic_text)
+print(result.synthetic_map)
+```
+
+Expected:
+
+```text
+Email alex.morgan@example.com or call 415-555-0188.
+```
+
+CLI:
+
+```bash
+policyaware protect synthesize "Email jane@example.com or call 212-555-7890"
+policyaware protect synthesize "Email jane@example.com" --json
+```
+
+Keep the returned synthetic map inside your trusted application boundary. Do not send it to external model providers.
+
 ## Policy Fields
 
 Data findings are exposed to YAML:
@@ -95,7 +122,7 @@ rules:
 
   - name: redact_pii
     effect: transform
-    action: redact
+    action: synthetic_redact
     when:
       data.contains_pii: true
 ```

@@ -20,6 +20,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Model routing | Select compliant model/provider by region, cost, risk, capability | `ModelRouter`, `ProviderRegistry` |
 | Provider adapters | Call local or external model backends | `SimulatedProvider`, provider adapters |
 | Tool governance | Govern MCP/agent connector and action permissions | `ToolPolicyEngine`, `ToolRegistry` |
+| MCP policy proxy | Intercept raw MCP JSON-RPC `tools/call` requests before MCP server execution | `MCPPolicyProxy`, `MCPProxyResult`, `policyaware mcp check` |
 | Evaluation | Check leakage, citations, policy consistency, golden datasets | `RuntimeEvaluator`, `EvalSuiteRunner` |
 | Audit | Persist traces, replay requests, generate evidence bundles | `AuditLogger`, `SQLiteAuditLogger`, `AuditBundleWriter`, `TraceViewer` |
 | Observability | Export local traces as Prometheus or OpenTelemetry-shaped data | `PrometheusExporter`, `OpenTelemetryJsonExporter` |
@@ -44,6 +45,9 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Policy rollout and trace correlation | Shadow/canary candidate policies, parent trace IDs, session IDs, and governance dashboards | `PolicyRollout`, `GovernanceDashboard` |
 | Observability templates | Connect PolicyAware outputs to Grafana, Prometheus, OTel, SIEM, and GRC workflows | `examples/observability` |
 | Policy contract checks | Prevent drift between YAML tool policy and Python tool signatures | `PolicyContractChecker`, `policyaware contract check` |
+| Adaptive governance | Generate policies from scan findings, synthesize sensitive values, safely rewrite risky trajectories, preflight agent plans, and detect shadow AI patterns | `PolicySuggester`, `PlanPreflightChecker`, `DataProtectionEngine.synthesize`, `safe_rewrite` |
+| Enterprise structural layers | Add jury consensus, retrieval-hook defense, tamper-evident audit chains, and token/cost/tool circuit breakers | `JuryConsensusEngine`, `RetrievalGuard`, `TamperEvidentAuditChain`, `BudgetCircuitBreaker` |
+| Edge and policy intelligence | Check air-gapped readiness, translate policies across orchestrators, run drift canaries, and monitor fairness distributions | `AirGapReadinessChecker`, `PolicyTranslationEngine`, `DriftCanaryEngine`, `FairnessMonitor` |
 
 ## Capability Guides
 
@@ -66,6 +70,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Examples Matrix](examples-matrix.md)
 - [Compatibility And Integration Status](compatibility.md)
 - [Tool Governance](capabilities/tool-governance.md)
+- [MCP Policy Proxy](mcp-policy-proxy.md)
 - [Evaluation](capabilities/evaluation.md)
 - [Audit And Observability](capabilities/audit-observability.md)
 - [ML-Assisted Signals](capabilities/ml-assisted-signals.md)
@@ -86,6 +91,9 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md)
 - [Observability Templates](observability-templates.md)
 - [Policy Contract Checks](policy-contract-checks.md)
+- [Adaptive Governance](adaptive-governance.md)
+- [Enterprise Structural Layers](enterprise-structural-layers.md)
+- [Edge And Policy Intelligence](edge-policy-intelligence.md)
 - [Integration Strategy](integrations-strategy.md)
 - [Lightweight Benchmarks](benchmarks.md)
 
@@ -99,6 +107,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Risk Classification](capabilities/risk-classification.md) | Main APIs, `RiskAssessment` result fields, common risk inputs |
 | [Model Routing And Providers](capabilities/model-routing-providers.md) | Main APIs, `ModelCandidate` fields, `RouteDecision` result fields, provider names |
 | [Tool Governance](capabilities/tool-governance.md) | Main APIs, `ToolCallRequest` fields, `ToolDecision` result fields |
+| [MCP Policy Proxy](mcp-policy-proxy.md) | Raw MCP JSON-RPC examples, connector/action mapping, blocked response schema |
 | [Evaluation](capabilities/evaluation.md) | Main APIs, `EvalResult` fields, `EvalReport` fields, eval case YAML fields |
 | [Audit And Observability](capabilities/audit-observability.md) | Main APIs, `AuditTrace` fields, exporter APIs, blocked-action telemetry attributes |
 | [ML-Assisted Signals](capabilities/ml-assisted-signals.md) | Main APIs, `MLSignal` fields, YAML policy fields |
@@ -120,6 +129,9 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md) | Shadow/canary rollout, parent trace/session IDs, dashboard |
 | [Observability Templates](observability-templates.md) | Grafana, Prometheus, OpenTelemetry, SIEM/GRC export pattern |
 | [Policy Contract Checks](policy-contract-checks.md) | Contract drift checks, naming conventions, CI gate examples |
+| [Adaptive Governance](adaptive-governance.md) | Policy suggestion, synthetic redaction, safe rewrite, plan preflight, and shadow AI scan examples |
+| [Enterprise Structural Layers](enterprise-structural-layers.md) | Jury consensus, retrieval-hook defense, tamper-evident audit chains, circuit breaker examples |
+| [Edge And Policy Intelligence](edge-policy-intelligence.md) | Air-gap readiness, policy translation, drift canaries, and fairness monitoring examples |
 
 ## Recommended Learning Path
 

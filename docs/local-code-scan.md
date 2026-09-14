@@ -162,6 +162,7 @@ Use it to catch:
 - hardcoded prompts containing unsafe instructions or sensitive examples
 - PII, PHI, secrets, and sensitive data patterns before prompts reach a model
 - missing token, timeout, retry, and cost limits around model or agent calls
+- shadow AI patterns such as dynamic dependency installation, subprocess execution, dynamic imports, and runtime tool registration
 - YAML policy schema problems and missing deny-by-default behavior
 - missing audit, trace, evaluation, or routing coverage
 
@@ -222,6 +223,7 @@ The fast local scanner checks:
 | Cost governance | Model or agent calls without token, timeout, rate, retry, or cost limits | Define request-level and workflow-level limits. |
 | Prompt safety | Prompt templates with bypass, ignore-instructions, reveal-system-prompt, or execute-without-approval language | Add prompt safety checks and approvals for autonomous actions. |
 | Guardrails integration | Direct NeMo Guardrails or Guardrails AI usage outside PolicyAware orchestration, missing guard config paths, custom guards without markers, guard policies without `when` conditions | Attach guardrails through PolicyAware adapters so guard results are audited and policy-aware. |
+| Shadow AI governance | Dynamic installs, shell/subprocess execution, dynamic imports, runtime tool registration | Require allowlists, sandboxing, approval, and audit for unmanaged runtime paths. |
 | RAG governance | Retrieval, vectorstore, similarity search, embedding code | Add grounding and citation evaluation. |
 | Data pipeline governance | PySpark, Spark reads/writes, streaming, cloud storage paths, sensitive column names | Mask sensitive columns and audit data writes. |
 | Configuration governance | `.env`, YAML, JSON, Terraform, Docker, and CI/CD style files with sensitive config context | Use secret manager references and avoid plaintext secrets. |
@@ -315,6 +317,7 @@ Every finding is mapped to a reviewer-friendly compliance area so policy, securi
 | Data Pipeline Governance | Data Pipeline Governance |
 | Configuration Governance | Secure Configuration |
 | Prompt Safety | Prompt Safety |
+| Shadow AI Governance | Shadow AI / Runtime Discovery |
 
 ## Ignore File
 
@@ -712,6 +715,25 @@ policyaware scan . --out policyaware-scan-report.html
 ```
 
 For CI, keep the HTML report as an artifact so reviewers can inspect governance findings.
+
+## Generate A Policy From Scan Findings
+
+After a scan, generate a conservative starter policy from repository signals:
+
+```bash
+policyaware policy suggest . --out policyaware.generated.yaml
+policyaware policy validate policyaware.generated.yaml
+```
+
+Use a profile when the application has a known governance target:
+
+```bash
+policyaware policy suggest . --profile soc2 --out policyaware.soc2.yaml
+policyaware policy suggest . --profile hipaa --out policyaware.hipaa.yaml
+policyaware policy suggest . --profile gdpr --out policyaware.gdpr.yaml
+```
+
+The generated file is a starting point for review. It does not replace security or legal approval.
 
 ## Feedback From Scan Users
 

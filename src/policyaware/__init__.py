@@ -1,8 +1,25 @@
+from policyaware.airgap import AirGapFinding, AirGapReadinessChecker, AirGapReadinessReport
 from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger, TraceViewer
+from policyaware.circuit_breakers import BudgetCircuitBreaker, CircuitBreakerDecision
+from policyaware.consensus import (
+    ConsensusResult,
+    ConsensusVote,
+    JuryConsensusEngine,
+    RuleBasedConsensusJuror,
+    default_jurors,
+)
 from policyaware.contracts import ContractCheckReport, ContractFinding, PolicyContractChecker, ToolContract
+from policyaware.crypto_audit import TamperEvidentAuditChain, TamperEvidentAuditRecord
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.dashboard import GovernanceDashboard
 from policyaware.evals import EvalSuiteRunner, RuntimeEvaluator
+from policyaware.drift import DriftCanaryCase, DriftCanaryEngine, DriftCanaryFinding, DriftCanaryReport
+from policyaware.fairness import (
+    FairnessDecisionEvent,
+    FairnessGroupMetric,
+    FairnessMonitor,
+    FairnessReport,
+)
 from policyaware.gateway import Gateway
 from policyaware.guardrails import (
     BaseGuardrailAdapter,
@@ -33,6 +50,15 @@ from policyaware.integrations.recommender import (
 )
 from policyaware.emergency import EmergencyRevokeList, EmergencyRevokeMatch
 from policyaware.integrity import IntegritySignature, IntegritySigner
+from policyaware.mcp_proxy import MCPJsonRpcRequest, MCPPolicyProxy, MCPProxyResult
+from policyaware.mcp_stdio import (
+    MCPStdioPolicyProxy,
+    MCPStdioProxyConfig,
+    decode_mcp_frame,
+    encode_mcp_message,
+    read_mcp_message,
+    write_mcp_message,
+)
 from policyaware.models import (
     AuditTrace,
     DataFindings,
@@ -46,8 +72,10 @@ from policyaware.models import (
     MLSignal,
     ModelCandidate,
     PolicyDecision,
+    RiskTier,
     RiskAssessment,
     RouteDecision,
+    SyntheticRedactionResult,
     ToolCallRequest,
     ToolDecision,
 )
@@ -62,6 +90,7 @@ from policyaware.ml import (
     TransformersDomainRiskClassifier,
 )
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter, RuntimeTelemetryCollector
+from policyaware.plan import PlanCheckReport, PlanFinding, PlanPreflightChecker, PlanStep
 from policyaware.policy import PolicyEngine, PolicyRule
 from policyaware.policy_composition import (
     PolicyComposer,
@@ -76,6 +105,12 @@ from policyaware.policy_pack_registry import (
     copy_policy_pack,
     list_policy_packs,
     read_policy_pack,
+)
+from policyaware.policy_suggest import PolicySuggestion, PolicySuggester
+from policyaware.policy_translation import (
+    PolicyTranslationArtifact,
+    PolicyTranslationEngine,
+    PolicyTranslationReport,
 )
 from policyaware.policy_source import (
     AzureDataLakePolicySource,
@@ -116,6 +151,7 @@ from policyaware.rejections import (
     rejection_status_code,
     tool_rejection,
 )
+from policyaware.retrieval import RetrievedDocument, RetrievalFinding, RetrievalGuard, RetrievalGuardResult
 from policyaware.risk import RiskClassifier
 from policyaware.rollout import PolicyRollout
 from policyaware.routing import ModelRouter
@@ -139,12 +175,20 @@ from policyaware.session_state import (
 )
 from policyaware.sidecar import PolicyAwareSidecar
 from policyaware.tools import ToolPolicyEngine, ToolRegistry
+from policyaware.trajectory import safe_rewrite_state
 
 __all__ = [
+    "AirGapFinding",
+    "AirGapReadinessChecker",
+    "AirGapReadinessReport",
     "AuditBundleWriter",
     "AuditLogger",
     "AuditTrace",
     "AzureDataLakePolicySource",
+    "BudgetCircuitBreaker",
+    "CircuitBreakerDecision",
+    "ConsensusResult",
+    "ConsensusVote",
     "ContractCheckReport",
     "ContractFinding",
     "DataFindings",
@@ -152,12 +196,20 @@ __all__ = [
     "Decision",
     "DecisionExplanation",
     "DynamicPolicyEngine",
+    "DriftCanaryCase",
+    "DriftCanaryEngine",
+    "DriftCanaryFinding",
+    "DriftCanaryReport",
     "FallbackPolicySource",
     "EmergencyRevokeList",
     "EmergencyRevokeMatch",
     "EvalReport",
     "EvalResult",
     "EvalSuiteRunner",
+    "FairnessDecisionEvent",
+    "FairnessGroupMetric",
+    "FairnessMonitor",
+    "FairnessReport",
     "Gateway",
     "GatewayRequest",
     "GatewayResponse",
@@ -173,8 +225,16 @@ __all__ = [
     "IntegrationRecommender",
     "IntegritySignature",
     "IntegritySigner",
+    "JuryConsensusEngine",
     "MLAssessment",
     "MLSignal",
+    "MCPJsonRpcRequest",
+    "MCPPolicyProxy",
+    "MCPProxyResult",
+    "MCPStdioPolicyProxy",
+    "MCPStdioProxyConfig",
+    "decode_mcp_frame",
+    "encode_mcp_message",
     "CompositeMLClassifier",
     "MLClassifier",
     "ModelCandidate",
@@ -184,6 +244,11 @@ __all__ = [
     "OptionalMLDependencyError",
     "OptionalGuardrailsDependencyError",
     "PolicyDecision",
+    "PolicySuggestion",
+    "PolicySuggester",
+    "PolicyTranslationArtifact",
+    "PolicyTranslationEngine",
+    "PolicyTranslationReport",
     "PolicyAwareCallbackResult",
     "PolicyAwareHaystackResult",
     "PolicyAwareInputComponent",
@@ -215,8 +280,17 @@ __all__ = [
     "PresidioPIIClassifier",
     "ProtectAIPromptInjectionClassifier",
     "RiskAssessment",
+    "RiskTier",
     "RiskClassifier",
     "RouteDecision",
+    "RetrievedDocument",
+    "RetrievalFinding",
+    "RetrievalGuard",
+    "RetrievalGuardResult",
+    "PlanCheckReport",
+    "PlanFinding",
+    "PlanPreflightChecker",
+    "PlanStep",
     "RuntimeEvaluator",
     "RuntimeTelemetryCollector",
     "S3PolicySource",
@@ -225,6 +299,9 @@ __all__ = [
     "SessionSignal",
     "SessionState",
     "SessionStateMonitor",
+    "SyntheticRedactionResult",
+    "TamperEvidentAuditChain",
+    "TamperEvidentAuditRecord",
     "ScanConfig",
     "LocalCodeScanner",
     "ScanFinding",
@@ -238,6 +315,7 @@ __all__ = [
     "list_policy_packs",
     "load_policy_layers",
     "read_policy_pack",
+    "read_mcp_message",
     "policy_source_from_uri",
     "policy_rejection",
     "rejection_event_attributes",
@@ -257,6 +335,7 @@ __all__ = [
     "ProviderRegistry",
     "PrometheusExporter",
     "default_provider_registry",
+    "default_jurors",
     "FilePolicySource",
     "HttpPolicySource",
     "SimulatedProvider",
@@ -272,4 +351,7 @@ __all__ = [
     "to_agt_decision",
     "to_agt_gateway_evidence",
     "to_agt_tool_evidence",
+    "safe_rewrite_state",
+    "RuleBasedConsensusJuror",
+    "write_mcp_message",
 ]

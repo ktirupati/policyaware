@@ -4,6 +4,8 @@
 
 Tool governance checks agent or MCP-style connector actions before execution.
 
+For raw MCP JSON-RPC traffic, use the first-class [MCP Policy Proxy](../mcp-policy-proxy.md). It evaluates `tools/call` requests before the target MCP server executes filesystem, Git, database, or enterprise API actions.
+
 It can govern:
 
 - connector name
@@ -30,6 +32,8 @@ from policyaware.models import ToolCallRequest
 | `ToolRegistry(...)` | class | Stores known tools/connectors for governance use. |
 | `ToolCallRequest(...)` | model | Standard tool-call request object. |
 | `policyaware tools check <file>` | CLI | Tests tool governance policy from the command line. |
+| `MCPPolicyProxy.from_policy_file(path)` | class method | Loads MCP/tool policy and evaluates raw MCP JSON-RPC requests. |
+| `policyaware mcp check <policy> <request.json>` | CLI | Tests one MCP `tools/call` request before forwarding. |
 
 ## `ToolCallRequest` Fields
 
@@ -118,6 +122,14 @@ policyaware tools check examples/policies/tool-governance.yaml \
   --action create_pr \
   --role developer
 ```
+
+Raw MCP JSON-RPC request:
+
+```bash
+policyaware mcp check examples/policies/tool-governance.yaml mcp-request.json
+```
+
+Read more: [MCP Policy Proxy](../mcp-policy-proxy.md)
 
 ## Prevent Policy Drift
 

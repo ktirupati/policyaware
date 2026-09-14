@@ -14,21 +14,34 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from policyaware.airgap import AirGapReadinessChecker
 from policyaware.audit import AuditBundleWriter, AuditLogger, SQLiteAuditLogger, TraceViewer
+from policyaware.circuit_breakers import BudgetCircuitBreaker
+from policyaware.consensus import JuryConsensusEngine
 from policyaware.contracts import PolicyContractChecker
+from policyaware.crypto_audit import TamperEvidentAuditChain
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.dashboard import GovernanceDashboard
+from policyaware.drift import DriftCanaryCase, DriftCanaryEngine
 from policyaware.evals import EvalSuiteRunner
+from policyaware.fairness import FairnessMonitor
 from policyaware.gateway import Gateway
 from policyaware.integrations.recommender import IntegrationRecommender
-from policyaware.models import GatewayRequest, ToolCallRequest
+from policyaware.models import GatewayRequest, RiskTier, ToolCallRequest
+from policyaware.integrity import IntegritySigner
+from policyaware.mcp_proxy import MCPPolicyProxy
+from policyaware.mcp_stdio import MCPStdioPolicyProxy, MCPStdioProxyConfig
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
+from policyaware.plan import PlanPreflightChecker
 from policyaware.policy import PolicyEngine
 from policyaware.policy_composition import PolicyComposer, PolicyCompositionError, load_policy_layers
 from policyaware.policy_pack_registry import copy_policy_pack, list_policy_packs, read_policy_pack
+from policyaware.policy_suggest import PolicySuggester
+from policyaware.policy_translation import PolicyTranslationEngine
 from policyaware.policy_schema import PolicySchemaValidator, PolicyValidationError
 from policyaware.policy_source import policy_source_from_uri
 from policyaware.risk import RiskClassifier
+from policyaware.retrieval import RetrievalGuard, RetrievedDocument
 from policyaware.rollout import PolicyRollout
 from policyaware.scanner import LocalCodeScanner, ScanConfig, git_changed_files
 from policyaware.session_state import SessionStateMonitor, SQLiteSessionStateStore
@@ -41,6 +54,7 @@ policy_packs_app = typer.Typer(help="Policy pack commands")
 eval_app = typer.Typer(help="Evaluation commands")
 dev_app = typer.Typer(help="Local development commands")
 tools_app = typer.Typer(help="MCP and tool governance commands")
+mcp_app = typer.Typer(help="MCP JSON-RPC policy proxy commands")
 audit_app = typer.Typer(help="Audit and replay commands")
 risk_app = typer.Typer(help="Risk classification commands")
 observability_app = typer.Typer(help="Metrics and trace export commands")
@@ -48,11 +62,21 @@ guards_app = typer.Typer(help="Guardrails integration commands")
 integrations_app = typer.Typer(help="Integration discovery commands")
 examples_app = typer.Typer(help="Runnable example commands")
 contract_app = typer.Typer(help="Policy/code contract drift commands")
+plan_app = typer.Typer(help="Agent plan preflight commands")
+protect_app = typer.Typer(help="Data protection helper commands")
+consensus_app = typer.Typer(help="Cross-agent jury consensus commands")
+retrieval_app = typer.Typer(help="RAG retrieval context governance commands")
+budget_app = typer.Typer(help="Token, cost, and tool-rate circuit breaker commands")
+airgap_app = typer.Typer(help="Air-gapped and edge deployment readiness commands")
+translate_app = typer.Typer(help="Cross-framework policy translation commands")
+drift_app = typer.Typer(help="Model drift canary commands")
+fairness_app = typer.Typer(help="Fairness and decision-distribution commands")
 app.add_typer(policy_app, name="policy")
 policy_app.add_typer(policy_packs_app, name="packs")
 app.add_typer(eval_app, name="eval")
 app.add_typer(dev_app, name="dev")
 app.add_typer(tools_app, name="tools")
+app.add_typer(mcp_app, name="mcp")
 app.add_typer(audit_app, name="audit")
 app.add_typer(risk_app, name="risk")
 app.add_typer(observability_app, name="observability")
@@ -60,6 +84,15 @@ app.add_typer(guards_app, name="guards")
 app.add_typer(integrations_app, name="integrations")
 app.add_typer(examples_app, name="examples")
 app.add_typer(contract_app, name="contract")
+app.add_typer(plan_app, name="plan")
+app.add_typer(protect_app, name="protect")
+app.add_typer(consensus_app, name="consensus")
+app.add_typer(retrieval_app, name="retrieval")
+app.add_typer(budget_app, name="budget")
+app.add_typer(airgap_app, name="airgap")
+app.add_typer(translate_app, name="translate")
+app.add_typer(drift_app, name="drift")
+app.add_typer(fairness_app, name="fairness")
 console = Console()
 
 PROJECT_URL = "https://github.com/ktirupati/policyaware"
@@ -1315,6 +1348,59 @@ def pull_policy(
     console.print(f"Written: {out.resolve()}")
 
 
+@policy_app.command("suggest")
+def suggest_policy(
+    path: Path = typer.Argument(..., help="Repository folder or file to scan for policy suggestions."),
+    out: Path = typer.Option(
+        Path("policyaware.generated.yaml"),
+        "--out",
+        "-o",
+        help="Suggested policy YAML output path.",
+    ),
+    profile: str = typer.Option(
+        "baseline",
+        "--profile",
+        help="Suggestion profile: baseline, soc2, hipaa, or gdpr.",
+    ),
+    force: bool = typer.Option(False, "--force", help="Overwrite output file if it exists."),
+    json_output: bool = typer.Option(False, "--json", help="Print suggestion metadata as JSON."),
+) -> None:
+    """Generate a conservative deny-by-default policy from scan findings."""
+    if not path.exists():
+        raise typer.BadParameter(f"Path does not exist: {path}")
+    if out.exists() and not force:
+        raise typer.BadParameter(f"Output already exists: {out}. Use --force to overwrite.")
+    try:
+        suggestion = PolicySuggester().suggest(path, profile=profile)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(suggestion.to_yaml(), encoding="utf-8")
+    PolicySchemaValidator().validate(suggestion.policy)
+    if json_output:
+        console.print_json(
+            data={
+                "out": str(out.resolve()),
+                "profile": profile,
+                "rationale": suggestion.rationale,
+                "source_findings": len(suggestion.source_report.findings),
+                "source_categories": dict(suggestion.source_report.category_counts),
+            }
+        )
+        return
+    table = Table(title="PolicyAware Policy Suggestion")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("Output", str(out.resolve()))
+    table.add_row("Profile", profile)
+    table.add_row("Source findings", str(len(suggestion.source_report.findings)))
+    table.add_row("Rules generated", str(len(suggestion.policy.get("rules", []))))
+    console.print(table)
+    for item in suggestion.rationale:
+        console.print(f"- {item}")
+    console.print(f"Validate it with: policyaware policy validate {out}")
+
+
 @policy_app.command("validate")
 def validate_policy(policy_file: Path) -> None:
     """Validate a YAML policy file and print clear schema errors."""
@@ -1551,6 +1637,327 @@ def classify_risk(
     console.print_json(data=risk.model_dump(mode="json"))
 
 
+@plan_app.command("check")
+def check_plan(
+    plan_file: Path = typer.Argument(..., help="JSON or YAML file containing an agent plan."),
+    fail_on: str = typer.Option(
+        "high",
+        "--fail-on",
+        help="Exit with code 1 when findings at this severity or higher exist: critical, high, medium, low, none.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print report as JSON."),
+) -> None:
+    """Preflight a multi-step agent plan before real tool or model execution."""
+    if not plan_file.exists():
+        raise typer.BadParameter(f"Plan file does not exist: {plan_file}")
+    report = PlanPreflightChecker().check_file(plan_file)
+    if json_output:
+        console.print_json(data=report.model_dump(mode="json"))
+    else:
+        table = Table(title="PolicyAware Plan Preflight")
+        table.add_column("Severity")
+        table.add_column("Step")
+        table.add_column("Finding")
+        table.add_column("Recommendation")
+        if not report.findings:
+            table.add_row("[green]PASS[/green]", "-", "No high-signal plan risks detected.", "-")
+        for finding in report.findings:
+            style = "red" if finding.severity in {"critical", "high"} else "yellow"
+            table.add_row(
+                f"[{style}]{finding.severity.upper()}[/{style}]",
+                str(finding.step),
+                f"{finding.title}: {finding.reason}",
+                finding.recommendation,
+            )
+        console.print(table)
+        console.print(f"Allowed before execution: {report.allowed}")
+    if _should_fail_scan(fail_on, {report.highest_severity: 1}):
+        raise typer.Exit(code=1)
+
+
+@protect_app.command("synthesize")
+def synthesize_text(
+    text: str = typer.Argument(..., help="Text to replace with context-preserving synthetic values."),
+    reversible: bool = typer.Option(True, "--reversible/--one-way", help="Return a local synthetic map."),
+    json_output: bool = typer.Option(False, "--json", help="Print full result as JSON."),
+) -> None:
+    """Replace PII/PHI/secrets with structurally useful synthetic values."""
+    result = DataProtectionEngine().synthesize(text, reversible=reversible)
+    if json_output:
+        console.print_json(data=result.model_dump(mode="json"))
+        return
+    console.print(result.synthetic_text)
+
+
+@consensus_app.command("check")
+def consensus_check(
+    prompt: str = typer.Argument(..., help="Request text to send through jury consensus."),
+    risk: str = typer.Option("low", "--risk", help="Risk tier: low, medium, high, or critical."),
+    role: str = typer.Option("developer", "--role", help="User role for the sample request."),
+    json_output: bool = typer.Option(False, "--json", help="Print consensus result as JSON."),
+) -> None:
+    """Run a local quorum-style jury decision for a high-risk request."""
+    try:
+        risk_tier = RiskTier(risk)
+    except ValueError as exc:
+        raise typer.BadParameter("Risk must be one of: low, medium, high, critical.") from exc
+    request = GatewayRequest(
+        tenant="cli",
+        app="consensus-check",
+        user={"id": "cli_user", "role": role},
+        context={"risk": risk_tier.value},
+        messages=[{"role": "user", "content": prompt}],
+    )
+    findings = DataProtectionEngine().inspect(prompt)
+    result = JuryConsensusEngine().decide(request, findings=findings, risk_tier=risk_tier)
+    if json_output:
+        console.print_json(data=result.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware Jury Consensus")
+    table.add_column("Juror")
+    table.add_column("Decision")
+    table.add_column("Confidence")
+    table.add_column("Reason Codes")
+    for vote in result.votes:
+        table.add_row(
+            vote.voter,
+            vote.decision.value,
+            f"{vote.confidence:.2f}",
+            ", ".join(vote.reason_codes) or "-",
+        )
+    console.print(table)
+    console.print(f"Final decision: [bold]{result.decision.value}[/bold]")
+    console.print(result.reason)
+
+
+@retrieval_app.command("sanitize")
+def retrieval_sanitize(
+    source: Path = typer.Argument(..., help="Text file containing retrieved context to sanitize."),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Optional sanitized text output path."),
+    block_on_high_risk: bool = typer.Option(
+        False,
+        "--block-on-high-risk",
+        help="Mark the result blocked when indirect prompt injection is found.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print full result as JSON."),
+) -> None:
+    """Scan retrieved RAG context before it enters the model context window."""
+    if not source.exists():
+        raise typer.BadParameter(f"Source file does not exist: {source}")
+    guard = RetrievalGuard(block_on_high_risk=block_on_high_risk)
+    result = guard.sanitize(
+        [RetrievedDocument(content=source.read_text(encoding="utf-8"), source=str(source))]
+    )
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result.documents[0].content, encoding="utf-8")
+    if json_output:
+        console.print_json(data=result.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware Retrieval Guard")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("Blocked", str(result.blocked))
+    table.add_row("Findings", str(len(result.findings)))
+    table.add_row("Redactions", str(result.redactions))
+    table.add_row("Output", str(out.resolve()) if out else "-")
+    console.print(table)
+    if result.findings:
+        for finding in result.findings:
+            console.print(f"- [yellow]{finding.title}[/yellow]: {finding.reason}")
+    elif not out:
+        console.print(result.documents[0].content)
+
+
+@budget_app.command("check")
+def budget_check(
+    session: str = typer.Option("demo-session", "--session", help="Session id."),
+    agent: str = typer.Option("agent", "--agent", help="Agent id."),
+    tool: str | None = typer.Option(None, "--tool", help="Optional tool name."),
+    input_tokens: int = typer.Option(0, "--input-tokens", help="Input tokens for this event."),
+    output_tokens: int = typer.Option(0, "--output-tokens", help="Output tokens for this event."),
+    cost_usd: float = typer.Option(0.0, "--cost-usd", help="Cost for this event."),
+    max_cost_usd: float = typer.Option(5.0, "--max-cost-usd", help="Session cost limit."),
+    max_tokens: int = typer.Option(50000, "--max-tokens", help="Session token limit."),
+    max_tool_calls: int = typer.Option(10, "--max-tool-calls", help="Tool calls allowed per window."),
+    json_output: bool = typer.Option(False, "--json", help="Print decision as JSON."),
+) -> None:
+    """Evaluate a token, cost, and tool-rate circuit breaker event."""
+    breaker = BudgetCircuitBreaker(
+        max_cost_usd_per_session=max_cost_usd,
+        max_tokens_per_session=max_tokens,
+        max_tool_calls_per_window=max_tool_calls,
+    )
+    decision = breaker.record(
+        session_id=session,
+        agent_id=agent,
+        tool=tool,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cost_usd=cost_usd,
+    )
+    if json_output:
+        console.print_json(data=decision.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware Budget Circuit Breaker")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("Allowed", str(decision.allowed))
+    table.add_row("Action", decision.action)
+    table.add_row("Reason", decision.reason)
+    table.add_row("Reason codes", ", ".join(decision.reason_codes) or "-")
+    table.add_row("Metrics", json.dumps(decision.metrics))
+    console.print(table)
+
+
+@airgap_app.command("check")
+def airgap_check(
+    policy: list[str] = typer.Option(
+        ["policyaware.yaml"],
+        "--policy",
+        help="Local policy file path. Repeat for multiple policies.",
+    ),
+    model: list[str] = typer.Option(
+        ["local"],
+        "--model",
+        help="Model source label or URI. Use local, ollama, vllm, llama.cpp, etc.",
+    ),
+    audit_path: str = typer.Option(".policyaware/audit.db", "--audit-path", help="Local audit DB/JSONL path."),
+    allow_remote_policy: bool = typer.Option(
+        False,
+        "--allow-remote-policy",
+        help="Allow remote policy sources for non-air-gapped edge deployments.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print readiness report as JSON."),
+) -> None:
+    """Check whether a PolicyAware setup can run as an offline edge/on-prem control point."""
+    report = AirGapReadinessChecker().check(
+        policy_sources=policy,
+        model_sources=model,
+        audit_path=audit_path,
+        allow_remote_policy_sources=allow_remote_policy,
+    )
+    if json_output:
+        console.print_json(data=report.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware Air-Gap Readiness")
+    table.add_column("Status")
+    table.add_column("Code")
+    table.add_column("Message")
+    for finding in report.findings:
+        style = "green" if finding.passed else "red" if finding.severity == "critical" else "yellow"
+        table.add_row(f"[{style}]{'PASS' if finding.passed else 'FAIL'}[/{style}]", finding.code, finding.message)
+    console.print(table)
+    console.print(f"Ready: {report.ready}")
+    if not report.ready:
+        raise typer.Exit(code=1)
+
+
+@translate_app.command("policy")
+def translate_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy to translate."),
+    frameworks: str = typer.Option(
+        "langchain,llamaindex,autogen,crewai,raw",
+        "--frameworks",
+        help="Comma-separated frameworks: langchain,llamaindex,autogen,crewai,openai,anthropic,raw.",
+    ),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Optional JSON output path."),
+) -> None:
+    """Generate framework adapter recipes from one PolicyAware policy."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    selected = _parse_csv(frameworks) or ["raw"]
+    report = PolicyTranslationEngine().translate_file(policy_file, frameworks=selected)  # type: ignore[arg-type]
+    payload = report.model_dump(mode="json")
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        console.print(f"[bold green]Translation report written:[/bold green] {out.resolve()}")
+        return
+    console.print_json(data=payload)
+
+
+@drift_app.command("canary")
+def drift_canary(
+    canary_file: Path = typer.Argument(..., help="YAML file with drift canary cases."),
+    threshold: float = typer.Option(0.2, "--threshold", help="Failure ratio allowed before drift fails."),
+    json_output: bool = typer.Option(False, "--json", help="Print drift report as JSON."),
+) -> None:
+    """Run offline drift canaries against expected output fixtures.
+
+    The YAML file can contain cases with prompt, output, expected_contains, and
+    forbidden_contains. Provider-backed canaries can use the same API with a real
+    model callable in application code.
+    """
+    if not canary_file.exists():
+        raise typer.BadParameter(f"Canary file does not exist: {canary_file}")
+    data = yaml.safe_load(canary_file.read_text(encoding="utf-8")) or {}
+    cases = [DriftCanaryCase(**case) for case in data.get("cases", [])]
+    outputs = {str(case.get("id") or case.get("case_id")): str(case.get("output", "")) for case in data.get("cases", [])}
+    report = DriftCanaryEngine(threshold=threshold).run(
+        cases,
+        lambda prompt: outputs.get(next((case.case_id for case in cases if case.prompt == prompt), ""), ""),
+    )
+    if json_output:
+        console.print_json(data=report.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware Drift Canary")
+    table.add_column("Case")
+    table.add_column("Passed")
+    table.add_column("Reason")
+    for finding in report.findings:
+        table.add_row(finding.case_id, str(finding.passed), finding.reason)
+    console.print(table)
+    console.print(f"Drift score: {report.drift_score:.2f}; passed: {report.passed}")
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@fairness_app.command("check")
+def fairness_check(
+    events_file: Path = typer.Argument(..., help="JSONL file of decision events."),
+    protected_attribute: str = typer.Option(..., "--attribute", help="Protected attribute field to group by."),
+    positive_outcomes: str = typer.Option("approved,selected,passed", "--positive-outcomes"),
+    threshold: float = typer.Option(0.2, "--threshold", help="Maximum allowed positive-rate disparity."),
+    min_group_size: int = typer.Option(5, "--min-group-size", help="Minimum records per group."),
+    json_output: bool = typer.Option(False, "--json", help="Print fairness report as JSON."),
+) -> None:
+    """Check real-time decision distributions for fairness review signals."""
+    if not events_file.exists():
+        raise typer.BadParameter(f"Events file does not exist: {events_file}")
+    monitor = FairnessMonitor(
+        protected_attribute=protected_attribute,
+        positive_outcomes=_parse_csv(positive_outcomes) or ["approved"],
+        threshold=threshold,
+        min_group_size=min_group_size,
+    )
+    report = None
+    for line in events_file.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        report = monitor.record(
+            subject_id=str(event.get("subject_id")),
+            outcome=str(event.get("outcome")),
+            attributes=dict(event.get("attributes", {})),
+        )
+    report = report or monitor.evaluate()
+    if json_output:
+        console.print_json(data=report.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware Fairness Check")
+    table.add_column("Group")
+    table.add_column("Total")
+    table.add_column("Positive")
+    table.add_column("Positive Rate")
+    for metric in report.metrics:
+        table.add_row(metric.group, str(metric.total), str(metric.positive), f"{metric.positive_rate:.2f}")
+    console.print(table)
+    console.print(f"Disparity: {report.disparity:.2f}; passed: {report.passed}")
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
 @tools_app.command("check")
 def check_tool(
     policy_file: Path,
@@ -1570,6 +1977,80 @@ def check_tool(
         )
     )
     console.print_json(data=decision.model_dump(mode="json"))
+
+
+@mcp_app.command("check")
+def check_mcp_request(
+    policy_file: Path = typer.Argument(..., help="MCP/tool governance YAML policy."),
+    request_file: Path = typer.Argument(..., help="JSON file containing one MCP JSON-RPC request."),
+    connector: str | None = typer.Option(
+        None,
+        "--connector",
+        help="Default connector id when MCP tool name does not include connector.action.",
+    ),
+    agent: str = typer.Option("mcp_client", "--agent", help="Agent/client identity."),
+    role: str = typer.Option("developer", "--role", help="User role."),
+    deny_on_secrets: bool = typer.Option(True, "--deny-on-secrets/--allow-secrets"),
+    json_output: bool = typer.Option(True, "--json/--table", help="Print full result as JSON."),
+) -> None:
+    """Evaluate an MCP tools/call JSON-RPC request before forwarding to the MCP server."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    if not request_file.exists():
+        raise typer.BadParameter(f"MCP request file does not exist: {request_file}")
+    payload = json.loads(request_file.read_text(encoding="utf-8"))
+    proxy = MCPPolicyProxy.from_policy_file(
+        policy_file,
+        connector_id=connector,
+        agent_id=agent,
+        user={"id": "cli_user", "role": role},
+        deny_on_secrets=deny_on_secrets,
+    )
+    result = proxy.evaluate(payload)
+    if json_output:
+        console.print_json(data=result.model_dump(mode="json"))
+        return
+    table = Table(title="PolicyAware MCP Policy Proxy")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("Allowed", str(result.allowed))
+    table.add_row("Action", result.action)
+    table.add_row("Connector", result.connector_id or "-")
+    table.add_row("Tool", result.tool_name or "-")
+    table.add_row("Reason codes", ", ".join(result.reason_codes) or "-")
+    table.add_row("Redactions", str(result.redactions))
+    console.print(table)
+
+
+@mcp_app.command("proxy")
+def proxy_mcp_server(
+    policy_file: Path = typer.Argument(..., help="MCP/tool governance YAML policy."),
+    server_command: str = typer.Option(
+        ...,
+        "--server-command",
+        help='Command that starts the real MCP server, for example "python server.py".',
+    ),
+    connector: str | None = typer.Option(
+        None,
+        "--connector",
+        help="Default connector id when MCP tool name does not include connector.action.",
+    ),
+    agent: str = typer.Option("mcp_client", "--agent", help="Agent/client identity."),
+    role: str = typer.Option("developer", "--role", help="User role."),
+    deny_on_secrets: bool = typer.Option(True, "--deny-on-secrets/--allow-secrets"),
+) -> None:
+    """Run a live stdio MCP policy proxy in front of a real MCP server command."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    config = MCPStdioProxyConfig(
+        policy_file=policy_file,
+        server_command=server_command,
+        connector_id=connector,
+        agent_id=agent,
+        user_role=role,
+        deny_on_secrets=deny_on_secrets,
+    )
+    raise typer.Exit(code=MCPStdioPolicyProxy(config).run())
 
 
 @audit_app.command("bundle")
@@ -1630,6 +2111,35 @@ def audit_dashboard_sqlite(
     traces = SQLiteAuditLogger(db).read_traces()
     output = GovernanceDashboard().write_html(traces, out)
     console.print(str(output))
+
+
+@audit_app.command("verify-chain")
+def audit_verify_chain(
+    traces_file: Path = typer.Argument(Path(".policyaware/traces.jsonl")),
+    secret: str | None = typer.Option(None, "--secret", help="Optional HMAC secret used for signing."),
+    out: Path | None = typer.Option(None, "--out", help="Optional JSON file for the hash-chain evidence."),
+) -> None:
+    """Build and verify a tamper-evident audit hash chain from JSONL traces."""
+    signer = IntegritySigner(secret)
+    chain = TamperEvidentAuditChain(signer)
+    traces = AuditLogger(traces_file).read_traces()
+    for trace in traces:
+        chain.append(trace)
+    verified = chain.verify()
+    records = [record.model_dump(mode="json") for record in chain.records]
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(records, indent=2), encoding="utf-8")
+    table = Table(title="PolicyAware Tamper-Evident Audit Chain")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("Traces", str(len(traces)))
+    table.add_row("Verified", str(verified))
+    table.add_row("Algorithm", records[-1]["algorithm"] if records else signer.sign({}).algorithm)
+    table.add_row("Output", str(out.resolve()) if out else "-")
+    console.print(table)
+    if not verified:
+        raise typer.Exit(code=1)
 
 
 @audit_app.command("replay")

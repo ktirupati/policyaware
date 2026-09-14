@@ -6,6 +6,15 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.2
+
+- Added first-class MCP JSON-RPC policy proxy support for `tools/call` isolation, sensitive argument redaction, structured JSON-RPC block responses, and live stdio MCP server wrapping with `policyaware mcp proxy`.
+- Added adaptive governance helpers for scan-driven policy suggestion, synthetic redaction, auditable safe rewrite, multi-step plan preflight, and shadow AI scan detection.
+- Added enterprise structural layers: jury consensus, RAG retrieval-context guard, tamper-evident audit chains, and token/cost/tool-rate circuit breakers.
+- Added edge and policy intelligence helpers for air-gapped readiness checks, cross-framework policy translation recipes, model drift canaries, and fairness distribution monitoring.
+- Expanded README, docs site, sitemap, and wiki pages with copy/paste examples for the new governance capabilities.
+- Added regression tests for MCP proxy, MCP stdio framing, adaptive governance, structural layers, and edge intelligence.
+
 ## 0.4.1
 
 - Added CLI-native scan rulesets through `policyaware scan --ruleset`, keeping

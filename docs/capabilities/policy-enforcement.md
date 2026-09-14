@@ -43,6 +43,7 @@ from policyaware import PolicyEngine, PolicySchemaValidator
 | `risk_tier` | `RiskTier` | Risk tier: `low`, `medium`, `high`, or `critical`. |
 | `remediation` | `list[str]` | Suggested fixes or next steps. |
 | `explanation` | `DecisionExplanation \| None` | Structured explanation with summary, policy IDs, and remediation. |
+| `state_mutation` | `dict \| None` | Auditable state patch for adaptive actions such as `safe_rewrite`. |
 
 ## YAML Policy Context Fields
 
@@ -144,3 +145,43 @@ Supported roots:
 ```text
 tenant, app, user, request, data, risk, ml
 ```
+
+## Safe Rewrite Transform
+
+Use `safe_rewrite` when you want PolicyAware to return a safer trajectory instead of only blocking the workflow.
+
+```yaml
+rules:
+  - name: safe_rewrite_risky_tool_trajectory
+    effect: transform
+    action: safe_rewrite
+    when:
+      request.action_type_in: ["delete", "deploy", "payment", "refund"]
+
+  - name: allow_developers
+    effect: allow
+    when:
+      user.role: developer
+```
+
+Python:
+
+```python
+decision = engine.decide(request, findings)
+
+print(decision.actions)
+print(decision.state_mutation)
+```
+
+The returned `state_mutation` contains rewritten messages and instructions that tell the agent to continue in read-only mode until a human approval workflow authorizes side effects.
+
+## Generate Suggested Policy
+
+Use scan findings to create a conservative deny-by-default starter policy:
+
+```bash
+policyaware policy suggest . --out policyaware.generated.yaml
+policyaware policy validate policyaware.generated.yaml
+```
+
+Read more: [Adaptive Governance](../adaptive-governance.md).

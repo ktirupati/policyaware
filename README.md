@@ -44,6 +44,11 @@ Observability templates: [Grafana, Prometheus, and OpenTelemetry examples](https
 Official GitHub Action: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action) for PolicyAware pull-request scans, annotations, SARIF, and report artifacts
 Policy contract checks: [prevent YAML/tool drift in CI](https://github.com/ktirupati/policyaware/blob/main/docs/policy-contract-checks.md)
 Policy composition: [hierarchical global, compliance, tenant, app, and local overrides](https://github.com/ktirupati/policyaware/blob/main/docs/policy-composition.md)
+Adaptive governance: [policy suggestion, synthetic redaction, safe rewrite, plan preflight, and shadow AI scan signals](https://github.com/ktirupati/policyaware/blob/main/docs/adaptive-governance.md)
+
+Enterprise structural layers: [jury consensus, retrieval-hook defense, tamper-evident audit chains, and budget circuit breakers](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-structural-layers.md)
+
+Edge and policy intelligence: [air-gapped readiness, cross-framework policy translation, drift canaries, and fairness monitoring](https://github.com/ktirupati/policyaware/blob/main/docs/edge-policy-intelligence.md)
 Runnable contract example: [`examples/policy-contract-checks`](https://github.com/ktirupati/policyaware/tree/main/examples/policy-contract-checks)
 Demo outputs: [captured terminal output for runnable examples](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md)
 Changelog: [release history](https://github.com/ktirupati/policyaware/blob/main/CHANGELOG.md)
@@ -96,6 +101,10 @@ PolicyAware includes lightweight workflow packs for coding-agent tools. These pa
 - **Structured rejection handshakes:** Returns canonical blocked-action payloads with decision, reason codes, matched rules, trace IDs, remediation, and telemetry fields so API wrappers do not swallow governance context.
 - **Dynamic policy retry protection:** Applies strict fetch timeouts, refresh TTLs, exponential backoff, jitter, last known-good cache, and emergency fallback policies for central HTTP/S3/GCS/ADLS policy sources.
 - **Offline AI governance linter:** `policyaware scan` runs locally or in CI before deployment to find PII/PHI/secrets, direct LLM calls, unmapped MCP tools, missing tool governance, weak routing controls, audit gaps, and policy YAML issues. GitHub Actions can block pull requests before unvetted AI tools or prompts reach production.
+- **Adaptive governance helpers:** Generate starter policies from scan findings, use synthetic redaction to preserve prompt utility, return auditable safe-rewrite state patches, preflight multi-step agent plans, and detect shadow-AI patterns such as dynamic installs or runtime tool registration.
+- **Enterprise structural layers:** Use jury consensus for high-risk decisions, sanitize retrieved RAG context before prompt assembly, verify tamper-evident audit chains, and pause runaway agent sessions with token, cost, and tool-rate circuit breakers.
+- **Edge and policy intelligence:** Validate air-gapped local deployment, translate one policy across orchestrators, run drift canaries, and monitor fairness distributions for decisioning agents.
+- **First-class MCP isolation:** Intercept MCP JSON-RPC `tools/call` requests, evaluate connector/action policy, redact sensitive arguments, and return structured JSON-RPC errors before MCP servers touch the host.
 - **Framework callbacks:** Includes lightweight LangChain and LlamaIndex callback handlers that aggregate streamed tokens and report policy, risk, leakage, eval, and token-accounting results.
 - **LangGraph node guard:** Adds dependency-free node/state and tool-call governance for graph-based AI agents.
 - **Haystack governance components:** Adds optional Haystack-style components for RAG query governance, output evaluation, and agent tool permission checks.
@@ -141,6 +150,19 @@ Read more: [Architecture](https://github.com/ktirupati/policyaware/blob/main/doc
 | GitHub pull-request scan gate | `ktirupati/policyaware-action@v1` |
 | Use PolicyAware from non-Python services | `policyaware up --policy policyaware.yaml --port 8080` |
 | Prevent YAML/tool contract drift | `policyaware contract check ./src --policy tool-governance.yaml` |
+| Generate a starter policy from scan signals | `policyaware policy suggest . --out policyaware.generated.yaml` |
+| Preflight a multi-step agent plan | `policyaware plan check plan.yaml` |
+| Preserve prompt utility while replacing sensitive values | `policyaware protect synthesize "Email jane@example.com"` |
+| Run high-risk jury consensus | `policyaware consensus check "transfer funds for jane@example.com" --risk high` |
+| Sanitize retrieved RAG context | `policyaware retrieval sanitize retrieved-context.txt --out safe-context.txt` |
+| Check cost/token circuit breakers | `policyaware budget check --cost-usd 10 --max-cost-usd 5` |
+| Verify tamper-evident audit chain | `policyaware audit verify-chain .policyaware/traces.jsonl` |
+| Check raw MCP JSON-RPC tool calls | `policyaware mcp check examples/policies/tool-governance.yaml mcp-request.json` |
+| Run a live MCP stdio policy proxy | `policyaware mcp proxy policyaware.yaml --connector filesystem --server-command "python filesystem_mcp_server.py"` |
+| Check air-gapped deployment readiness | `policyaware airgap check --policy policyaware.yaml --model local` |
+| Translate one policy across frameworks | `policyaware translate policy policyaware.yaml --frameworks langchain,llamaindex,autogen,raw` |
+| Run drift canaries | `policyaware drift canary canaries.yaml --threshold 0.1` |
+| Check fairness distribution | `policyaware fairness check decisions.jsonl --attribute group --positive-outcomes approved` |
 | Simple PII/PHI/secrets string check | `DataProtectionEngine.inspect(...)` |
 | YAML policy unit testing | `PolicyEngine.decide(...)` |
 
@@ -224,6 +246,9 @@ policyaware policy packs list
 policyaware policy packs copy healthcare-hipaa --out policyaware.yaml
 policyaware policy compose-check examples/policy-composition/policy-stack-safe.yaml
 policyaware policy compose examples/policy-composition/policy-stack-safe.yaml --out policyaware.composed.yaml
+policyaware policy suggest . --out policyaware.generated.yaml
+policyaware plan check agent-plan.yaml --fail-on high
+policyaware protect synthesize "Email jane@example.com or call 212-555-7890"
 policyaware contract check ./src --policy tool-governance.yaml
 policyaware up --policy policyaware.yaml --port 8080
 policyaware up --policy-url s3://policy-configs/prod/policyaware.yaml --policy-cache .policyaware/policy-cache.yaml --fallback-policy examples/policies/emergency-fallback-deny.yaml --require-auth
@@ -299,6 +324,9 @@ policyaware scan . --out policyaware-scan-report.html
 policyaware scan . --include ".py,.yaml,.json" --exclude "tests,fixtures"
 policyaware scan . --write-baseline policyaware-baseline.json
 policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sarif,markdown
+policyaware policy suggest . --out policyaware.generated.yaml
+policyaware plan check agent-plan.yaml --json
+policyaware protect synthesize "Email jane@example.com" --json
 ```
 
 For copy-pasteable end-to-end examples, see [Working Examples](https://github.com/ktirupati/policyaware/blob/main/docs/working-examples.md).

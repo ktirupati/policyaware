@@ -17,6 +17,7 @@ from policyaware.models import (
 )
 from policyaware.policy_schema import PolicySchemaValidator
 from policyaware.reason_codes import ReasonCode
+from policyaware.trajectory import safe_rewrite_state
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,8 @@ class PolicyEngine:
                 reason_codes=reason_codes,
                 remediation=[] if not actions else ["Transforms were applied before execution."],
             )
+            if "safe_rewrite" in actions:
+                decision.state_mutation = safe_rewrite_state(request)
             return self._with_explanation(decision)
 
         if self.default == "allow":
@@ -119,6 +122,8 @@ class PolicyEngine:
                 risk_tier=risk.tier,
                 reason_codes=reason_codes,
             )
+            if "safe_rewrite" in actions:
+                decision.state_mutation = safe_rewrite_state(request)
             return self._with_explanation(decision)
 
         decision = PolicyDecision(

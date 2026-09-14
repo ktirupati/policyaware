@@ -29,6 +29,10 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/mcp-policy-proxy.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/pii-redaction-llm.html</loc>
     <priority>0.8</priority>
   </url>
@@ -151,6 +155,18 @@
   <url>
     <loc>https://ktirupati.github.io/policyaware/stateful-session-governance.md</loc>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/adaptive-governance.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/enterprise-structural-layers.md</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/edge-policy-intelligence.md</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://ktirupati.github.io/policyaware/enterprise-hardening.md</loc>

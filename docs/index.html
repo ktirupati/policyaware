@@ -88,9 +88,13 @@
             <li>Risk classification and explainable decisions</li>
             <li>Model routing across real providers and local models</li>
             <li>MCP/tool governance and approval hooks</li>
+            <li>First-class MCP JSON-RPC policy proxy for tool-call isolation</li>
             <li>Optional NeMo Guardrails and Guardrails AI orchestration</li>
             <li>Runtime evaluation, audit traces, and replay</li>
             <li>Local code scanning with HTML, JSON, SARIF, and Markdown reports</li>
+            <li>Adaptive governance for policy suggestion, synthetic redaction, safe rewrite, and plan preflight</li>
+            <li>Enterprise structural layers for jury consensus, RAG retrieval defense, tamper-evident audit chains, and budget circuit breakers</li>
+            <li>Edge and policy intelligence for air-gapped readiness, policy translation, drift canaries, and fairness monitoring</li>
             <li>LangChain and LlamaIndex callback governance</li>
           </ul>
         </div>
@@ -160,6 +164,7 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="fastapi-llm-policy-middleware.html">FastAPI LLM policy middleware guide</a></li>
           <li><a href="langchain-policy-guardrails.html">LangChain policy guardrails guide</a></li>
           <li><a href="mcp-tool-permission-gateway.html">MCP tool permission gateway guide</a></li>
+          <li><a href="mcp-policy-proxy.md">MCP JSON-RPC policy proxy</a></li>
           <li><a href="pii-redaction-llm.html">PII redaction for LLM apps guide</a></li>
           <li><a href="local-code-scan.md">Local code scan and HTML report guide</a></li>
           <li><a href="capabilities/guardrails-integrations.md">NeMo Guardrails and Guardrails AI integrations</a></li>
@@ -174,6 +179,9 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="sidecar-http-gateway.md">HTTP sidecar gateway for non-Python services</a></li>
           <li><a href="dynamic-policy-distribution.md">Dynamic policy distribution for many agents</a></li>
           <li><a href="stateful-session-governance.md">Stateful session governance for cumulative leakage</a></li>
+          <li><a href="adaptive-governance.md">Adaptive governance for safe rewrite, plan preflight, synthetic redaction, and policy suggestion</a></li>
+          <li><a href="enterprise-structural-layers.md">Enterprise structural layers for jury consensus, retrieval-hook defense, audit chains, and cost controls</a></li>
+          <li><a href="edge-policy-intelligence.md">Edge and policy intelligence for air-gapped readiness, policy translation, drift canaries, and fairness monitoring</a></li>
           <li><a href="enterprise-hardening.md">Enterprise hardening primitives</a></li>
           <li><a href="policy-rollout-and-trace-correlation.md">Policy rollout and trace correlation</a></li>
           <li><a href="observability-templates.md">Grafana, Prometheus, and OpenTelemetry templates</a></li>
@@ -302,6 +310,9 @@ policyaware policy explain examples/policies/basic.yaml --role developer --promp
 policyaware scan . --out policyaware-scan-report.html
 policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sarif,markdown
 policyaware scan . --diff --diff-base origin/main --fail-on high
+policyaware policy suggest . --out policyaware.generated.yaml
+policyaware plan check agent-plan.yaml --fail-on high
+policyaware protect synthesize "Email jane@example.com or call 212-555-7890"
 policyaware audit view --traces-file .policyaware/traces.jsonl --out .policyaware/trace-viewer.html</code></pre>
       </div>
     </section>
@@ -455,6 +466,22 @@ policyaware observability otel-json</code></pre>
           <div class="card">
             <h3>Policy Contract Checks</h3>
             <p><a href="policy-contract-checks.md">Prevent drift between YAML policies and Python tool signatures</a></p>
+          </div>
+          <div class="card">
+            <h3>Adaptive Governance</h3>
+            <p><a href="adaptive-governance.md">Generate policies, synthesize sensitive values, safely rewrite risky trajectories, preflight plans, and detect shadow AI</a></p>
+          </div>
+          <div class="card">
+            <h3>Enterprise Structural Layers</h3>
+            <p><a href="enterprise-structural-layers.md">Run jury consensus, sanitize retrieved context, verify audit chains, and pause runaway agent sessions</a></p>
+          </div>
+          <div class="card">
+            <h3>MCP Policy Proxy</h3>
+            <p><a href="mcp-policy-proxy.md">Intercept raw MCP JSON-RPC tool calls before filesystem, Git, database, or API servers execute them</a></p>
+          </div>
+          <div class="card">
+            <h3>Edge And Policy Intelligence</h3>
+            <p><a href="edge-policy-intelligence.md">Validate air-gapped deployment, translate policies, run drift canaries, and monitor fairness signals</a></p>
           </div>
           <div class="card">
             <h3>Security Boundaries</h3>

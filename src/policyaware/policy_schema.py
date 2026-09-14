@@ -16,7 +16,15 @@ class PolicySchemaValidator:
     allowed_rule_fields: frozenset[str] = frozenset({"name", "effect", "when", "action"})
     allowed_effects: frozenset[str] = frozenset({"allow", "deny", "transform", "require_approval"})
     allowed_actions: frozenset[str] = frozenset(
-        {"redact", "mask", "log", "route_to_safe_model", "require_approval"}
+        {
+            "redact",
+            "synthetic_redact",
+            "mask",
+            "log",
+            "route_to_safe_model",
+            "require_approval",
+            "safe_rewrite",
+        }
     )
     allowed_roots: frozenset[str] = frozenset(
         {"tenant", "app", "user", "request", "data", "risk", "ml", "metadata"}

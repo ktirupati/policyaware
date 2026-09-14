@@ -50,6 +50,14 @@ class DataFindings(BaseModel):
         return self.contains_pii or self.contains_phi or self.contains_secrets
 
 
+class SyntheticRedactionResult(BaseModel):
+    original_text: str
+    synthetic_text: str
+    synthetic_map: dict[str, str] = Field(default_factory=dict)
+    categories: list[str] = Field(default_factory=list)
+    reversible: bool = True
+
+
 class MLSignal(BaseModel):
     name: str
     label: str | None = None
@@ -99,6 +107,7 @@ class PolicyDecision(BaseModel):
     violated_rules: list[str] = Field(default_factory=list)
     remediation: list[str] = Field(default_factory=list)
     explanation: DecisionExplanation | None = None
+    state_mutation: dict[str, Any] | None = None
 
 
 class ModelCandidate(BaseModel):

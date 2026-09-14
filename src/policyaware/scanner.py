@@ -132,7 +132,7 @@ class ScanConfig:
             {
                 "Prompt Safety", "Secrets", "PII", "PHI", "Tool Governance",
                 "Agent Tool Governance", "Autonomous Agent Governance", "LLM Governance",
-                "RAG Governance", "Provider Governance",
+                "RAG Governance", "Provider Governance", "Shadow AI Governance",
             }
         ),
         "prompt-injection": frozenset({"Prompt Safety"}),
@@ -140,7 +140,7 @@ class ScanConfig:
         "mcp-security": frozenset(
             {
                 "Tool Governance", "Agent Tool Governance",
-                "Autonomous Agent Governance", "Configuration Governance",
+                "Autonomous Agent Governance", "Configuration Governance", "Shadow AI Governance",
             }
         ),
         "enterprise-governance": frozenset(
@@ -365,6 +365,20 @@ class LocalCodeScanner:
             act\s+autonomously|
             execute\s+without\s+approval
         )\b
+        """
+    )
+    DYNAMIC_INSTALL_RE = re.compile(
+        r"""(?ix)
+        \b(
+            pip\s+install|poetry\s+add|npm\s+install|pnpm\s+add|yarn\s+add|
+            subprocess\.(run|Popen|call)|os\.system|exec\(|eval\(|importlib\.import_module|
+            __import__\(|curl\s+.*\|\s*(sh|bash)|wget\s+.*\|\s*(sh|bash)
+        )\b
+        """
+    )
+    RUNTIME_TOOL_REGISTRATION_RE = re.compile(
+        r"""(?ix)
+        \b(register_tool|register_function|add_tool|load_tool|tool_registry|dynamic_tool)\b
         """
     )
     RAG_RE = re.compile(r"\b(vectorstore|retriever|similarity_search|rag|retrieve|embedding)\b", re.I)
@@ -795,6 +809,42 @@ class LocalCodeScanner:
                         "CI/CD, Kubernetes, Docker, Terraform, and env files do not expose secrets."
                     ),
                     docs_url=self.DOCS["data"],
+                )
+            )
+        if self.DYNAMIC_INSTALL_RE.search(text) and _is_code_file(path) and not has_approval:
+            findings.append(
+                ScanFinding(
+                    severity="high",
+                    category="Shadow AI Governance",
+                    file=relative,
+                    line=_first_match_line(text, self.DYNAMIC_INSTALL_RE),
+                    title="Dynamic code execution or dependency installation detected",
+                    evidence="Runtime install, subprocess, shell, eval, exec, or dynamic import pattern detected.",
+                    recommendation=(
+                        "Treat dynamic code/dependency loading as shadow AI risk. Require allowlisted "
+                        "packages, sandboxing, approval, and audit before execution."
+                    ),
+                    docs_url=self.DOCS["tool"],
+                )
+            )
+        if (
+            self.RUNTIME_TOOL_REGISTRATION_RE.search(text)
+            and not has_policyaware
+            and _is_code_file(path)
+        ):
+            findings.append(
+                ScanFinding(
+                    severity="medium",
+                    category="Shadow AI Governance",
+                    file=relative,
+                    line=_first_match_line(text, self.RUNTIME_TOOL_REGISTRATION_RE),
+                    title="Runtime tool registration found outside PolicyAware governance",
+                    evidence="Dynamic tool registration or registry pattern detected.",
+                    recommendation=(
+                        "Register tools through PolicyAware ToolPolicyEngine or run a contract check "
+                        "so newly exposed actions receive connector/action permissions."
+                    ),
+                    docs_url=self.DOCS["tool"],
                 )
             )
         if path.suffix.lower() in {".yaml", ".yml"}:
@@ -1650,6 +1700,10 @@ def _recommendations_plain(report: ScanReport) -> list[str]:
         recommendations.append(
             "Review Docker, Kubernetes, Terraform, CI/CD, and env-style files for plaintext secrets and unsafe configuration defaults."
         )
+    if categories["Shadow AI Governance"]:
+        recommendations.append(
+            "Review dynamic installs, subprocess execution, and runtime tool registration; require sandboxing, allowlists, approval, and audit for shadow AI paths."
+        )
     if not recommendations:
         recommendations.append(
             "No high-signal findings were detected. Keep PolicyAware scanning in local development and CI to catch regressions."
@@ -1871,6 +1925,7 @@ def _compliance_framework_mapping(report: ScanReport) -> dict[str, list[str]]:
             "Tool Governance",
             "Agent Tool Governance",
             "Autonomous Agent Governance",
+            "Shadow AI Governance",
             "RAG Governance",
             "Prompt Safety",
             "Guardrails Integration",
@@ -1904,6 +1959,7 @@ def _compliance_area(category: str) -> str:
         "Configuration Governance": "Secure Configuration",
         "Prompt Safety": "Prompt Safety",
         "Guardrails Integration": "Guardrails Orchestration",
+        "Shadow AI Governance": "Shadow AI / Runtime Discovery",
     }.get(category, "Governance")
 
 
@@ -1996,6 +2052,11 @@ env:
 gateway = Gateway.from_policy_file("policyaware.yaml")
 gateway.add_input_guard(NeMoGuardrailsAdapter(config_path="rails/"))
 gateway.add_output_guard(GuardrailsAIAdapter(rail_spec="guardrails/spec.rail"))""",
+        "Shadow AI Governance": """tool_policies:
+  - connector: runtime
+    action: dynamic_install
+    effect: require_approval
+    allowed_roles: [platform_admin]""",
     }
     return snippets.get(category, "")
 
@@ -2036,6 +2097,7 @@ def _policy_coverage(findings: list[ScanFinding]) -> tuple[int, list[str]]:
         "LLM Governance": "gateway enforcement before model calls",
         "Prompt Safety": "prompt safety checks",
         "Guardrails Integration": "guardrail orchestration through PolicyAware",
+        "Shadow AI Governance": "shadow AI and dynamic tool controls",
         "Tool Governance": "tool approval policy",
         "Agent Tool Governance": "agent/MCP tool permissions",
         "RAG Governance": "RAG citation and grounding evaluation",
