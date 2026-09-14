@@ -40,13 +40,23 @@ PolicyAware emits:
 - Prometheus-compatible metrics from the sidecar `/metrics` endpoint.
 - Prometheus files from audit traces.
 - OpenTelemetry-shaped JSON spans/events.
+- Native OpenTelemetry span events when `opentelemetry-api` is installed and
+  configured by the host application.
 - Semantic governance events for advanced controls such as trajectory mutation,
   synthetic redaction, retrieval sanitization, jury vetoes, and circuit breakers.
 
-```python
-from policyaware import RuntimeTelemetryCollector
+Install the optional OTel bridge support:
 
-telemetry = RuntimeTelemetryCollector()
+```bash
+pip install "policyaware[observability]"
+```
+
+```python
+from policyaware import OpenTelemetryBridge, RuntimeTelemetryCollector
+
+telemetry = RuntimeTelemetryCollector(
+    otel_bridge=OpenTelemetryBridge("policyaware.agent-platform")
+)
 
 telemetry.record_governance_event(
     event_type="jury_veto",
@@ -63,6 +73,12 @@ telemetry.record_governance_event(
 print(telemetry.prometheus_text())
 print(telemetry.otel_events())
 ```
+
+The same event is available in three forms:
+
+- Prometheus counter: `policyaware_governance_events_total`
+- OTel-shaped JSON event: `policyaware.governance.jury_veto`
+- Native OpenTelemetry span event when an OTel SDK/exporter is configured
 
 Export existing traces:
 
@@ -85,6 +101,28 @@ curl http://127.0.0.1:8080/metrics
 
 When a prompt, tool call, or agent action is blocked, developers need a clear
 answer to: which rule fired, what decision happened, and what should be changed?
+
+Launch the interactive local dashboard:
+
+```bash
+policyaware dashboard --policy examples/policies/basic.yaml --port 8765
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765
+```
+
+For FastAPI/Uvicorn mode, install the dashboard extra:
+
+```bash
+pip install "policyaware[dashboard]"
+policyaware dashboard --policy policyaware.yaml --fastapi
+```
+
+If FastAPI is not installed, PolicyAware automatically falls back to a
+dependency-free local web server.
 
 Use the visual simulator to generate a local HTML explanation for one request:
 

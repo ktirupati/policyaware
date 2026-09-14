@@ -37,6 +37,24 @@ rules:
 
 If no allow rule matches, the request is denied. Transform rules, such as redaction, do not grant access by themselves.
 
+## Fail-Closed Behavior
+
+PolicyAware is designed to fail closed for governance-critical paths. If policy
+loading, policy validation, remote policy refresh, checksum verification, or a
+configured validator cannot produce a trusted allow decision, applications
+should treat the result as `DENY` or `require_approval`, not as implicit allow.
+
+Built-in dynamic policy loading follows this order in fail-closed mode:
+
+```text
+remote source -> last known-good cache -> local emergency fallback -> deny
+```
+
+For external validators, approval systems, model providers, or optional
+guardrail services, configure strict timeouts and handle exceptions by returning
+a blocked PolicyAware decision. Do not let validator failures bypass policy
+enforcement.
+
 ## Pre-Execution Enforcement
 
 Use `Gateway.chat(...)`, middleware, or tool governance checks when PolicyAware must decide before execution.

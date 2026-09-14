@@ -12,62 +12,39 @@ These benchmarks are intentionally simple and local. They do not call external m
 | Policy decision | `PolicyEngine.decide(...)` over common contexts | Deny-by-default policy should add low overhead. |
 | Tool governance | `ToolPolicyEngine.decide(...)` over connector/action calls | Agent tool checks should be cheap enough to run before every tool call. |
 | Local scan | `policyaware scan ./repo` | Pre-deployment governance scanning should remain practical for developer and CI usage. |
-| Evidence export | `to_agt_*` helpers | Audit/evidence conversion should be near-zero overhead. |
+| Evidence export | `to_agt_*` helpers | Audit/evidence conversion should be cheap enough for request-time evidence capture. |
 
-## Copy-Paste Benchmark Script
+## Reproducible Benchmark Scripts
 
-```python
-from time import perf_counter
+The repository includes runnable benchmark scripts in `benchmarks/`.
 
-from policyaware import (
-    DataProtectionEngine,
-    GatewayRequest,
-    PolicyEngine,
-    RiskClassifier,
-    ToolCallRequest,
-    ToolPolicyEngine,
-)
+Policy, privacy, gateway preflight, and tool-governance benchmark:
 
-policy = PolicyEngine.from_file("examples/policies/basic.yaml")
-tool_policy = ToolPolicyEngine.from_file("examples/policies/tool-governance.yaml")
-data = DataProtectionEngine()
-risk_classifier = RiskClassifier()
-
-request = GatewayRequest(
-    tenant="acme",
-    app="bench",
-    user={"id": "u_1", "role": "support_agent"},
-    context={"region": "us", "risk": "low", "task_type": "support"},
-    messages=[{"role": "user", "content": "Email jane@example.com about this case."}],
-)
-
-N = 1000
-
-start = perf_counter()
-for _ in range(N):
-    findings = data.inspect(request.prompt_text)
-print("data_protection_ms=", round((perf_counter() - start) * 1000 / N, 4))
-
-findings = data.inspect(request.prompt_text)
-risk = risk_classifier.classify(request, findings)
-
-start = perf_counter()
-for _ in range(N):
-    policy.decide(request, findings, risk)
-print("policy_decision_ms=", round((perf_counter() - start) * 1000 / N, 4))
-
-tool_request = ToolCallRequest(
-    agent_id="code_assistant",
-    connector_id="github",
-    action="create_pr",
-    user={"role": "developer"},
-)
-
-start = perf_counter()
-for _ in range(N):
-    tool_policy.decide(tool_request)
-print("tool_decision_ms=", round((perf_counter() - start) * 1000 / N, 4))
+```bash
+python benchmarks/benchmark_policy_engine.py --requests 1000 --concurrency 1
+python benchmarks/benchmark_policy_engine.py --requests 1000 --concurrency 20
 ```
+
+JSON output for CI or repeated tracking:
+
+```bash
+python benchmarks/benchmark_policy_engine.py --requests 1000 --concurrency 20 --json
+```
+
+Local scan benchmark:
+
+```bash
+python benchmarks/benchmark_scan.py . --iterations 3
+python benchmarks/benchmark_scan.py examples --iterations 5 --json
+```
+
+The policy benchmark reports:
+
+- median latency in microseconds
+- p95 latency in microseconds
+- p99 latency in microseconds
+- total runtime
+- requests per second
 
 ## Scan Timing
 
@@ -81,4 +58,5 @@ The terminal dashboard reports total scan time, files scanned, and findings.
 
 - Base PolicyAware checks are rules-based and local.
 - Optional ML integrations such as Presidio, Transformers, Torch, or ONNX can add model-load time and higher runtime overhead.
+- PolicyAware currently ships as a pure-Python package. The wheel pipeline is ready for future optional native accelerators, but public performance claims should be based on measured benchmark results.
 - Run benchmarks on representative repositories and prompts before setting CI thresholds.

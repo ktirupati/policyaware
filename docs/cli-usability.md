@@ -16,7 +16,37 @@ The base install intentionally stays pure Python. This command gives platform
 teams a startup diagnostic they can capture in logs without adding heavy native
 dependencies.
 
+## Deterministic Test Harness
+
+Run seeded high-volume policy checks against a YAML file:
+
+```bash
+policyaware test-harness policyaware.yaml --requests 10000 --workers 16 --json
+```
+
+Standalone entry point:
+
+```bash
+policyaware-test-harness policyaware.yaml --requests 10000 --workers 16 --json
+```
+
+Use this in CI to catch YAML regressions, unexpected exceptions, and
+thread-safety issues before policy changes reach production.
+
 ## Visual Policy Simulator
+
+Launch the interactive local dashboard:
+
+```bash
+policyaware dashboard --policy examples/policies/basic.yaml --port 8765
+```
+
+Optional FastAPI/Uvicorn mode:
+
+```bash
+pip install "policyaware[dashboard]"
+policyaware dashboard --policy policyaware.yaml --fastapi
+```
 
 Generate a local HTML report explaining one policy decision:
 

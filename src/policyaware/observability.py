@@ -26,6 +26,63 @@ class TelemetryEvent:
     value: float = 1.0
 
 
+class OpenTelemetryBridge:
+    """Optional bridge to the real OpenTelemetry SDK.
+
+    PolicyAware keeps the base package dependency-free. When an application has
+    `opentelemetry-api` installed and configured, this bridge emits native OTel
+    span events with the same semantic attributes used by the built-in JSON
+    exporter and Prometheus counters.
+    """
+
+    def __init__(self, tracer_name: str = "policyaware") -> None:
+        self.tracer_name = tracer_name
+        self._trace = None
+        self._tracer = None
+        try:
+            from opentelemetry import trace  # type: ignore[import-not-found]
+        except Exception:
+            return
+        self._trace = trace
+        self._tracer = trace.get_tracer(tracer_name)
+
+    @property
+    def available(self) -> bool:
+        return self._tracer is not None
+
+    def emit_event(
+        self,
+        name: str,
+        attributes: dict[str, Any],
+        *,
+        value: float = 1.0,
+        span_name: str = "policyaware.enforcement",
+    ) -> None:
+        if self._tracer is None:
+            return
+        safe_attributes = {
+            key: _otel_attribute_value(attribute_value)
+            for key, attribute_value in attributes.items()
+        }
+        safe_attributes["policyaware.event_value"] = float(value)
+        with self._tracer.start_as_current_span(span_name) as span:
+            span.add_event(name, safe_attributes)
+            if bool(attributes.get("policyaware.blocked")):
+                span.set_attribute("policyaware.blocked", True)
+            if "policyaware.decision" in safe_attributes:
+                span.set_attribute("policyaware.decision", safe_attributes["policyaware.decision"])
+
+
+def _otel_attribute_value(value: Any) -> Any:
+    if isinstance(value, str | bool | int | float):
+        return value
+    if value is None:
+        return "unknown"
+    if isinstance(value, list | tuple):
+        return [str(item) for item in value]
+    return str(value)
+
+
 class RuntimeTelemetryCollector:
     """Dependency-free runtime telemetry for PolicyAware enforcement events.
 
@@ -34,12 +91,18 @@ class RuntimeTelemetryCollector:
     agent, dashboard, or OpenTelemetry SDK dependency into the base package.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        otel_bridge: OpenTelemetryBridge | None = None,
+        emit_native_otel: bool = False,
+    ) -> None:
         self._lock = Lock()
         self._counters: dict[tuple[str, tuple[tuple[str, str], ...]], float] = defaultdict(float)
         self._latency_sum_ms = 0.0
         self._latency_count = 0
         self._events: list[TelemetryEvent] = []
+        self.otel_bridge = otel_bridge or (OpenTelemetryBridge() if emit_native_otel else None)
 
     def record_trace(self, trace: dict[str, Any]) -> None:
         labels = {
@@ -85,7 +148,7 @@ class RuntimeTelemetryCollector:
             latency_ms = float(trace.get("latency_ms") or 0.0)
             self._latency_sum_ms += latency_ms
             self._latency_count += 1
-            self._events.append(
+            self._append_event_locked(
                 TelemetryEvent(
                     name="policyaware.gateway.request",
                     attributes={
@@ -133,7 +196,7 @@ class RuntimeTelemetryCollector:
                     "policyaware_tool_reason_codes_total",
                     {**labels, "reason_code": code},
                 )
-            self._events.append(
+            self._append_event_locked(
                 TelemetryEvent(
                     name="policyaware.tool.decision",
                     attributes={
@@ -179,7 +242,7 @@ class RuntimeTelemetryCollector:
             self._inc_locked("policyaware_governance_events_total", labels, value)
             if blocked:
                 self._inc_locked("policyaware_governance_blocked_total", labels, value)
-            self._events.append(
+            self._append_event_locked(
                 TelemetryEvent(
                     name=f"policyaware.governance.{normalized_type}",
                     attributes={
@@ -260,6 +323,11 @@ class RuntimeTelemetryCollector:
     def _inc_locked(self, name: str, labels: dict[str, Any], value: float = 1.0) -> None:
         normalized = tuple(sorted((key, _label_value(label_value)) for key, label_value in labels.items()))
         self._counters[(name, normalized)] += value
+
+    def _append_event_locked(self, event: TelemetryEvent) -> None:
+        self._events.append(event)
+        if self.otel_bridge is not None:
+            self.otel_bridge.emit_event(event.name, event.attributes, value=event.value)
 
 
 class PrometheusExporter:

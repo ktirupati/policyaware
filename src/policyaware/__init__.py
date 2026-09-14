@@ -12,6 +12,7 @@ from policyaware.contracts import ContractCheckReport, ContractFinding, PolicyCo
 from policyaware.crypto_audit import TamperEvidentAuditChain, TamperEvidentAuditRecord
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.dashboard import GovernanceDashboard
+from policyaware.dashboard_server import create_dashboard_app, serve_dashboard
 from policyaware.evals import EvalSuiteRunner, RuntimeEvaluator
 from policyaware.drift import DriftCanaryCase, DriftCanaryEngine, DriftCanaryFinding, DriftCanaryReport
 from policyaware.fairness import (
@@ -89,7 +90,12 @@ from policyaware.ml import (
     StaticMLClassifier,
     TransformersDomainRiskClassifier,
 )
-from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter, RuntimeTelemetryCollector
+from policyaware.observability import (
+    OpenTelemetryBridge,
+    OpenTelemetryJsonExporter,
+    PrometheusExporter,
+    RuntimeTelemetryCollector,
+)
 from policyaware.performance import FastCoreRuntime, PerformanceBackendStatus, performance_status
 from policyaware.plan import PlanCheckReport, PlanFinding, PlanPreflightChecker, PlanStep
 from policyaware.policy import PolicyEngine, PolicyRule
@@ -176,6 +182,7 @@ from policyaware.session_state import (
 )
 from policyaware.sidecar import PolicyAwareSidecar
 from policyaware.simulator import VisualPolicySimulator
+from policyaware.test_harness import HarnessCase, HarnessResult, PolicyAwareTestHarness
 from policyaware.tools import ToolPolicyEngine, ToolRegistry
 from policyaware.trajectory import safe_rewrite_state
 
@@ -217,12 +224,15 @@ __all__ = [
     "GatewayRequest",
     "GatewayResponse",
     "GovernanceDashboard",
+    "create_dashboard_app",
     "GoogleCloudStoragePolicySource",
     "BaseGuardrailAdapter",
     "BasePolicyAwareCallbackHandler",
     "GuardrailAdapter",
     "GuardrailResult",
     "GuardrailsAIAdapter",
+    "HarnessCase",
+    "HarnessResult",
     "IntegrationRecommendation",
     "IntegrationRecommendationReport",
     "IntegrationRecommender",
@@ -261,6 +271,7 @@ __all__ = [
     "PolicyAwareRejection",
     "PolicyAwareToolGovernanceComponent",
     "PolicyAwareSidecar",
+    "PolicyAwareTestHarness",
     "PerformanceBackendStatus",
     "PolicyContractChecker",
     "PolicyComposer",
@@ -330,6 +341,7 @@ __all__ = [
     "TraceViewer",
     "TransformersDomainRiskClassifier",
     "OpenAICompatibleProvider",
+    "OpenTelemetryBridge",
     "OpenTelemetryJsonExporter",
     "AzureOpenAIProvider",
     "AnthropicProvider",
@@ -358,6 +370,7 @@ __all__ = [
     "to_agt_gateway_evidence",
     "to_agt_tool_evidence",
     "safe_rewrite_state",
+    "serve_dashboard",
     "RuleBasedConsensusJuror",
     "write_mcp_message",
 ]

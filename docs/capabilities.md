@@ -44,6 +44,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 | Enterprise hardening | Add SQLite state, emergency revoke lists, checksum pinning, and signed audit traces | `SQLiteSessionStateStore`, `EmergencyRevokeList`, `IntegritySigner` |
 | Policy rollout and trace correlation | Shadow/canary candidate policies, parent trace IDs, session IDs, and governance dashboards | `PolicyRollout`, `GovernanceDashboard` |
 | Performance, telemetry, and simulation | Check runtime backend, emit semantic governance events, and generate visual policy simulator reports | `FastCoreRuntime`, `RuntimeTelemetryCollector`, `VisualPolicySimulator` |
+| Enterprise attestation and test harness | Document confidential-computing deployment patterns and run deterministic 10,000-request policy stress tests | `PolicyAwareTestHarness`, `policyaware test-harness` |
 | Observability templates | Connect PolicyAware outputs to Grafana, Prometheus, OTel, SIEM, and GRC workflows | `examples/observability` |
 | Policy contract checks | Prevent drift between YAML tool policy and Python tool signatures | `PolicyContractChecker`, `policyaware contract check` |
 | Adaptive governance | Generate policies from scan findings, synthesize sensitive values, safely rewrite risky trajectories, preflight agent plans, and detect shadow AI patterns | `PolicySuggester`, `PlanPreflightChecker`, `DataProtectionEngine.synthesize`, `safe_rewrite` |
@@ -92,6 +93,7 @@ Each capability guide includes copy/paste code, YAML examples, and API tables th
 - [Policy Rollout And Trace Correlation](policy-rollout-and-trace-correlation.md)
 - [Observability Templates](observability-templates.md)
 - [Performance, Telemetry, And Visual Simulation](performance-observability-simulator.md)
+- [Enterprise Attestation, Certification, And Test Harness](enterprise-attestation-certification-and-test-harness.md)
 - [Policy Contract Checks](policy-contract-checks.md)
 - [Adaptive Governance](adaptive-governance.md)
 - [Enterprise Structural Layers](enterprise-structural-layers.md)

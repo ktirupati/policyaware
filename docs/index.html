@@ -162,9 +162,11 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="use-cases/llm-token-budget-cost-controls.md">LLM token budget and cost controls</a></li>
           <li><a href="use-cases/llm-audit-logging-opentelemetry.md">LLM audit logging and OpenTelemetry</a></li>
           <li><a href="fastapi-llm-policy-middleware.html">FastAPI LLM policy middleware guide</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/zero-config-openai">Zero-config raw OpenAI preflight example</a></li>
           <li><a href="langchain-policy-guardrails.html">LangChain policy guardrails guide</a></li>
           <li><a href="mcp-tool-permission-gateway.html">MCP tool permission gateway guide</a></li>
           <li><a href="mcp-policy-proxy.md">MCP JSON-RPC policy proxy</a></li>
+          <li><a href="rag-retrieval-governance.md">RAG retrieval governance and indirect prompt-injection defense</a></li>
           <li><a href="pii-redaction-llm.html">PII redaction for LLM apps guide</a></li>
           <li><a href="local-code-scan.md">Local code scan and HTML report guide</a></li>
           <li><a href="capabilities/guardrails-integrations.md">NeMo Guardrails and Guardrails AI integrations</a></li>
@@ -186,6 +188,7 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="policy-rollout-and-trace-correlation.md">Policy rollout and trace correlation</a></li>
           <li><a href="observability-templates.md">Grafana, Prometheus, and OpenTelemetry templates</a></li>
           <li><a href="performance-observability-simulator.md">Performance, telemetry, and visual policy simulation</a></li>
+          <li><a href="enterprise-attestation-certification-and-test-harness.md">Enterprise attestation, certification, and deterministic test harness</a></li>
           <li><a href="github-action.md">Official PolicyAware GitHub Action for CI/CD</a></li>
           <li><a href="policy-contract-checks.md">Policy contract checks for YAML/tool drift</a></li>
           <li><a href="security-boundaries.md">Security boundaries and sidecar enforcement</a></li>
@@ -401,8 +404,8 @@ policyaware observability otel-json</code></pre>
             <p><a href="enterprise-readiness.md">Review enterprise governance controls and evidence artifacts</a></p>
           </div>
           <div class="card">
-            <h3>Limitations</h3>
-            <p><a href="limitations.md">Understand current scope and production validation responsibilities</a></p>
+            <h3>Scope And Trust</h3>
+            <p><a href="limitations.md">Understand stable core features, optional adapters, limitations, and production validation responsibilities</a></p>
           </div>
           <div class="card">
             <h3>Security Model</h3>
@@ -430,7 +433,7 @@ policyaware observability otel-json</code></pre>
           </div>
           <div class="card">
             <h3>Benchmarks</h3>
-            <p><a href="benchmarks.md">Measure local policy, privacy, tool, scan, and evidence overhead</a></p>
+            <p><a href="benchmarks.md">Run reproducible local benchmark scripts for policy, privacy, gateway, tool, and scan overhead</a></p>
           </div>
           <div class="card">
             <h3>CLI Usability</h3>
@@ -464,6 +467,7 @@ policyaware observability otel-json</code></pre>
             <h3>Observability Templates</h3>
             <p><a href="observability-templates.md">Connect traces and metrics to dashboards and compliance systems</a></p>
             <p><a href="performance-observability-simulator.md">Check runtime mode, emit semantic governance events, and generate simulator reports</a></p>
+            <p><a href="enterprise-attestation-certification-and-test-harness.md">Run deterministic policy stress tests and plan confidential-computing deployments</a></p>
           </div>
           <div class="card">
             <h3>Policy Contract Checks</h3>

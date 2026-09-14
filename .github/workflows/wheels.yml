@@ -1,0 +1,35 @@
+name: Build Wheels
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "src/**"
+      - ".github/workflows/wheels.yml"
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*-musllinux_*"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl

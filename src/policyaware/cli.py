@@ -22,6 +22,7 @@ from policyaware.contracts import PolicyContractChecker
 from policyaware.crypto_audit import TamperEvidentAuditChain
 from policyaware.data_protection import DataProtectionEngine
 from policyaware.dashboard import GovernanceDashboard
+from policyaware.dashboard_server import serve_dashboard
 from policyaware.drift import DriftCanaryCase, DriftCanaryEngine
 from policyaware.evals import EvalSuiteRunner
 from policyaware.fairness import FairnessMonitor
@@ -48,6 +49,7 @@ from policyaware.scanner import LocalCodeScanner, ScanConfig, git_changed_files
 from policyaware.session_state import SessionStateMonitor, SQLiteSessionStateStore
 from policyaware.sidecar import serve_sidecar
 from policyaware.simulator import VisualPolicySimulator
+from policyaware.test_harness import PolicyAwareTestHarness
 from policyaware.tools import ToolPolicyEngine
 
 app = typer.Typer(help="PolicyAware AI Gateway CLI")
@@ -60,7 +62,11 @@ mcp_app = typer.Typer(help="MCP JSON-RPC policy proxy commands")
 audit_app = typer.Typer(help="Audit and replay commands")
 risk_app = typer.Typer(help="Risk classification commands")
 observability_app = typer.Typer(help="Metrics and trace export commands")
-dashboard_app = typer.Typer(help="Visual policy simulator and dashboard commands")
+dashboard_app = typer.Typer(
+    help="Visual policy simulator and dashboard commands",
+    invoke_without_command=True,
+    no_args_is_help=False,
+)
 performance_app = typer.Typer(help="Runtime performance and accelerator commands")
 guards_app = typer.Typer(help="Guardrails integration commands")
 integrations_app = typer.Typer(help="Integration discovery commands")
@@ -2194,6 +2200,44 @@ def export_otel_json(
     console.print(str(output))
 
 
+@dashboard_app.callback()
+def dashboard_root(
+    ctx: typer.Context,
+    policy_file: Path = typer.Option(
+        Path("policyaware.yaml"),
+        "--policy",
+        "--config",
+        help="Policy YAML file used by the local simulator UI.",
+    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Dashboard host."),
+    port: int = typer.Option(8765, "--port", help="Dashboard port."),
+    open_browser: bool = typer.Option(True, "--open/--no-open", help="Open the dashboard in a browser."),
+    prefer_fastapi: bool = typer.Option(
+        True,
+        "--fastapi/--stdlib",
+        help="Use FastAPI/Uvicorn when installed; otherwise use the built-in stdlib server.",
+    ),
+) -> None:
+    """Launch the interactive local PolicyAware dashboard."""
+    if ctx.invoked_subcommand is not None:
+        return
+    if not policy_file.exists():
+        fallback = Path("examples/policies/basic.yaml")
+        if fallback.exists():
+            policy_file = fallback
+        else:
+            raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    console.print(f"PolicyAware dashboard: http://{host}:{port}")
+    console.print(f"Policy file: {policy_file}")
+    serve_dashboard(
+        policy_file,
+        host=host,
+        port=port,
+        open_browser=open_browser,
+        prefer_fastapi=prefer_fastapi,
+    )
+
+
 @dashboard_app.command("simulate")
 def dashboard_simulate(
     policy_file: Path = typer.Argument(..., help="Policy YAML file to test."),
@@ -2254,6 +2298,36 @@ def performance_runtime_status(
     for key, value in payload.items():
         table.add_row(key, str(value))
     console.print(table)
+
+
+@app.command("test-harness")
+def deterministic_test_harness(
+    policy_file: Path = typer.Argument(Path("policyaware.yaml"), help="Policy YAML file to stress test."),
+    requests: int = typer.Option(10_000, "--requests", help="Number of deterministic requests."),
+    workers: int = typer.Option(8, "--workers", help="Concurrent worker threads."),
+    seed: int = typer.Option(1337, "--seed", help="Deterministic corpus seed."),
+    max_errors: int = typer.Option(0, "--max-errors", help="Allowed exception count before failure."),
+    json_output: bool = typer.Option(False, "--json", help="Print machine-readable JSON."),
+) -> None:
+    """Run deterministic concurrent fuzz checks against a policy YAML file."""
+    if not policy_file.exists():
+        fallback = Path("examples/policies/basic.yaml")
+        if fallback.exists() and policy_file == Path("policyaware.yaml"):
+            policy_file = fallback
+        else:
+            raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    result = PolicyAwareTestHarness(policy_file, seed=seed).run(requests=requests, workers=workers)
+    if json_output:
+        console.print_json(data=result.to_dict())
+    else:
+        table = Table(title="PolicyAware Deterministic Test Harness")
+        table.add_column("Field")
+        table.add_column("Value")
+        for key, value in result.to_dict().items():
+            table.add_row(key, json.dumps(value) if isinstance(value, dict) else str(value))
+        console.print(table)
+    if result.errors > max_errors or not result.deterministic:
+        raise typer.Exit(code=1)
 
 
 @app.command("chat")

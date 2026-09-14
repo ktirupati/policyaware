@@ -158,6 +158,21 @@ print(telemetry.prometheus_text())
 print(telemetry.otel_events())
 ```
 
+Use native OpenTelemetry when your application already configures an OTel SDK
+and exporter:
+
+```bash
+pip install "policyaware[observability]"
+```
+
+```python
+from policyaware import OpenTelemetryBridge, RuntimeTelemetryCollector
+
+telemetry = RuntimeTelemetryCollector(
+    otel_bridge=OpenTelemetryBridge("policyaware.claims-assistant")
+)
+```
+
 Record an advanced governance event:
 
 ```python

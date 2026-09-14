@@ -77,3 +77,22 @@ def test_examples_run_unknown_fails_helpfully() -> None:
 
     assert result.exit_code != 0
     assert "Unknown example" in result.output
+
+
+def test_policyaware_test_harness_cli_json() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "test-harness",
+            "examples/policies/basic.yaml",
+            "--requests",
+            "20",
+            "--workers",
+            "2",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert '"requests": 20' in result.output
+    assert '"passed": true' in result.output

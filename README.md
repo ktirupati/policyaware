@@ -42,6 +42,7 @@ Enterprise hardening: [SQLite session state, emergency revokes, checksum pinning
 Policy rollout and trace correlation: [shadow policy evaluation, canary enforcement, parent traces, and dashboard](https://github.com/ktirupati/policyaware/blob/main/docs/policy-rollout-and-trace-correlation.md)
 Observability templates: [Grafana, Prometheus, and OpenTelemetry examples](https://github.com/ktirupati/policyaware/blob/main/docs/observability-templates.md)
 Performance and visual simulation: [fast-core boundary, semantic telemetry, and simulator reports](https://github.com/ktirupati/policyaware/blob/main/docs/performance-observability-simulator.md)
+Enterprise attestation and test harness: [confidential-computing patterns, ecosystem certification, and deterministic policy stress tests](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-attestation-certification-and-test-harness.md)
 Official GitHub Action: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action) for PolicyAware pull-request scans, annotations, SARIF, and report artifacts
 Policy contract checks: [prevent YAML/tool drift in CI](https://github.com/ktirupati/policyaware/blob/main/docs/policy-contract-checks.md)
 Policy composition: [hierarchical global, compliance, tenant, app, and local overrides](https://github.com/ktirupati/policyaware/blob/main/docs/policy-composition.md)
@@ -99,8 +100,10 @@ PolicyAware includes lightweight workflow packs for coding-agent tools. These pa
 
 - **Audit-ready traces:** Records structured policy decisions, risk tiers, reason codes, model choices, evaluation scores, token estimates, and request/response snapshots.
 - **Observability exporters:** Provides live sidecar `/metrics`, Prometheus-style metrics, OpenTelemetry-shaped events, and audit-trace exports for monitoring and compliance workflows.
-- **Performance and policy debugging:** Provides a lightweight fast-core runtime boundary, semantic governance metrics, and a visual policy simulator for explaining blocked or mutated agent actions.
+- **Performance and policy debugging:** Provides lightweight runtime diagnostics, reproducible local benchmarks, semantic governance metrics, and a visual policy simulator for explaining blocked or mutated agent actions.
+- **Deterministic policy test harness:** Runs seeded concurrent policy stress tests, including 10,000-request CI checks, to catch YAML regressions and thread-safety issues before production.
 - **Structured rejection handshakes:** Returns canonical blocked-action payloads with decision, reason codes, matched rules, trace IDs, remediation, and telemetry fields so API wrappers do not swallow governance context.
+- **Fail-closed security posture:** Treats untrusted policy state, validation failures, checksum mismatches, unavailable remote policy sources, and validator errors as blocked or approval-required conditions instead of implicit allow.
 - **Dynamic policy retry protection:** Applies strict fetch timeouts, refresh TTLs, exponential backoff, jitter, last known-good cache, and emergency fallback policies for central HTTP/S3/GCS/ADLS policy sources.
 - **Offline AI governance linter:** `policyaware scan` runs locally or in CI before deployment to find PII/PHI/secrets, direct LLM calls, unmapped MCP tools, missing tool governance, weak routing controls, audit gaps, and policy YAML issues. GitHub Actions can block pull requests before unvetted AI tools or prompts reach production.
 - **Adaptive governance helpers:** Generate starter policies from scan findings, use synthetic redaction to preserve prompt utility, return auditable safe-rewrite state patches, preflight multi-step agent plans, and detect shadow-AI patterns such as dynamic installs or runtime tool registration.
@@ -415,6 +418,7 @@ More details: [LangChain and LlamaIndex callback integrations](https://github.co
 
 ## Copy-Paste Examples
 
+- [Zero-config OpenAI preflight](https://github.com/ktirupati/policyaware/tree/main/examples/zero-config-openai): wrap a raw OpenAI client with local PolicyAware checks before the prompt leaves your app.
 - [FastAPI LLM policy middleware](https://github.com/ktirupati/policyaware/tree/main/examples/fastapi-llm-policy-middleware): protect a FastAPI `/chat` endpoint with policy checks before model execution.
 - [LangChain policy guardrails](https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails): wrap a chain-style LLM call with deny-by-default policy, PII redaction, and secret blocking.
 - [MCP tool permission gateway](https://github.com/ktirupati/policyaware/tree/main/examples/mcp-tool-permission-gateway): govern connector-level and action-level tool permissions for agent workflows.
@@ -426,6 +430,27 @@ More details: [LangChain and LlamaIndex callback integrations](https://github.co
 - [Approval workflow hooks](https://github.com/ktirupati/policyaware/tree/main/examples/approval-workflow-hooks): send high-risk requests to approval instead of calling a model.
 - [Local code scan](https://github.com/ktirupati/policyaware/blob/main/docs/local-code-scan.md): scan local AI app code and generate an HTML governance report.
 - [Full-stack guardrails](https://github.com/ktirupati/policyaware/tree/main/examples/full-stack-guardrails): orchestrate NeMo Guardrails, Guardrails AI, or custom validators as input/output guards.
+
+Zero-config raw OpenAI preflight:
+
+```python
+import policyaware
+from openai import OpenAI
+
+gateway = policyaware.Gateway.from_policy_file("policy.yaml")
+client = OpenAI()
+user_context = {"user_role": "billing_admin", "session_id": "99x-delta", "risk": "low"}
+safe_prompt, token_meta = gateway.inspect_and_mutate(
+    prompt="Email jane@example.com about claim ACME-42.",
+    context=user_context,
+    app="zero-config",
+)
+print(token_meta["decision"], token_meta["actions"])
+response = client.responses.create(model="gpt-4.1-mini", input=safe_prompt)
+print(response.output_text)
+```
+
+`inspect_and_mutate(...)` fails closed with `PermissionError` for denied or approval-required requests, returns redacted prompt text when policy applies a `redact` transform, and emits audit/telemetry metadata through the normal PolicyAware runtime path.
 
 Captured terminal output for the runnable examples is available in [docs/demo-outputs.md](https://github.com/ktirupati/policyaware/blob/main/docs/demo-outputs.md).
 

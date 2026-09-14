@@ -40,6 +40,27 @@ PolicyAware is strongest when an application uses LLMs, RAG, MCP-style tools, au
 
 It is usually not necessary for ordinary CRUD services, internal APIs, or microservices that do not send prompts to models or allow agents to invoke tools. In those cases, start with standard application security controls and add PolicyAware only where AI execution needs governance.
 
+## Trust-First Positioning
+
+PolicyAware should be evaluated by its stable, testable core first:
+
+- deny-by-default policy decisions
+- local PII/PHI/secrets pattern checks
+- MCP/tool permission governance
+- local code scanning and HTML reports
+- audit traces and evidence export
+- lightweight provider, routing, and sidecar abstractions
+
+Optional integrations are adapters, not mandatory runtime dependencies. Presidio, ProtectAI/Transformers, NeMo Guardrails, Guardrails AI, Haystack, cloud providers, and dashboard tooling should be installed only when the service needs them.
+
+Avoid treating roadmap-oriented or optional capabilities as production guarantees until they are tested in the target deployment. In particular, do not claim Rust/C native speed, hardware-backed attestation, or external-framework behavior unless the relevant component is installed, configured, benchmarked, and validated in that environment.
+
+For market trust, lead with one or two concrete workflows that users can verify quickly:
+
+1. `policyaware scan . --format html,json,sarif,markdown`
+2. deny-by-default MCP/tool governance with `ToolPolicyEngine` or `MCPPolicyProxy`
+3. raw-client preflight with `Gateway.inspect_and_mutate(...)`
+
 Execution-plane security must be layered. For high-assurance systems, combine PolicyAware decisions with process isolation, container hardening, dependency scanning, short-lived credentials, secret managers, least-privilege service accounts, and separate read/write tool identities. Do not rely on a Python SDK to guarantee RAM-level containment or OS-level privilege reduction.
 
 The base install is intentionally lightweight. It provides deterministic rules, YAML policy validation, data-protection patterns, tool governance, scan reports, audit traces, routing abstractions, and CLI workflows without forcing heavy ML dependencies. When teams need deeper PII detection, prompt-injection signals, conversational guardrails, or framework-specific behavior, they can opt into Presidio, ProtectAI/Transformers, NeMo Guardrails, Guardrails AI, Haystack, or provider-specific extras.

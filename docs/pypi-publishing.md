@@ -55,3 +55,22 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 
 PyPI does not allow re-uploading the same version. If `0.2.0` is published and you need a fix, update `pyproject.toml` to `0.2.1`.
 
+## Wheel Builds
+
+PolicyAware includes a `cibuildwheel` workflow at:
+
+```text
+.github/workflows/wheels.yml
+```
+
+Today, the package remains lightweight and pure Python by default. The workflow
+is still useful because it verifies installable wheels on Linux, macOS, and
+Windows. If PolicyAware later ships an optional Rust, C, or C++ native
+accelerator, the same workflow can publish pre-built wheels so users do not need
+to compile native code during `pip install policyaware`.
+
+Manual wheel check:
+
+```text
+Actions -> Build Wheels -> Run workflow
+```

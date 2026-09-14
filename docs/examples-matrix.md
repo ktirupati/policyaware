@@ -4,6 +4,7 @@ Use this table to pick the fastest PolicyAware example for your use case.
 
 | Use Case | Folder Or Doc | Command | What It Proves |
 | --- | --- | --- | --- |
+| Zero-config raw OpenAI preflight | `examples/zero-config-openai` | `python app.py` | Put PolicyAware in front of a raw OpenAI client with a tiny YAML policy. |
 | FastAPI LLM policy middleware | `examples/fastapi-llm-policy-middleware` | `python app.py` | Protect an API endpoint before an LLM request reaches a provider. |
 | LangChain policy guardrails | `examples/langchain-policy-guardrails` | `python chain_demo.py` | Apply PolicyAware decisions around chain-style LLM calls. |
 | LangChain/LlamaIndex callbacks | `docs/capabilities/integration-callbacks.md` | Copy the callback sample | Capture streamed tokens, policy result, output leakage, evals, and token counts. |

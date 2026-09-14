@@ -117,6 +117,83 @@ class Gateway:
         self.add_output_guard(guard)
         return self
 
+    def inspect_and_mutate(
+        self,
+        prompt: str,
+        context: dict[str, Any] | None = None,
+        *,
+        user: dict[str, Any] | None = None,
+        tenant: str = "default",
+        app: str = "default",
+        tools: list[dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> tuple[str, dict[str, Any]]:
+        """Run a local policy preflight before a caller invokes its own LLM client.
+
+        This is the smallest raw-client integration path: pass a prompt and optional
+        request context, get back a safe prompt plus structured decision metadata.
+        Deny and approval-required decisions fail closed with ``PermissionError``.
+        """
+
+        started_at = time.perf_counter()
+        request_context = dict(context or {})
+        request_user = dict(user or {})
+        if "role" not in request_user and request_context.get("user_role"):
+            request_user["role"] = request_context["user_role"]
+        request = GatewayRequest(
+            tenant=tenant,
+            app=app,
+            user=request_user,
+            context=request_context,
+            messages=[{"role": "user", "content": prompt}],
+            tools=list(tools or []),
+            metadata=dict(metadata or {}),
+        )
+
+        findings = self.data_protection.redact(request.prompt_text)
+        ml_assessment = self.ml_classifier.classify(request.prompt_text, request)
+        policy_request = request.model_copy(
+            update={
+                "metadata": {
+                    **request.metadata,
+                    "ml": ml_assessment.as_policy_context(),
+                }
+            }
+        )
+        risk = self.risk_classifier.classify(policy_request, findings)
+        decision = self.policy_engine.decide(policy_request, findings, risk)
+        safe_prompt = findings.redacted_text if "redact" in decision.actions else prompt
+        metadata_out = {
+            "allowed": decision.decision in {Decision.ALLOW, Decision.CONDITIONAL_ALLOW},
+            "decision": decision.decision.value,
+            "reason": decision.reason,
+            "reason_codes": decision.reason_codes,
+            "matched_rules": decision.matched_rules,
+            "violated_rules": decision.violated_rules,
+            "actions": decision.actions,
+            "risk_tier": risk.tier.value,
+            "risk_score": risk.score,
+            "redactions": findings.redactions,
+            "categories": findings.categories,
+            "contains_sensitive": findings.contains_sensitive,
+            "state_mutation": decision.state_mutation,
+            "request_id": policy_request.request_id,
+        }
+        response = GatewayResponse(
+            content=safe_prompt if metadata_out["allowed"] else "",
+            policy=decision,
+            risk=risk,
+            metadata={"preflight": metadata_out, "ml": ml_assessment.model_dump(mode="json")},
+        )
+        trace = self._record_audit_and_telemetry(policy_request, response, started_at)
+        metadata_out["trace_id"] = trace.trace_id
+
+        if decision.decision == Decision.DENY:
+            raise PermissionError(f"Blocked by PolicyAware: {decision.reason}")
+        if decision.decision == Decision.REQUIRE_APPROVAL:
+            raise PermissionError(f"PolicyAware requires approval: {decision.reason}")
+        return safe_prompt, metadata_out
+
     def chat(self, request: GatewayRequest) -> GatewayResponse:
         started_at = time.perf_counter()
         if self.emergency_revoke:
