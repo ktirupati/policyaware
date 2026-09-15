@@ -46,6 +46,23 @@ The policy benchmark reports:
 - total runtime
 - requests per second
 
+## Sample Local Output
+
+This sample was captured on one local Windows development machine with Python 3.11. Treat it as an example of the output shape, not a guaranteed performance claim.
+
+```text
+PolicyAware local benchmark results
+requests=1000 concurrency=1
+
+name                                median_us       p95_us       p99_us     total_ms          rps
+data_protection.inspect                12.800       20.300       27.800       15.332     65222.64
+policy_engine.decide                   24.900       43.200      126.700       34.382     29085.32
+gateway.inspect_and_mutate            900.650     2024.600     4061.200     1090.401       917.09
+tool_policy.decide                      9.850       20.300       35.400       13.231     75578.93
+```
+
+`gateway.inspect_and_mutate(...)` includes full preflight work and audit trace recording, so it is intentionally heavier than a raw `PolicyEngine.decide(...)` call.
+
 ## Scan Timing
 
 ```bash

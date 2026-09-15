@@ -54,6 +54,24 @@ github.delete_branch as developer: deny approval_required=False
 snowflake.query medical database: deny approval_required=False
 ```
 
+## MCP JSON-RPC Policy Proxy
+
+Folder: [examples/mcp-policy-proxy-demo](../examples/mcp-policy-proxy-demo)
+
+```bash
+python examples/mcp-policy-proxy-demo/mcp_proxy_demo.py
+```
+
+Captured output: [terminal-output.txt](../examples/mcp-policy-proxy-demo/terminal-output.txt)
+
+```text
+SAFE READ: allowed=True action=forward decision=allow redactions=0
+PII READ: allowed=True action=forward decision=allow redactions=1
+CREATE PR: allowed=False action=block decision=require_approval redactions=0
+DELETE BRANCH: allowed=False action=block decision=deny redactions=0
+MEDICAL QUERY: allowed=False action=block decision=deny redactions=0
+```
+
 ## PII Redaction Policy
 
 Folder: [examples/pii-redaction-policy](../examples/pii-redaction-policy)

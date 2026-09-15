@@ -10,6 +10,7 @@ Use these when your team needs to stop unsafe agent actions, block tool misuse, 
 
 - [AI Firewall For LLM Agents](ai-firewall-for-llm-agents.md)
 - [MCP Tool Permission Gateway](mcp-tool-permission-gateway.md)
+- [Secure An MCP Filesystem Server With PolicyAware](../mcp-filesystem-server-tutorial.md)
 
 Search intents these pages answer:
 
@@ -17,6 +18,7 @@ Search intents these pages answer:
 | --- | --- |
 | how to stop autonomous agent runaway loop | Token budgets, tool budgets, risk tiers, and approval gates |
 | intercept model context protocol mcp tools python | MCP-style connector and action policy checks |
+| secure mcp filesystem server | JSON-RPC proxy checks before filesystem actions execute |
 | deterministic ai firewall local pip package | Local deny-by-default Python policy enforcement |
 | deny-by-default llm gateway | Gateway decisions default to deny unless policy allows |
 

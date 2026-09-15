@@ -6,6 +6,19 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.5
+
+- Added `Gateway.inspect_and_mutate(...)` as a zero-config raw-client preflight API for wrapping OpenAI-compatible calls before prompts leave the application.
+- Added `examples/zero-config-openai` with a copy-paste OpenAI preflight example and deny-by-default YAML policy.
+- Added reproducible benchmark scripts under `benchmarks/` for policy decisions, data protection, gateway preflight, tool governance, and local scans.
+- Added trust-first documentation that separates stable core features, optional adapters, benchmark expectations, and production validation responsibilities.
+- Added GitHub Pages deployment workflow and cross-platform universal wheel verification for the current pure-Python package.
+- Added RAG retrieval-governance documentation for indirect prompt-injection defense.
+- Added interactive dashboard and deterministic policy test-harness documentation and commands.
+- Added `docs/production-checklist.md`, `docs/release-notes-0.4.5.md`, `docs/why-policyaware.md`, and a runnable MCP JSON-RPC policy proxy demo.
+- Added a focused MCP filesystem server tutorial and release draft for GitHub Releases.
+- Added a security report issue template for safer community reporting.
+
 ## 0.4.3
 
 - Added `FastCoreRuntime` and `policyaware performance status` as a stable fast-core boundary for future optional native acceleration while keeping the base package pure Python and lightweight.

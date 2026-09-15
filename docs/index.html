@@ -166,6 +166,8 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="langchain-policy-guardrails.html">LangChain policy guardrails guide</a></li>
           <li><a href="mcp-tool-permission-gateway.html">MCP tool permission gateway guide</a></li>
           <li><a href="mcp-policy-proxy.md">MCP JSON-RPC policy proxy</a></li>
+          <li><a href="mcp-filesystem-server-tutorial.md">Secure an MCP filesystem server with PolicyAware</a></li>
+          <li><a href="https://github.com/ktirupati/policyaware/tree/main/examples/mcp-policy-proxy-demo">Runnable MCP JSON-RPC policy proxy demo</a></li>
           <li><a href="rag-retrieval-governance.md">RAG retrieval governance and indirect prompt-injection defense</a></li>
           <li><a href="pii-redaction-llm.html">PII redaction for LLM apps guide</a></li>
           <li><a href="local-code-scan.md">Local code scan and HTML report guide</a></li>
@@ -191,10 +193,14 @@ policyaware eval run examples/evals/executable_governance_cases.yaml --policy-fi
           <li><a href="enterprise-attestation-certification-and-test-harness.md">Enterprise attestation, certification, and deterministic test harness</a></li>
           <li><a href="github-action.md">Official PolicyAware GitHub Action for CI/CD</a></li>
           <li><a href="policy-contract-checks.md">Policy contract checks for YAML/tool drift</a></li>
+          <li><a href="why-policyaware.md">Why PolicyAware exists and where it fits</a></li>
           <li><a href="security-boundaries.md">Security boundaries and sidecar enforcement</a></li>
           <li><a href="ci/policyaware-scan-github-actions.yml">GitHub Actions scan template</a></li>
           <li><a href="ci/policyaware-policy-cicd.yml">Advanced PolicyAware policy CI/CD template</a></li>
           <li><a href="demo-outputs.md">Captured terminal output for runnable examples</a></li>
+          <li><a href="production-checklist.md">Production deployment checklist</a></li>
+          <li><a href="release-notes-0.4.5.md">PolicyAware 0.4.5 release notes</a></li>
+          <li><a href="github-release-v0.4.5.md">Copy-paste GitHub release draft for v0.4.5</a></li>
           <li><a href="seo-and-distribution.md">SEO and distribution checklist</a></li>
         </ul>
 
@@ -406,6 +412,7 @@ policyaware observability otel-json</code></pre>
           <div class="card">
             <h3>Scope And Trust</h3>
             <p><a href="limitations.md">Understand stable core features, optional adapters, limitations, and production validation responsibilities</a></p>
+            <p><a href="why-policyaware.md">Read the short trust-first positioning page</a></p>
           </div>
           <div class="card">
             <h3>Security Model</h3>
@@ -434,6 +441,15 @@ policyaware observability otel-json</code></pre>
           <div class="card">
             <h3>Benchmarks</h3>
             <p><a href="benchmarks.md">Run reproducible local benchmark scripts for policy, privacy, gateway, tool, and scan overhead</a></p>
+          </div>
+          <div class="card">
+            <h3>Production Checklist</h3>
+            <p><a href="production-checklist.md">Validate policies, scans, MCP tools, audit traces, fail-closed behavior, and benchmarks before deployment</a></p>
+          </div>
+          <div class="card">
+            <h3>Release Notes</h3>
+            <p><a href="release-notes-0.4.5.md">Review PolicyAware 0.4.5 highlights, install commands, and trust-focused improvements</a></p>
+            <p><a href="github-release-v0.4.5.md">Use the copy-paste GitHub release draft</a></p>
           </div>
           <div class="card">
             <h3>CLI Usability</h3>
@@ -484,6 +500,7 @@ policyaware observability otel-json</code></pre>
           <div class="card">
             <h3>MCP Policy Proxy</h3>
             <p><a href="mcp-policy-proxy.md">Intercept raw MCP JSON-RPC tool calls before filesystem, Git, database, or API servers execute them</a></p>
+            <p><a href="mcp-filesystem-server-tutorial.md">Follow the 10-minute filesystem MCP tutorial</a></p>
           </div>
           <div class="card">
             <h3>Edge And Policy Intelligence</h3>

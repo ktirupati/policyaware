@@ -199,6 +199,20 @@ Example MCP client configuration pattern:
 
 This pattern is useful for Claude Desktop, Cursor, local agent hosts, or any MCP client that can launch a stdio server command.
 
+For a step-by-step filesystem example, see [Secure An MCP Filesystem Server With PolicyAware](mcp-filesystem-server-tutorial.md).
+
+## Runnable Demo
+
+Run the local demo to see allowed, redacted, approval-gated, and denied MCP tool calls:
+
+```bash
+python examples/mcp-policy-proxy-demo/mcp_proxy_demo.py
+```
+
+From a source checkout, install the repo in editable mode first with `pip install -e .`, or run with `PYTHONPATH=src` so Python imports the local package instead of an older global install.
+
+The demo shows PolicyAware evaluating raw MCP JSON-RPC `tools/call` requests before a filesystem, Git, database, or API MCP server would execute them.
+
 ## Transport Boundary
 
 `MCPPolicyProxy` is transport-neutral and `MCPStdioPolicyProxy` is the built-in stdio transport wrapper. HTTP/SSE transports can reuse the same `MCPPolicyProxy.evaluate(...)` decision core.

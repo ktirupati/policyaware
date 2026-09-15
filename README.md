@@ -24,6 +24,7 @@ Coding-agent integrations: [Codex, Antigravity, Claude Code, Cursor, and Windsur
 Use-case guides: [AI firewall, MCP tool gateway, policy-as-code, centralized policy distribution, PII redaction, token budgets, and OpenTelemetry audit logging](https://github.com/ktirupati/policyaware/blob/main/docs/use-cases/README.md)
 Ready-to-use YAML policies: [docs/capabilities/ready-to-use-yaml.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/ready-to-use-yaml.md)
 Comparison guide: [PolicyAware vs guardrails vs AI gateway vs model router](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md)
+Why PolicyAware: [short positioning and trust-first category fit](https://github.com/ktirupati/policyaware/blob/main/docs/why-policyaware.md)
 Alternatives guide: [PolicyAware alternatives for guardrails, AI gateways, model routers, and MCP governance](https://ktirupati.github.io/policyaware/alternatives.html)
 Usage modes: [Gateway vs callbacks vs tool governance vs scan](https://github.com/ktirupati/policyaware/blob/main/docs/usage-modes.md)
 Enterprise readiness: [enterprise AI governance checklist](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-readiness.md)
@@ -34,6 +35,9 @@ Examples matrix: [choose the right runnable example](https://github.com/ktirupat
 Compatibility: [Python, providers, extras, and integration status](https://github.com/ktirupati/policyaware/blob/main/docs/compatibility.md)
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
+Production checklist: [deployment validation steps for governed AI workflows](https://github.com/ktirupati/policyaware/blob/main/docs/production-checklist.md)
+Release notes: [PolicyAware 0.4.5 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.5.md)
+GitHub release draft: [copy-paste v0.4.5 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.5.md)
 Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
 HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
 Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
@@ -45,6 +49,7 @@ Performance and visual simulation: [fast-core boundary, semantic telemetry, and 
 Enterprise attestation and test harness: [confidential-computing patterns, ecosystem certification, and deterministic policy stress tests](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-attestation-certification-and-test-harness.md)
 Official GitHub Action: [`ktirupati/policyaware-action`](https://github.com/ktirupati/policyaware-action) for PolicyAware pull-request scans, annotations, SARIF, and report artifacts
 Policy contract checks: [prevent YAML/tool drift in CI](https://github.com/ktirupati/policyaware/blob/main/docs/policy-contract-checks.md)
+MCP filesystem tutorial: [secure an MCP filesystem server with PolicyAware](https://github.com/ktirupati/policyaware/blob/main/docs/mcp-filesystem-server-tutorial.md)
 Policy composition: [hierarchical global, compliance, tenant, app, and local overrides](https://github.com/ktirupati/policyaware/blob/main/docs/policy-composition.md)
 Adaptive governance: [policy suggestion, synthetic redaction, safe rewrite, plan preflight, and shadow AI scan signals](https://github.com/ktirupati/policyaware/blob/main/docs/adaptive-governance.md)
 
@@ -422,6 +427,7 @@ More details: [LangChain and LlamaIndex callback integrations](https://github.co
 - [FastAPI LLM policy middleware](https://github.com/ktirupati/policyaware/tree/main/examples/fastapi-llm-policy-middleware): protect a FastAPI `/chat` endpoint with policy checks before model execution.
 - [LangChain policy guardrails](https://github.com/ktirupati/policyaware/tree/main/examples/langchain-policy-guardrails): wrap a chain-style LLM call with deny-by-default policy, PII redaction, and secret blocking.
 - [MCP tool permission gateway](https://github.com/ktirupati/policyaware/tree/main/examples/mcp-tool-permission-gateway): govern connector-level and action-level tool permissions for agent workflows.
+- [MCP JSON-RPC policy proxy demo](https://github.com/ktirupati/policyaware/tree/main/examples/mcp-policy-proxy-demo): intercept raw MCP `tools/call` requests before the server executes filesystem, Git, database, or API actions.
 - [Haystack RAG governance](https://github.com/ktirupati/policyaware/tree/main/examples/haystack-policyaware-rag-governance): add PolicyAware query, output, and tool governance around Haystack-style RAG and agent workflows.
 - [PII redaction policy](https://github.com/ktirupati/policyaware/tree/main/examples/pii-redaction-policy): inspect and redact sensitive text before model execution.
 - [Regulated RAG assistant](https://github.com/ktirupati/policyaware/tree/main/examples/regulated-rag-assistant): require citations and stricter controls for healthcare-style RAG.

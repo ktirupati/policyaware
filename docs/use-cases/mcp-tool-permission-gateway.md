@@ -82,6 +82,24 @@ policyaware tools check tool-governance.yaml \
   --role developer
 ```
 
+## Raw MCP JSON-RPC Proxy Demo
+
+For MCP clients and servers that exchange raw JSON-RPC `tools/call` messages, use `MCPPolicyProxy`.
+
+Runnable example:
+
+```bash
+python examples/mcp-policy-proxy-demo/mcp_proxy_demo.py
+```
+
+The demo shows:
+
+- a safe `github.read_file` request being forwarded,
+- a read request with PII being forwarded with redacted arguments,
+- `github.create_pr` being blocked with an approval-required JSON-RPC error,
+- `github.delete_branch` being denied,
+- a `snowflake.query` against a restricted medical database being denied.
+
 ## Typical Decisions
 
 | Tool Call | Result |

@@ -13,6 +13,7 @@ Use this table to pick the fastest PolicyAware example for your use case.
 | Haystack agent tool governance | `examples/haystack-policyaware-rag-governance` | `python tool_governance_demo.py` | Add allow, deny, and approval-required decisions before agent tool execution. |
 | Microsoft AGT-style interop | `examples/microsoft-agt-interop` | `python agt_interop_demo.py` | Export PolicyAware tool decisions as dependency-free enterprise agent-governance evidence JSON. |
 | MCP tool permission gateway | `examples/mcp-tool-permission-gateway` | `python tool_gateway_demo.py` | Govern connector-level and action-level agent tool permissions. |
+| MCP JSON-RPC policy proxy | `examples/mcp-policy-proxy-demo` | `python mcp_proxy_demo.py` | Intercept raw MCP `tools/call` messages, redact safe arguments, approval-gate writes, and deny destructive actions before server execution. |
 | PII redaction policy | `examples/pii-redaction-policy` | `python pii_demo.py` | Detect and redact sensitive text before model execution. |
 | Regulated RAG assistant | `examples/regulated-rag-assistant` | `python rag_demo.py` | Require citations and stricter controls for regulated-domain answers. |
 | Provider routing by risk | `examples/provider-routing-by-risk` | `python routing_demo.py` | Route by risk, region, provider policy, cost, and availability. |

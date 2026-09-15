@@ -6,6 +6,9 @@ contact_links:
   - name: GitHub Discussions
     url: https://github.com/ktirupati/policyaware/discussions
     about: Ask questions, share ideas, and discuss use cases.
+  - name: Security policy
+    url: https://github.com/ktirupati/policyaware/security/policy
+    about: Review the preferred process for reporting sensitive security issues.
   - name: Testimonials and Show and Tell
     url: https://github.com/ktirupati/policyaware/discussions/categories/show-and-tell
     about: Share public user stories, testimonials, screenshots, or adoption examples.

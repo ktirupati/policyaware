@@ -1,0 +1,11 @@
+$ python mcp_proxy_demo.py
+SAFE READ: allowed=True action=forward decision=allow redactions=0
+  forwarded_arguments={'path': 'README.md'}
+PII READ: allowed=True action=forward decision=allow redactions=1
+  forwarded_arguments={'path': 'case.txt', 'query': 'email [REDACTED_EMAIL]'}
+CREATE PR: allowed=False action=block decision=require_approval redactions=0
+  jsonrpc_error=-32001 Tool action requires approval.
+DELETE BRANCH: allowed=False action=block decision=deny redactions=0
+  jsonrpc_error=-32000 Tool action denied by default or policy.
+MEDICAL QUERY: allowed=False action=block decision=deny redactions=0
+  jsonrpc_error=-32000 Tool action denied by default or policy.
