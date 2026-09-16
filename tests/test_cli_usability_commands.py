@@ -29,6 +29,17 @@ def test_examples_list_cli() -> None:
     assert result.exit_code == 0
     assert "langgraph-agent-governance" in result.output
     assert "enterprise-ai-control-plane" in result.output
+    assert "mcp-policy-proxy-demo" in result.output
+
+
+def test_examples_copy_cli(tmp_path: Path) -> None:
+    out = tmp_path / "mcp-demo"
+
+    result = CliRunner().invoke(app, ["examples", "copy", "mcp-policy-proxy-demo", str(out)])
+
+    assert result.exit_code == 0
+    assert (out / "mcp_proxy_demo.py").exists()
+    assert (out / "README.md").exists()
 
 
 def test_policy_migrate_writes_valid_yaml(tmp_path: Path) -> None:
@@ -54,6 +65,118 @@ rules:
     assert target.exists()
     assert "schema_version: '0.3'" in target.read_text(encoding="utf-8")
     assert validate.exit_code == 0
+
+
+def test_policy_diff_reports_changed_rules(tmp_path: Path) -> None:
+    old = tmp_path / "old.yaml"
+    new = tmp_path / "new.yaml"
+    old.write_text(
+        """
+id: old
+default: deny
+rules:
+  - name: deny_secret
+    effect: deny
+    when:
+      data.contains_secrets: true
+""",
+        encoding="utf-8",
+    )
+    new.write_text(
+        """
+id: new
+default: deny
+rules:
+  - name: redact_pii
+    effect: transform
+    action: redact
+    when:
+      data.contains_pii: true
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "diff", str(old), str(new), "--json"])
+
+    assert result.exit_code == 0
+    assert '"removed"' in result.output
+    assert "deny_secret" in result.output
+    assert "redact_pii" in result.output
+
+
+def test_policy_diff_can_fail_on_relaxed_policy(tmp_path: Path) -> None:
+    old = tmp_path / "old.yaml"
+    new = tmp_path / "new.yaml"
+    old.write_text(
+        """
+id: old
+default: deny
+rules:
+  - name: deny_secret
+    effect: deny
+    when:
+      data.contains_secrets: true
+""",
+        encoding="utf-8",
+    )
+    new.write_text(
+        """
+id: new
+default: allow
+rules: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "diff", str(old), str(new), "--fail-on-relaxed"])
+
+    assert result.exit_code == 1
+
+
+def test_policy_summarize_cli_json() -> None:
+    result = CliRunner().invoke(app, ["policy", "summarize", "examples/policies/basic.yaml", "--json"])
+
+    assert result.exit_code == 0
+    assert '"default": "deny"' in result.output
+    assert '"rule_count"' in result.output
+    assert '"coverage"' in result.output
+
+
+def test_policy_lint_flags_default_allow(tmp_path: Path) -> None:
+    policy = tmp_path / "weak.yaml"
+    policy.write_text(
+        """
+id: weak
+default: allow
+rules:
+  - name: allow_everything
+    effect: allow
+    when: {}
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "lint", str(policy), "--json", "--fail-on", "high"])
+
+    assert result.exit_code == 1
+    assert "POLICY.DEFAULT_ALLOW" in result.output
+    assert "POLICY.BROAD_ALLOW" in result.output
+
+
+def test_protect_redact_cli_json() -> None:
+    result = CliRunner().invoke(app, ["protect", "redact", "Email jane@example.com", "--json"])
+
+    assert result.exit_code == 0
+    assert "[REDACTED_EMAIL]" in result.output
+    assert '"contains_pii": true' in result.output
+
+
+def test_protect_inspect_cli_json() -> None:
+    result = CliRunner().invoke(app, ["protect", "inspect", "Email jane@example.com", "--json"])
+
+    assert result.exit_code == 0
+    assert '"contains_pii": true' in result.output
+    assert '"email"' in result.output
 
 
 def test_integration_recommend_html_output(tmp_path: Path) -> None:

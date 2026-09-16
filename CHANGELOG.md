@@ -6,6 +6,16 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.6
+
+- Added lightweight CLI ergonomics: `policyaware init --profile` for `mcp`, `rag`, `pii`, and `agent`.
+- Added `policyaware policy diff` for GitOps review of YAML policy changes.
+- Added `policyaware policy lint` for lightweight policy design warnings beyond schema validation.
+- Added `policyaware policy summarize` for reviewer-friendly policy summaries.
+- Added `policyaware protect inspect` for quick sensitive-data category checks without redaction.
+- Added `policyaware protect redact` for quick deterministic redaction previews.
+- Added `policyaware examples copy` and included the MCP JSON-RPC proxy demo in the examples registry.
+
 ## 0.4.5
 
 - Added `Gateway.inspect_and_mutate(...)` as a zero-config raw-client preflight API for wrapping OpenAI-compatible calls before prompts leave the application.

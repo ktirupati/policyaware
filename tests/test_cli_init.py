@@ -47,6 +47,20 @@ def test_init_force_overwrites_existing_policy(tmp_path: Path) -> None:
     assert "policyaware_baseline_policy" in out.read_text(encoding="utf-8")
 
 
+def test_init_creates_mcp_profile(tmp_path: Path) -> None:
+    out = tmp_path / "mcp-policy.yaml"
+
+    result = CliRunner().invoke(app, ["init", "--out", str(out), "--profile", "mcp"])
+
+    assert result.exit_code == 0
+    text = out.read_text(encoding="utf-8")
+    assert "policyaware_mcp_policy" in text
+    assert "deny_destructive_mcp_commands" in text
+    policy = yaml.safe_load(text)
+    PolicySchemaValidator().validate(policy)
+    assert PolicyEngine(policy) is not None
+
+
 def test_init_rejects_unknown_profile(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         app,
@@ -55,3 +69,4 @@ def test_init_rejects_unknown_profile(tmp_path: Path) -> None:
 
     assert result.exit_code != 0
     assert "baseline" in result.output
+    assert "mcp" in result.output

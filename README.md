@@ -36,8 +36,8 @@ Compatibility: [Python, providers, extras, and integration status](https://githu
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
 Production checklist: [deployment validation steps for governed AI workflows](https://github.com/ktirupati/policyaware/blob/main/docs/production-checklist.md)
-Release notes: [PolicyAware 0.4.5 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.5.md)
-GitHub release draft: [copy-paste v0.4.5 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.5.md)
+Release notes: [PolicyAware 0.4.6 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.6.md)
+GitHub release draft: [copy-paste v0.4.6 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.6.md)
 Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
 HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
 Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
@@ -251,6 +251,7 @@ policyaware integrations recommend . --use-case rag --framework haystack --needs
 policyaware integrations recommend . --html integration-report.html
 policyaware doctor
 policyaware examples list
+policyaware examples copy mcp-policy-proxy-demo ./policyaware-mcp-demo
 policyaware examples run langgraph-agent-governance
 policyaware policy packs list
 policyaware policy packs copy healthcare-hipaa --out policyaware.yaml
@@ -264,6 +265,9 @@ policyaware up --policy policyaware.yaml --port 8080
 policyaware up --policy-url s3://policy-configs/prod/policyaware.yaml --policy-cache .policyaware/policy-cache.yaml --fallback-policy examples/policies/emergency-fallback-deny.yaml --require-auth
 policyaware init
 policyaware policy validate policyaware.yaml
+policyaware policy summarize policyaware.yaml
+policyaware policy lint policyaware.yaml
+policyaware policy diff old-policy.yaml new-policy.yaml --fail-on-relaxed
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
 policyaware dev simulate
 policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare
@@ -336,6 +340,8 @@ policyaware scan . --write-baseline policyaware-baseline.json
 policyaware scan . --config examples/policyaware-scan.yaml --format html,json,sarif,markdown
 policyaware policy suggest . --out policyaware.generated.yaml
 policyaware plan check agent-plan.yaml --json
+policyaware protect inspect "Email jane@example.com" --json
+policyaware protect redact "Email jane@example.com" --json
 policyaware protect synthesize "Email jane@example.com" --json
 ```
 
@@ -361,6 +367,10 @@ Create a NIST-aligned baseline starter policy in the current directory:
 
 ```bash
 policyaware init
+policyaware init --profile mcp --out mcp-policy.yaml
+policyaware init --profile rag --out rag-policy.yaml
+policyaware init --profile pii --out pii-policy.yaml
+policyaware init --profile agent --out agent-policy.yaml
 policyaware policy validate policyaware.yaml
 ```
 

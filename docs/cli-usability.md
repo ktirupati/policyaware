@@ -1,6 +1,32 @@
 # CLI Usability Commands
 
-PolicyAware includes commands that help developers diagnose their setup, discover examples, run examples, migrate policy files, and create integration recommendation reports.
+PolicyAware includes commands that help developers diagnose their setup, generate starter policies, discover examples, copy examples, inspect/redact sensitive text, summarize policies, lint risky policy design, compare policy files, migrate policy files, and create integration recommendation reports.
+
+## Starter Policy Profiles
+
+Generate a deny-by-default starter policy:
+
+```bash
+policyaware init
+policyaware init --profile baseline
+```
+
+Generate focused lightweight policies:
+
+```bash
+policyaware init --profile mcp --out mcp-policy.yaml
+policyaware init --profile rag --out rag-policy.yaml
+policyaware init --profile pii --out pii-policy.yaml
+policyaware init --profile agent --out agent-policy.yaml
+```
+
+Validate the generated file:
+
+```bash
+policyaware policy validate mcp-policy.yaml
+```
+
+Profiles are intentionally lightweight YAML templates. They do not install ML dependencies or call external services.
 
 ## Performance Diagnostics
 
@@ -101,6 +127,15 @@ policyaware examples run microsoft-agt-interop
 
 The runner only executes known bundled examples.
 
+Copy an example into your own workspace:
+
+```bash
+policyaware examples copy mcp-policy-proxy-demo ./policyaware-mcp-demo
+policyaware examples copy pii-redaction-policy ./pii-redaction-demo
+```
+
+Use `--force` only when you intentionally want to replace the destination folder.
+
 ## Adaptive Governance Helpers
 
 Generate a conservative policy from scan findings:
@@ -123,6 +158,20 @@ Replace sensitive values with structurally useful synthetic values:
 ```bash
 policyaware protect synthesize "Email jane@example.com or call 212-555-7890"
 policyaware protect synthesize "Email jane@example.com" --json
+```
+
+Preview deterministic placeholder redaction:
+
+```bash
+policyaware protect redact "Email jane@example.com or call 212-555-7890"
+policyaware protect redact "Email jane@example.com" --json
+```
+
+Inspect sensitive-data categories without redacting the text:
+
+```bash
+policyaware protect inspect "Email jane@example.com or use token_abcd1234abcd1234"
+policyaware protect inspect "Email jane@example.com" --json
 ```
 
 Read more: [Adaptive Governance](adaptive-governance.md).
@@ -222,6 +271,33 @@ policyaware integrations recommend . \
 ```
 
 ## Policy Migration
+
+Summarize a policy for reviewers:
+
+```bash
+policyaware policy summarize policyaware.yaml
+policyaware policy summarize policyaware.yaml --json
+```
+
+Lint risky policy design beyond schema validation:
+
+```bash
+policyaware policy lint policyaware.yaml
+policyaware policy lint policyaware.yaml --json
+policyaware policy lint policyaware.yaml --fail-on high
+```
+
+`policy lint` warns about patterns such as `default: allow`, missing explicit secret-deny rules, missing PII redaction, missing approval gates, missing budget controls, and broad allow rules.
+
+Compare policy changes before review or deployment:
+
+```bash
+policyaware policy diff old-policy.yaml new-policy.yaml
+policyaware policy diff old-policy.yaml new-policy.yaml --json
+policyaware policy diff old-policy.yaml new-policy.yaml --fail-on-relaxed
+```
+
+`--fail-on-relaxed` is useful in CI because it exits non-zero when a policy changes from `default: deny` to `default: allow` or removes an explicit deny rule.
 
 Conservatively annotate a policy for a target schema version:
 

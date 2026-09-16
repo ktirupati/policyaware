@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from importlib.util import find_spec
@@ -226,6 +227,11 @@ EXAMPLES = [
         "description": "Check MCP-style connector/action permissions.",
     },
     {
+        "id": "mcp-policy-proxy-demo",
+        "command": ["mcp_proxy_demo.py"],
+        "description": "Intercept raw MCP JSON-RPC tools/call requests before server execution.",
+    },
+    {
         "id": "microsoft-agt-interop",
         "command": ["agt_interop_demo.py"],
         "description": "Export tool decisions as AGT-style evidence JSON.",
@@ -237,7 +243,7 @@ EXAMPLES = [
     },
     {
         "id": "pii-redaction-policy",
-        "command": ["pii_demo.py"],
+        "command": ["demo.py"],
         "description": "Detect and redact PII before model execution.",
     },
     {
@@ -378,6 +384,106 @@ rules:
 """
 
 
+PROFILE_RULES: dict[str, list[dict[str, object]]] = {
+    "pii": [
+        {
+            "name": "deny_secret_leakage",
+            "effect": "deny",
+            "when": {"data.contains_secrets": True},
+        },
+        {
+            "name": "redact_pii_before_model",
+            "effect": "transform",
+            "action": "redact",
+            "when": {"data.contains_pii": True},
+        },
+        {
+            "name": "allow_low_medium_risk_privacy_reviewed_prompts",
+            "effect": "allow",
+            "when": {"risk.tier_in": ["low", "medium"]},
+        },
+    ],
+    "mcp": [
+        {
+            "name": "deny_destructive_mcp_commands",
+            "effect": "deny",
+            "when": {
+                "request.tool_command_in": [
+                    "rm -rf",
+                    "del /s",
+                    "format",
+                    "mkfs",
+                    "terraform destroy",
+                    "kubectl delete",
+                ]
+            },
+        },
+        {
+            "name": "require_approval_for_side_effecting_mcp_tools",
+            "effect": "require_approval",
+            "when": {"request.action_type_in": ["write", "delete", "deploy", "permission_change"]},
+        },
+        {
+            "name": "allow_read_only_developer_mcp_tools",
+            "effect": "allow",
+            "when": {
+                "user.role_in": ["developer", "platform_engineer", "security_engineer"],
+                "request.action_type_in": ["read", "search", "list"],
+                "risk.tier_in": ["low", "medium"],
+            },
+        },
+    ],
+    "rag": [
+        {
+            "name": "deny_secret_leakage",
+            "effect": "deny",
+            "when": {"data.contains_secrets": True},
+        },
+        {
+            "name": "redact_sensitive_rag_query_data",
+            "effect": "transform",
+            "action": "redact",
+            "when": {"data.contains_pii": True},
+        },
+        {
+            "name": "require_approval_for_regulated_rag_domains",
+            "effect": "require_approval",
+            "when": {"request.domain_in": ["healthcare", "finance", "legal"]},
+        },
+        {
+            "name": "allow_low_risk_cited_rag_answers",
+            "effect": "allow",
+            "when": {"risk.tier_in": ["low", "medium"]},
+        },
+    ],
+    "agent": [
+        {
+            "name": "deny_excessive_token_budget",
+            "effect": "deny",
+            "when": {"request.max_tokens_gte": 8193},
+        },
+        {
+            "name": "require_approval_for_high_agent_iterations",
+            "effect": "require_approval",
+            "when": {"request.max_iterations_gte": 11},
+        },
+        {
+            "name": "require_approval_for_high_impact_agent_actions",
+            "effect": "require_approval",
+            "when": {"request.action_type_in": ["write", "delete", "deploy", "payment", "external_send"]},
+        },
+        {
+            "name": "allow_low_medium_risk_internal_agent_tasks",
+            "effect": "allow",
+            "when": {
+                "user.role_in": ["developer", "analyst", "platform_engineer"],
+                "risk.tier_in": ["low", "medium"],
+            },
+        },
+    ],
+}
+
+
 def _project_links_table(title: str) -> Table:
     table = Table(title=title)
     table.add_column("Resource")
@@ -438,9 +544,248 @@ def _example_by_id(example_id: str) -> dict[str, object] | None:
 
 def _starter_policy_template(profile: str) -> str:
     normalized = profile.strip().lower()
-    if normalized != "baseline":
-        raise typer.BadParameter("Only the 'baseline' init profile is currently supported.")
-    return BASELINE_POLICY_TEMPLATE
+    if normalized == "baseline":
+        return BASELINE_POLICY_TEMPLATE
+    if normalized not in PROFILE_RULES:
+        supported = ", ".join(["baseline", *sorted(PROFILE_RULES)])
+        raise typer.BadParameter(f"Unsupported init profile: {profile}. Supported profiles: {supported}.")
+    policy = {
+        "id": f"policyaware_{normalized}_policy",
+        "schema_version": "0.2",
+        "default": "deny",
+        "rules": PROFILE_RULES[normalized],
+    }
+    header = (
+        "# PolicyAware starter policy\n"
+        "# Generated by: policyaware init\n"
+        f"# Profile: {normalized}\n"
+        "# Review and adapt this deny-by-default policy before production use.\n\n"
+    )
+    return header + yaml.safe_dump(policy, sort_keys=False)
+
+
+def _load_yaml_mapping(path: Path) -> dict[str, object]:
+    if not path.exists():
+        raise typer.BadParameter(f"File does not exist: {path}")
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise typer.BadParameter(f"YAML file must contain a mapping/object: {path}")
+    return data
+
+
+def _rules_by_name(policy: dict[str, object]) -> dict[str, dict[str, object]]:
+    rules = policy.get("rules", [])
+    if not isinstance(rules, list):
+        return {}
+    named: dict[str, dict[str, object]] = {}
+    for index, rule in enumerate(rules):
+        if isinstance(rule, dict):
+            name = str(rule.get("name") or f"<unnamed:{index}>")
+            named[name] = rule
+    return named
+
+
+def _policy_diff(old_policy: dict[str, object], new_policy: dict[str, object]) -> dict[str, object]:
+    old_rules = _rules_by_name(old_policy)
+    new_rules = _rules_by_name(new_policy)
+    added = sorted(set(new_rules) - set(old_rules))
+    removed = sorted(set(old_rules) - set(new_rules))
+    changed = sorted(name for name in set(old_rules) & set(new_rules) if old_rules[name] != new_rules[name])
+    old_default = old_policy.get("default", "deny")
+    new_default = new_policy.get("default", "deny")
+    effect_changes = []
+    for name in changed:
+        old_effect = old_rules[name].get("effect")
+        new_effect = new_rules[name].get("effect")
+        if old_effect != new_effect:
+            effect_changes.append({"rule": name, "old": old_effect, "new": new_effect})
+    return {
+        "changed": bool(added or removed or changed or old_default != new_default),
+        "default": {"old": old_default, "new": new_default, "changed": old_default != new_default},
+        "rules": {
+            "added": added,
+            "removed": removed,
+            "changed": changed,
+            "effect_changes": effect_changes,
+        },
+        "summary": {
+            "added_rules": len(added),
+            "removed_rules": len(removed),
+            "changed_rules": len(changed),
+            "effect_changes": len(effect_changes),
+        },
+    }
+
+
+def _condition_keys(rule: dict[str, object]) -> set[str]:
+    when = rule.get("when", {})
+    if not isinstance(when, dict):
+        return set()
+    return {str(key) for key in when}
+
+
+def _rule_covers(rule: dict[str, object], *needles: str) -> bool:
+    haystack = " ".join([str(rule.get("name", "")), *sorted(_condition_keys(rule))]).lower()
+    return any(needle.lower() in haystack for needle in needles)
+
+
+def _has_risk_constraint(condition_keys: set[str]) -> bool:
+    return any(key.startswith("risk.") or key.startswith("request.risk") for key in condition_keys)
+
+
+def _policy_summary(policy: dict[str, object]) -> dict[str, object]:
+    rules = list(_rules_by_name(policy).values())
+    effect_counts = {
+        "allow": sum(1 for rule in rules if rule.get("effect") == "allow"),
+        "deny": sum(1 for rule in rules if rule.get("effect") == "deny"),
+        "require_approval": sum(1 for rule in rules if rule.get("effect") == "require_approval"),
+        "transform": sum(1 for rule in rules if rule.get("effect") == "transform"),
+    }
+    coverage = {
+        "pii": any(_rule_covers(rule, "contains_pii", "pii") for rule in rules),
+        "phi": any(_rule_covers(rule, "contains_phi", "phi") for rule in rules),
+        "secrets": any(_rule_covers(rule, "contains_secrets", "secret") for rule in rules),
+        "mcp_tools": any(_rule_covers(rule, "tool", "action_type", "tool_command") for rule in rules),
+        "token_budget": any(_rule_covers(rule, "max_tokens", "max_iterations", "budget") for rule in rules),
+        "role_constraints": any(key.startswith("user.role") for rule in rules for key in _condition_keys(rule)),
+        "risk_constraints": any(_has_risk_constraint(_condition_keys(rule)) for rule in rules),
+    }
+    return {
+        "id": policy.get("id", "-"),
+        "schema_version": policy.get("schema_version", "-"),
+        "default": policy.get("default", "deny"),
+        "rule_count": len(rules),
+        "effects": effect_counts,
+        "coverage": coverage,
+    }
+
+
+def _policy_lint(policy: dict[str, object]) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    try:
+        PolicySchemaValidator().validate(policy)
+    except PolicyValidationError as exc:
+        for error in exc.errors:
+            findings.append(
+                {
+                    "severity": "high",
+                    "code": "POLICY.SCHEMA_INVALID",
+                    "rule": "-",
+                    "message": error,
+                    "recommendation": "Fix schema validation before relying on this policy.",
+                }
+            )
+
+    rules = list(_rules_by_name(policy).values())
+    if policy.get("default", "deny") == "allow":
+        findings.append(
+            {
+                "severity": "high",
+                "code": "POLICY.DEFAULT_ALLOW",
+                "rule": "-",
+                "message": "Policy default is allow.",
+                "recommendation": "Use default: deny and add explicit allow rules.",
+            }
+        )
+    if not rules:
+        findings.append(
+            {
+                "severity": "high",
+                "code": "POLICY.NO_RULES",
+                "rule": "-",
+                "message": "Policy has no rules.",
+                "recommendation": "Add deny, approval, redaction, and explicit allow rules.",
+            }
+        )
+
+    deny_rules = [rule for rule in rules if rule.get("effect") == "deny"]
+    approval_rules = [rule for rule in rules if rule.get("effect") == "require_approval"]
+    transform_rules = [rule for rule in rules if rule.get("effect") == "transform"]
+    allow_rules = [rule for rule in rules if rule.get("effect") == "allow"]
+
+    if not any(_rule_covers(rule, "contains_secrets", "secret") for rule in deny_rules):
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "POLICY.NO_SECRET_DENY",
+                "rule": "-",
+                "message": "No explicit deny rule for secrets was found.",
+                "recommendation": "Add a deny rule for data.contains_secrets: true.",
+            }
+        )
+    if not any(rule.get("action") == "redact" and _rule_covers(rule, "contains_pii", "pii") for rule in transform_rules):
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "POLICY.NO_PII_REDACTION",
+                "rule": "-",
+                "message": "No PII redaction transform was found.",
+                "recommendation": "Add a transform rule with action: redact for data.contains_pii: true.",
+            }
+        )
+    if not approval_rules:
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "POLICY.NO_APPROVAL_GATE",
+                "rule": "-",
+                "message": "No approval gate was found.",
+                "recommendation": "Require approval for write, delete, deploy, payment, or high-risk actions.",
+            }
+        )
+    if not any(_rule_covers(rule, "max_tokens", "max_iterations", "budget") for rule in rules):
+        findings.append(
+            {
+                "severity": "low",
+                "code": "POLICY.NO_BUDGET_CONTROL",
+                "rule": "-",
+                "message": "No obvious token or agent-loop budget control was found.",
+                "recommendation": "Add max token or max iteration controls for agentic workflows.",
+            }
+        )
+
+    for rule in allow_rules:
+        rule_name = str(rule.get("name", "<unnamed>"))
+        condition_keys = _condition_keys(rule)
+        if not condition_keys:
+            findings.append(
+                {
+                    "severity": "high",
+                    "code": "POLICY.BROAD_ALLOW",
+                    "rule": rule_name,
+                    "message": "Allow rule has no conditions.",
+                    "recommendation": "Constrain allow rules by role, risk, region, tenant, or task.",
+                }
+            )
+            continue
+        if not any(key.startswith("user.role") for key in condition_keys):
+            findings.append(
+                {
+                    "severity": "low",
+                    "code": "POLICY.ALLOW_WITHOUT_ROLE",
+                    "rule": rule_name,
+                    "message": "Allow rule has no user.role constraint.",
+                    "recommendation": "Constrain allow rules by role where possible.",
+                }
+            )
+        if not _has_risk_constraint(condition_keys):
+            findings.append(
+                {
+                    "severity": "low",
+                    "code": "POLICY.ALLOW_WITHOUT_RISK",
+                    "rule": rule_name,
+                    "message": "Allow rule has no risk constraint.",
+                    "recommendation": "Constrain allow rules by risk.tier where possible.",
+                }
+            )
+
+    severity_order = {"high": 0, "medium": 1, "low": 2}
+    findings.sort(key=lambda item: (severity_order.get(str(item["severity"]), 9), str(item["code"])))
+    return {
+        "ok": not any(item["severity"] in {"high", "medium"} for item in findings),
+        "summary": _policy_summary(policy),
+        "findings": findings,
+    }
 
 
 def _parse_size(value: str) -> int:
@@ -829,7 +1174,7 @@ def init_policy(
     profile: str = typer.Option(
         "baseline",
         "--profile",
-        help="Starter policy profile to generate. Currently supports: baseline.",
+        help="Starter policy profile to generate: baseline, agent, mcp, pii, or rag.",
     ),
     force: bool = typer.Option(
         False,
@@ -1263,6 +1608,31 @@ def run_example(example_id: str) -> None:
     raise typer.Exit(code=result.returncode)
 
 
+@examples_app.command("copy")
+def copy_example(
+    example_id: str = typer.Argument(..., help="Example id from `policyaware examples list`."),
+    out: Path = typer.Argument(..., help="Destination folder for the copied example."),
+    force: bool = typer.Option(False, "--force", help="Overwrite an existing destination folder."),
+) -> None:
+    """Copy a bundled example into a local project folder."""
+    example = _example_by_id(example_id)
+    if example is None:
+        raise typer.BadParameter(f"Unknown example: {example_id}. Run `policyaware examples list`.")
+    examples_root = _examples_root()
+    example_dir = examples_root / str(example["id"])
+    if not example_dir.exists():
+        raise typer.BadParameter(f"Example folder not found: {example_dir}")
+    if out.exists() and not force:
+        raise typer.BadParameter(f"Destination already exists: {out}. Use --force to replace it.")
+    if out.exists():
+        shutil.rmtree(out)
+    shutil.copytree(example_dir, out)
+    console.print(f"[bold green]Copied example:[/bold green] {example['id']} -> {out.resolve()}")
+    console.print("Next steps:")
+    console.print(f"  cd {out}")
+    console.print(f"  policyaware examples run {example['id']}")
+
+
 @contract_app.command("check")
 def contract_check(
     path: Path = typer.Argument(..., help="Python source folder or file to scan."),
@@ -1430,6 +1800,83 @@ def validate_policy(policy_file: Path) -> None:
     console.print("[bold green]Policy validation passed[/bold green]")
 
 
+@policy_app.command("summarize")
+def summarize_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    json_output: bool = typer.Option(False, "--json", help="Print summary as JSON."),
+) -> None:
+    """Summarize policy defaults, rule effects, and governance coverage."""
+    policy = _load_yaml_mapping(policy_file)
+    summary = _policy_summary(policy)
+    if json_output:
+        console.print_json(data=summary)
+        return
+    table = Table(title="PolicyAware Policy Summary")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("id", str(summary["id"]))
+    table.add_row("schema_version", str(summary["schema_version"]))
+    table.add_row("default", str(summary["default"]))
+    table.add_row("rule_count", str(summary["rule_count"]))
+    effects = summary["effects"]
+    if isinstance(effects, dict):
+        table.add_row(
+            "effects",
+            ", ".join(f"{name}={count}" for name, count in effects.items()),
+        )
+    coverage = summary["coverage"]
+    if isinstance(coverage, dict):
+        covered = [name for name, enabled in coverage.items() if enabled]
+        missing = [name for name, enabled in coverage.items() if not enabled]
+        table.add_row("coverage", ", ".join(covered) or "-")
+        table.add_row("missing_signals", ", ".join(missing) or "-")
+    console.print(table)
+
+
+@policy_app.command("lint")
+def lint_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    json_output: bool = typer.Option(False, "--json", help="Print lint report as JSON."),
+    fail_on: str = typer.Option("medium", "--fail-on", help="Fail on severity: high, medium, low, none."),
+) -> None:
+    """Warn about risky policy design beyond basic schema validation."""
+    policy = _load_yaml_mapping(policy_file)
+    report = _policy_lint(policy)
+    if json_output:
+        console.print_json(data=report)
+    else:
+        table = Table(title="PolicyAware Policy Lint")
+        table.add_column("Severity")
+        table.add_column("Code")
+        table.add_column("Rule")
+        table.add_column("Finding")
+        table.add_column("Recommendation")
+        findings = report["findings"]
+        if not findings:
+            table.add_row("[green]PASS[/green]", "POLICY.OK", "-", "No lint findings.", "-")
+        elif isinstance(findings, list):
+            for item in findings:
+                severity = str(item["severity"])
+                style = "red" if severity == "high" else "yellow" if severity == "medium" else "cyan"
+                table.add_row(
+                    f"[{style}]{severity.upper()}[/{style}]",
+                    str(item["code"]),
+                    str(item["rule"]),
+                    str(item["message"]),
+                    str(item["recommendation"]),
+                )
+        console.print(table)
+    severity_counts = {"high": 0, "medium": 0, "low": 0}
+    findings = report["findings"]
+    if isinstance(findings, list):
+        for item in findings:
+            severity = str(item.get("severity", "low"))
+            if severity in severity_counts:
+                severity_counts[severity] += 1
+    if _should_fail_scan(fail_on, severity_counts):
+        raise typer.Exit(code=1)
+
+
 @policy_app.command("migrate")
 def migrate_policy(
     policy_file: Path,
@@ -1455,6 +1902,65 @@ def migrate_policy(
     )
     console.print("Review the migration note and run:")
     console.print(f"  policyaware policy validate {target}")
+
+
+@policy_app.command("diff")
+def diff_policy(
+    old_policy_file: Path = typer.Argument(..., help="Original policy YAML file."),
+    new_policy_file: Path = typer.Argument(..., help="Updated policy YAML file."),
+    json_output: bool = typer.Option(False, "--json", help="Print diff as JSON."),
+    fail_on_relaxed: bool = typer.Option(
+        False,
+        "--fail-on-relaxed",
+        help="Exit with code 1 when default changes from deny to allow or deny rules are removed.",
+    ),
+) -> None:
+    """Compare two PolicyAware YAML policies for GitOps review."""
+    old_policy = _load_yaml_mapping(old_policy_file)
+    new_policy = _load_yaml_mapping(new_policy_file)
+    old_valid = True
+    new_valid = True
+    try:
+        PolicySchemaValidator().validate(old_policy)
+    except PolicyValidationError:
+        old_valid = False
+    try:
+        PolicySchemaValidator().validate(new_policy)
+    except PolicyValidationError:
+        new_valid = False
+    diff = _policy_diff(old_policy, new_policy)
+    diff["validation"] = {"old": old_valid, "new": new_valid}
+    if json_output:
+        console.print_json(data=diff)
+    else:
+        table = Table(title="PolicyAware Policy Diff")
+        table.add_column("Area")
+        table.add_column("Change")
+        table.add_column("Details")
+        default = diff["default"]
+        if isinstance(default, dict) and default["changed"]:
+            table.add_row("default", f"{default['old']} -> {default['new']}", "Policy default changed")
+        rules = diff["rules"]
+        if isinstance(rules, dict):
+            table.add_row("rules added", str(len(rules["added"])), ", ".join(rules["added"]) or "-")
+            table.add_row("rules removed", str(len(rules["removed"])), ", ".join(rules["removed"]) or "-")
+            table.add_row("rules changed", str(len(rules["changed"])), ", ".join(rules["changed"]) or "-")
+            effect_details = [
+                f"{item['rule']}: {item['old']} -> {item['new']}" for item in rules["effect_changes"]
+            ]
+            table.add_row("effect changes", str(len(effect_details)), "; ".join(effect_details) or "-")
+        table.add_row("validation", "-", f"old={old_valid}, new={new_valid}")
+        console.print(table)
+    relaxed = False
+    default = diff["default"]
+    rules = diff["rules"]
+    if isinstance(default, dict) and default.get("old") == "deny" and default.get("new") == "allow":
+        relaxed = True
+    if isinstance(rules, dict):
+        old_rules = _rules_by_name(old_policy)
+        relaxed = relaxed or any(old_rules.get(name, {}).get("effect") == "deny" for name in rules["removed"])
+    if fail_on_relaxed and relaxed:
+        raise typer.Exit(code=1)
 
 
 @policy_app.command("compose")
@@ -1699,6 +2205,42 @@ def synthesize_text(
         console.print_json(data=result.model_dump(mode="json"))
         return
     console.print(result.synthetic_text)
+
+
+@protect_app.command("redact")
+def redact_text(
+    text: str = typer.Argument(..., help="Text to inspect and redact."),
+    json_output: bool = typer.Option(False, "--json", help="Print findings and redacted text as JSON."),
+) -> None:
+    """Preview deterministic PII/PHI/secrets redaction from the lightweight engine."""
+    result = DataProtectionEngine().redact(text)
+    payload = result.model_dump(mode="json")
+    if json_output:
+        console.print_json(data=payload)
+        return
+    console.print(result.redacted_text or text)
+
+
+@protect_app.command("inspect")
+def inspect_text(
+    text: str = typer.Argument(..., help="Text to inspect for PII, PHI, and secrets."),
+    json_output: bool = typer.Option(False, "--json", help="Print findings as JSON."),
+) -> None:
+    """Inspect text without redacting it."""
+    result = DataProtectionEngine().inspect(text)
+    payload = result.model_dump(mode="json")
+    if json_output:
+        console.print_json(data=payload)
+        return
+    table = Table(title="PolicyAware Data Inspection")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("contains_pii", str(result.contains_pii))
+    table.add_row("contains_phi", str(result.contains_phi))
+    table.add_row("contains_secrets", str(result.contains_secrets))
+    table.add_row("categories", ", ".join(result.categories) or "-")
+    table.add_row("matches", str(result.redactions))
+    console.print(table)
 
 
 @consensus_app.command("check")
