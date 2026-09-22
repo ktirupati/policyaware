@@ -163,6 +163,85 @@ rules:
     assert "POLICY.BROAD_ALLOW" in result.output
 
 
+def test_policy_normalize_writes_stable_yaml(tmp_path: Path) -> None:
+    source = tmp_path / "policy.yaml"
+    target = tmp_path / "policy.normalized.yaml"
+    source.write_text(
+        """
+rules:
+  - when:
+      user.role: developer
+    effect: allow
+    name: allow_developer
+default: deny
+id: sample
+schema_version: "0.3"
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "normalize", str(source), "--out", str(target)])
+
+    assert result.exit_code == 0
+    normalized = target.read_text(encoding="utf-8")
+    assert normalized.index("id: sample") < normalized.index("default: deny")
+    assert normalized.index("name: allow_developer") < normalized.index("effect: allow")
+
+
+def test_policy_checklist_reports_readiness_json() -> None:
+    result = CliRunner().invoke(app, ["policy", "checklist", "examples/policies/basic.yaml", "--json"])
+
+    assert result.exit_code == 0
+    assert '"checklist"' in result.output
+    assert '"deny_by_default"' in result.output
+    assert '"counts"' in result.output
+
+
+def test_policy_checklist_can_fail_on_weak_policy(tmp_path: Path) -> None:
+    policy = tmp_path / "weak.yaml"
+    policy.write_text(
+        """
+id: weak
+default: allow
+rules: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "checklist", str(policy), "--fail-on", "high"])
+
+    assert result.exit_code == 1
+    assert "PolicyAware Policy Readiness Checklist" in result.output
+    assert "Policy defaults to deny" in result.output
+
+
+def test_policy_doctor_reports_rollup_json() -> None:
+    result = CliRunner().invoke(app, ["policy", "doctor", "examples/policies/basic.yaml", "--json"])
+
+    assert result.exit_code == 0
+    assert '"lint"' in result.output
+    assert '"readiness"' in result.output
+    assert '"summary"' in result.output
+
+
+def test_policy_doctor_can_fail_on_weak_policy(tmp_path: Path) -> None:
+    policy = tmp_path / "weak.yaml"
+    policy.write_text(
+        """
+id: weak
+default: allow
+rules: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "doctor", str(policy), "--fail-on", "high"])
+
+    assert result.exit_code == 1
+    assert "PolicyAware policy doctor" in result.output
+    assert "POLICY.DEFAULT_ALLOW" in result.output
+
+
 def test_protect_redact_cli_json() -> None:
     result = CliRunner().invoke(app, ["protect", "redact", "Email jane@example.com", "--json"])
 

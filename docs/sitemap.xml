@@ -169,6 +169,14 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/release-notes-0.4.7.md</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/github-release-v0.4.7.md</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/cli-usability.md</loc>
     <priority>0.8</priority>
   </url>

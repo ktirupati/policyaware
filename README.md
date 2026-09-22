@@ -36,8 +36,8 @@ Compatibility: [Python, providers, extras, and integration status](https://githu
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
 Production checklist: [deployment validation steps for governed AI workflows](https://github.com/ktirupati/policyaware/blob/main/docs/production-checklist.md)
-Release notes: [PolicyAware 0.4.6 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.6.md)
-GitHub release draft: [copy-paste v0.4.6 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.6.md)
+Release notes: [PolicyAware 0.4.7 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.7.md)
+GitHub release draft: [copy-paste v0.4.7 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.7.md)
 Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
 HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
 Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
@@ -265,8 +265,11 @@ policyaware up --policy policyaware.yaml --port 8080
 policyaware up --policy-url s3://policy-configs/prod/policyaware.yaml --policy-cache .policyaware/policy-cache.yaml --fallback-policy examples/policies/emergency-fallback-deny.yaml --require-auth
 policyaware init
 policyaware policy validate policyaware.yaml
+policyaware policy doctor policyaware.yaml
 policyaware policy summarize policyaware.yaml
 policyaware policy lint policyaware.yaml
+policyaware policy checklist policyaware.yaml
+policyaware policy normalize policyaware.yaml --out policyaware.normalized.yaml
 policyaware policy diff old-policy.yaml new-policy.yaml --fail-on-relaxed
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
 policyaware dev simulate

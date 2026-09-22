@@ -788,6 +788,175 @@ def _policy_lint(policy: dict[str, object]) -> dict[str, object]:
     }
 
 
+POLICY_KEY_ORDER = [
+    "id",
+    "schema_version",
+    "version",
+    "name",
+    "description",
+    "default",
+    "default_decision",
+    "metadata",
+    "data_protection",
+    "budgets",
+    "routing",
+    "providers",
+    "guards",
+    "rules",
+    "audit",
+    "observability",
+]
+
+POLICY_RULE_KEY_ORDER = [
+    "name",
+    "id",
+    "description",
+    "effect",
+    "action",
+    "reason",
+    "reason_codes",
+    "priority",
+    "when",
+    "then",
+    "metadata",
+]
+
+
+def _ordered_mapping(mapping: dict[object, object], preferred_order: list[str]) -> dict[object, object]:
+    ordered: dict[object, object] = {}
+    for key in preferred_order:
+        if key in mapping:
+            ordered[key] = _normalize_policy_value(key, mapping[key])
+    for key in sorted((item for item in mapping if item not in ordered), key=str):
+        ordered[key] = _normalize_policy_value(str(key), mapping[key])
+    return ordered
+
+
+def _normalize_policy_value(key: str, value: object) -> object:
+    if key == "rules" and isinstance(value, list):
+        return [
+            _ordered_mapping(item, POLICY_RULE_KEY_ORDER) if isinstance(item, dict) else item
+            for item in value
+        ]
+    if isinstance(value, dict):
+        return _ordered_mapping(value, [])
+    if isinstance(value, list):
+        return [_normalize_policy_value("", item) for item in value]
+    return value
+
+
+def _normalized_policy_yaml(policy: dict[str, object]) -> str:
+    normalized = _ordered_mapping(policy, POLICY_KEY_ORDER)
+    return yaml.safe_dump(normalized, sort_keys=False)
+
+
+def _policy_checklist(policy: dict[str, object]) -> dict[str, object]:
+    summary = _policy_summary(policy)
+    lint_report = _policy_lint(policy)
+    coverage = summary["coverage"] if isinstance(summary["coverage"], dict) else {}
+    lint_codes = {
+        str(item["code"])
+        for item in lint_report["findings"]
+        if isinstance(lint_report["findings"], list) and isinstance(item, dict)
+    }
+
+    checklist = [
+        {
+            "id": "deny_by_default",
+            "severity": "high",
+            "status": "pass" if summary["default"] == "deny" else "fail",
+            "check": "Policy defaults to deny.",
+            "recommendation": "Use default: deny and add explicit allow rules for known-safe paths.",
+        },
+        {
+            "id": "schema_valid",
+            "severity": "high",
+            "status": "fail" if "POLICY.SCHEMA_INVALID" in lint_codes else "pass",
+            "check": "Policy passes schema validation.",
+            "recommendation": "Run policyaware policy validate and fix schema errors before deployment.",
+        },
+        {
+            "id": "rules_present",
+            "severity": "high",
+            "status": "pass" if int(summary["rule_count"]) > 0 else "fail",
+            "check": "Policy has at least one explicit rule.",
+            "recommendation": "Add explicit deny, approval, redaction, budget, and allow rules.",
+        },
+        {
+            "id": "secret_deny",
+            "severity": "medium",
+            "status": "pass" if "POLICY.NO_SECRET_DENY" not in lint_codes else "warn",
+            "check": "Secrets are explicitly denied.",
+            "recommendation": "Add a deny rule for data.contains_secrets: true.",
+        },
+        {
+            "id": "pii_redaction",
+            "severity": "medium",
+            "status": "pass" if "POLICY.NO_PII_REDACTION" not in lint_codes else "warn",
+            "check": "PII redaction is configured.",
+            "recommendation": "Add a transform rule with action: redact for data.contains_pii: true.",
+        },
+        {
+            "id": "approval_gate",
+            "severity": "medium",
+            "status": "pass" if "POLICY.NO_APPROVAL_GATE" not in lint_codes else "warn",
+            "check": "High-risk actions have an approval path.",
+            "recommendation": "Require approval for write, delete, deploy, payment, or regulated actions.",
+        },
+        {
+            "id": "budget_control",
+            "severity": "low",
+            "status": "pass" if "POLICY.NO_BUDGET_CONTROL" not in lint_codes else "warn",
+            "check": "Token, cost, or agent-loop budget controls are present.",
+            "recommendation": "Add max token, max iteration, cost, or tool-rate constraints for agents.",
+        },
+        {
+            "id": "mcp_tool_governance",
+            "severity": "low",
+            "status": "pass" if coverage.get("mcp_tools") else "warn",
+            "check": "MCP/tool actions are covered.",
+            "recommendation": "Add rules for action_type, tool_command, connector, or tool arguments.",
+        },
+        {
+            "id": "role_constraints",
+            "severity": "low",
+            "status": "pass" if coverage.get("role_constraints") else "warn",
+            "check": "Allow paths are constrained by user role.",
+            "recommendation": "Constrain allow rules by user.role where possible.",
+        },
+        {
+            "id": "risk_constraints",
+            "severity": "low",
+            "status": "pass" if coverage.get("risk_constraints") else "warn",
+            "check": "Allow paths are constrained by risk.",
+            "recommendation": "Constrain allow rules by risk.tier where possible.",
+        },
+    ]
+    counts = {
+        "pass": sum(1 for item in checklist if item["status"] == "pass"),
+        "warn": sum(1 for item in checklist if item["status"] == "warn"),
+        "fail": sum(1 for item in checklist if item["status"] == "fail"),
+    }
+    return {
+        "ok": counts["fail"] == 0,
+        "summary": summary,
+        "counts": counts,
+        "checklist": checklist,
+    }
+
+
+def _checklist_severity_counts(report: dict[str, object]) -> dict[str, int]:
+    severity_counts = {"high": 0, "medium": 0, "low": 0}
+    checklist = report["checklist"]
+    if isinstance(checklist, list):
+        for item in checklist:
+            if isinstance(item, dict) and item.get("status") in {"fail", "warn"}:
+                severity = str(item.get("severity", "low"))
+                if severity in severity_counts:
+                    severity_counts[severity] += 1
+    return severity_counts
+
+
 def _parse_size(value: str) -> int:
     normalized = value.strip().lower()
     multiplier = 1
@@ -1873,6 +2042,149 @@ def lint_policy(
             severity = str(item.get("severity", "low"))
             if severity in severity_counts:
                 severity_counts[severity] += 1
+    if _should_fail_scan(fail_on, severity_counts):
+        raise typer.Exit(code=1)
+
+
+@policy_app.command("normalize")
+def normalize_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Output path. Omit to print normalized YAML."),
+    in_place: bool = typer.Option(False, "--in-place", help="Rewrite the input policy file in place."),
+    force: bool = typer.Option(False, "--force", help="Overwrite --out when it already exists."),
+) -> None:
+    """Normalize policy YAML key ordering for clean policy-as-code diffs."""
+    if out and in_place:
+        raise typer.BadParameter("Use either --out or --in-place, not both.")
+    policy = _load_yaml_mapping(policy_file)
+    normalized = _normalized_policy_yaml(policy)
+    if in_place:
+        policy_file.write_text(normalized, encoding="utf-8")
+        console.print(f"[bold green]Normalized policy written:[/bold green] {policy_file}")
+        return
+    if out:
+        if out.exists() and not force:
+            raise typer.BadParameter(f"Output already exists: {out}. Use --force to overwrite.")
+        out.write_text(normalized, encoding="utf-8")
+        console.print(f"[bold green]Normalized policy written:[/bold green] {out}")
+        return
+    console.print(normalized, end="")
+
+
+@policy_app.command("checklist")
+def checklist_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    json_output: bool = typer.Option(False, "--json", help="Print checklist as JSON."),
+    fail_on: str = typer.Option("none", "--fail-on", help="Fail on severity: high, medium, low, none."),
+) -> None:
+    """Print a lightweight production-readiness checklist for a policy file."""
+    policy = _load_yaml_mapping(policy_file)
+    report = _policy_checklist(policy)
+    if json_output:
+        console.print_json(data=report)
+    else:
+        table = Table(title="PolicyAware Policy Readiness Checklist")
+        table.add_column("Status")
+        table.add_column("Severity")
+        table.add_column("Check")
+        table.add_column("Recommendation")
+        checklist = report["checklist"]
+        if isinstance(checklist, list):
+            for item in checklist:
+                status = str(item["status"])
+                severity = str(item["severity"])
+                style = "green" if status == "pass" else "red" if status == "fail" else "yellow"
+                table.add_row(
+                    f"[{style}]{status.upper()}[/{style}]",
+                    severity.upper(),
+                    str(item["check"]),
+                    str(item["recommendation"]),
+                )
+        console.print(table)
+        counts = report["counts"]
+        if isinstance(counts, dict):
+            console.print(
+                f"Result: pass={counts['pass']}, warn={counts['warn']}, fail={counts['fail']}"
+            )
+    severity_counts = _checklist_severity_counts(report)
+    if _should_fail_scan(fail_on, severity_counts):
+        raise typer.Exit(code=1)
+
+
+@policy_app.command("doctor")
+def doctor_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    json_output: bool = typer.Option(False, "--json", help="Print doctor report as JSON."),
+    fail_on: str = typer.Option("medium", "--fail-on", help="Fail on readiness severity: high, medium, low, none."),
+) -> None:
+    """Run validation, summary, lint, and readiness checks in one command."""
+    policy = _load_yaml_mapping(policy_file)
+    lint_report = _policy_lint(policy)
+    checklist_report = _policy_checklist(policy)
+    findings = lint_report["findings"] if isinstance(lint_report["findings"], list) else []
+    lint_counts = {
+        "high": sum(1 for item in findings if isinstance(item, dict) and item.get("severity") == "high"),
+        "medium": sum(1 for item in findings if isinstance(item, dict) and item.get("severity") == "medium"),
+        "low": sum(1 for item in findings if isinstance(item, dict) and item.get("severity") == "low"),
+    }
+    report = {
+        "ok": bool(lint_report["ok"]) and bool(checklist_report["ok"]),
+        "summary": lint_report["summary"],
+        "lint": {
+            "ok": lint_report["ok"],
+            "counts": lint_counts,
+            "findings": findings,
+        },
+        "readiness": {
+            "ok": checklist_report["ok"],
+            "counts": checklist_report["counts"],
+            "checklist": checklist_report["checklist"],
+        },
+    }
+    if json_output:
+        console.print_json(data=report)
+    else:
+        summary = report["summary"]
+        readiness_counts = checklist_report["counts"]
+        status = "[bold green]PASS[/bold green]" if report["ok"] else "[bold yellow]REVIEW[/bold yellow]"
+        console.print(f"{status} PolicyAware policy doctor: {policy_file}")
+        table = Table(title="PolicyAware Policy Doctor")
+        table.add_column("Area")
+        table.add_column("Result")
+        table.add_column("Details")
+        if isinstance(summary, dict):
+            table.add_row(
+                "summary",
+                str(summary.get("default", "-")),
+                f"rules={summary.get('rule_count', '-')}, id={summary.get('id', '-')}",
+            )
+        table.add_row(
+            "lint",
+            "pass" if lint_counts == {"high": 0, "medium": 0, "low": 0} else "review",
+            f"high={lint_counts['high']}, medium={lint_counts['medium']}, low={lint_counts['low']}",
+        )
+        if isinstance(readiness_counts, dict):
+            table.add_row(
+                "readiness",
+                "pass" if readiness_counts.get("fail") == 0 else "review",
+                (
+                    f"pass={readiness_counts.get('pass', 0)}, "
+                    f"warn={readiness_counts.get('warn', 0)}, fail={readiness_counts.get('fail', 0)}"
+                ),
+            )
+        console.print(table)
+        if findings:
+            console.print("Top lint findings:")
+            for item in findings[:5]:
+                if isinstance(item, dict):
+                    console.print(
+                        f"- [{item.get('severity', 'low')}] {item.get('code', '-')}: "
+                        f"{item.get('message', '-')}"
+                    )
+        console.print("Next commands:")
+        console.print(f"  policyaware policy checklist {policy_file}")
+        console.print(f"  policyaware policy normalize {policy_file} --out {policy_file.with_suffix('.normalized.yaml')}")
+    severity_counts = _checklist_severity_counts(checklist_report)
     if _should_fail_scan(fail_on, severity_counts):
         raise typer.Exit(code=1)
 

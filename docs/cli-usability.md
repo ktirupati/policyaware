@@ -289,6 +289,35 @@ policyaware policy lint policyaware.yaml --fail-on high
 
 `policy lint` warns about patterns such as `default: allow`, missing explicit secret-deny rules, missing PII redaction, missing approval gates, missing budget controls, and broad allow rules.
 
+Run the one-command policy doctor:
+
+```bash
+policyaware policy doctor policyaware.yaml
+policyaware policy doctor policyaware.yaml --json
+policyaware policy doctor policyaware.yaml --fail-on high
+```
+
+`policy doctor` rolls validation, summary, lint, and readiness counts into one report. It is the simplest command to use in CI logs, screenshots, and first-time policy reviews.
+
+Run a production-readiness checklist:
+
+```bash
+policyaware policy checklist policyaware.yaml
+policyaware policy checklist policyaware.yaml --json
+policyaware policy checklist policyaware.yaml --fail-on high
+```
+
+`policy checklist` is intentionally lightweight. It checks deny-by-default posture, schema validity, explicit rules, secret denial, PII redaction, approval gates, budget controls, MCP/tool coverage, role constraints, and risk constraints. Use it in pull requests when reviewers need a quick readiness signal without installing ML extras.
+
+Normalize YAML key ordering for clean Git diffs:
+
+```bash
+policyaware policy normalize policyaware.yaml --out policyaware.normalized.yaml
+policyaware policy normalize policyaware.yaml --in-place
+```
+
+`policy normalize` preserves rule semantics. It only rewrites YAML ordering so policy-as-code changes are easier to review.
+
 Compare policy changes before review or deployment:
 
 ```bash

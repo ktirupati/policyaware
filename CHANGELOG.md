@@ -6,6 +6,12 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.7
+
+- Added `policyaware policy doctor` as a one-command rollup for validation, summary, lint findings, and readiness checks.
+- Added `policyaware policy checklist` for a lightweight production-readiness checklist covering deny-by-default posture, schema validity, PII/secrets, approval gates, budget controls, MCP/tool coverage, role constraints, and risk constraints.
+- Added `policyaware policy normalize` for deterministic YAML ordering and cleaner policy-as-code Git diffs.
+
 ## 0.4.6
 
 - Added lightweight CLI ergonomics: `policyaware init --profile` for `mcp`, `rag`, `pii`, and `agent`.
