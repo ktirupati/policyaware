@@ -6,6 +6,10 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.9
+
+- Improved `policyaware demo doctor` overwrite handling so the message is stable across Linux, macOS, and Windows CLI test environments.
+
 ## 0.4.8
 
 - Added `policyaware demo doctor` for a zero-config policy doctor onboarding demo.

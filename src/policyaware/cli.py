@@ -3435,7 +3435,8 @@ def demo_doctor(
 ) -> None:
     """Create a tiny demo policy and run policy doctor without external services."""
     if out.exists() and not force:
-        raise typer.BadParameter(f"Output already exists: {out}. Use --force to overwrite.")
+        console.print(f"[bold red]Output already exists:[/bold red] {out}. Use --force to overwrite.")
+        raise typer.Exit(code=1)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(DEMO_DOCTOR_POLICY_TEMPLATE, encoding="utf-8")
     policy = _load_yaml_mapping(out)
