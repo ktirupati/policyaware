@@ -242,6 +242,43 @@ rules: []
     assert "POLICY.DEFAULT_ALLOW" in result.output
 
 
+def test_demo_doctor_writes_policy_and_runs_doctor(tmp_path: Path) -> None:
+    out = tmp_path / "demo-policy.yaml"
+
+    result = CliRunner().invoke(app, ["demo", "doctor", "--out", str(out)])
+
+    assert result.exit_code == 0
+    assert out.exists()
+    assert "Created demo policy" in result.output
+    assert "PASS PolicyAware policy doctor" in result.output
+    assert "POLICY.SCHEMA_INVALID" not in result.output
+    assert "PolicyAware policy doctor" in result.output
+    text = out.read_text(encoding="utf-8")
+    assert "policyaware_demo_doctor" in text
+    assert "block_secrets" in text
+
+
+def test_demo_doctor_json_output(tmp_path: Path) -> None:
+    out = tmp_path / "demo-policy.yaml"
+
+    result = CliRunner().invoke(app, ["demo", "doctor", "--out", str(out), "--json"])
+
+    assert result.exit_code == 0
+    assert '"policy_file"' in result.output
+    assert '"policyaware_demo_doctor"' in result.output
+    assert '"readiness"' in result.output
+
+
+def test_demo_doctor_refuses_overwrite_without_force(tmp_path: Path) -> None:
+    out = tmp_path / "demo-policy.yaml"
+    out.write_text("id: existing\n", encoding="utf-8")
+
+    result = CliRunner().invoke(app, ["demo", "doctor", "--out", str(out)])
+
+    assert result.exit_code != 0
+    assert "Use --force to overwrite" in result.output
+
+
 def test_protect_redact_cli_json() -> None:
     result = CliRunner().invoke(app, ["protect", "redact", "Email jane@example.com", "--json"])
 

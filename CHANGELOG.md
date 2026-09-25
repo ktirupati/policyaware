@@ -6,6 +6,10 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.8
+
+- Added `policyaware demo doctor` for a zero-config policy doctor onboarding demo.
+
 ## 0.4.7
 
 - Added `policyaware policy doctor` as a one-command rollup for validation, summary, lint findings, and readiness checks.

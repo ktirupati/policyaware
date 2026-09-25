@@ -110,6 +110,16 @@ Provider checks only report whether environment variables exist. They do not pri
 
 ## Examples
 
+Run a zero-config policy doctor demo:
+
+```bash
+policyaware demo doctor
+policyaware demo doctor --json
+policyaware demo doctor --out .policyaware/demo/policyaware.demo.yaml --force
+```
+
+`demo doctor` writes a tiny deny-by-default policy with PII, secrets, MCP/tool, budget, role, and risk signals, then runs the same `policy doctor` report used for real policies. It is useful for onboarding, screenshots, and quick local verification after `pip install policyaware`.
+
 List examples:
 
 ```bash
