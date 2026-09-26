@@ -14,10 +14,23 @@ PolicyAware is an open-source AI control plane and security gateway for governed
 
 Unlike basic content filters that only check text strings, PolicyAware provides policy-aware governance across requests, tools, models, evaluations, and local code scans.
 
+## Try In 30 Seconds
+
+```bash
+pip install policyaware
+policyaware --version
+policyaware quickstart
+policyaware policy validate .policyaware/demo/policyaware.demo.yaml --json
+policyaware scan .
+```
+
+Start here: [Quickstart](https://github.com/ktirupati/policyaware/blob/main/docs/quickstart.md).
+
 Deployment model: PolicyAware is an adoption-ready open-source framework that teams embed and operate inside their own AI applications, platforms, and CI workflows. It keeps the base install lightweight with native rules-based governance, and uses optional integrations such as Presidio, ProtectAI/Transformers, NeMo Guardrails, Guardrails AI, Haystack, and provider adapters when teams need deeper detection or ecosystem-specific behavior.
 
 Documentation site: https://ktirupati.github.io/policyaware/
 
+Quickstart: [install and run PolicyAware in 30 seconds](https://github.com/ktirupati/policyaware/blob/main/docs/quickstart.md)
 Capability docs: [docs/capabilities.md](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities.md)
 Branding: [standard PolicyAware icon and positioning](https://github.com/ktirupati/policyaware/blob/main/docs/branding.md)
 Coding-agent integrations: [Codex, Antigravity, Claude Code, Cursor, and Windsurf workflow packs](https://github.com/ktirupati/policyaware/tree/main/integrations)
@@ -36,8 +49,8 @@ Compatibility: [Python, providers, extras, and integration status](https://githu
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
 Production checklist: [deployment validation steps for governed AI workflows](https://github.com/ktirupati/policyaware/blob/main/docs/production-checklist.md)
-Release notes: [PolicyAware 0.4.9 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.9.md)
-GitHub release draft: [copy-paste v0.4.9 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.9.md)
+Release notes: [PolicyAware 0.4.10 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.10.md)
+GitHub release draft: [copy-paste v0.4.10 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.10.md)
 Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
 HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
 Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
@@ -265,6 +278,7 @@ policyaware up --policy policyaware.yaml --port 8080
 policyaware up --policy-url s3://policy-configs/prod/policyaware.yaml --policy-cache .policyaware/policy-cache.yaml --fallback-policy examples/policies/emergency-fallback-deny.yaml --require-auth
 policyaware init
 policyaware policy validate policyaware.yaml
+policyaware policy validate policyaware.yaml --json
 policyaware policy doctor policyaware.yaml
 policyaware policy summarize policyaware.yaml
 policyaware policy lint policyaware.yaml
@@ -272,6 +286,7 @@ policyaware policy checklist policyaware.yaml
 policyaware policy normalize policyaware.yaml --out policyaware.normalized.yaml
 policyaware policy diff old-policy.yaml new-policy.yaml --fail-on-relaxed
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
+policyaware quickstart
 policyaware demo doctor
 policyaware dev simulate
 policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare

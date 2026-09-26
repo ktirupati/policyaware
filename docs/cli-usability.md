@@ -2,6 +2,14 @@
 
 PolicyAware includes commands that help developers diagnose their setup, generate starter policies, discover examples, copy examples, inspect/redact sensitive text, summarize policies, lint risky policy design, compare policy files, migrate policy files, and create integration recommendation reports.
 
+## Version
+
+Check the installed package version:
+
+```bash
+policyaware --version
+```
+
 ## Starter Policy Profiles
 
 Generate a deny-by-default starter policy:
@@ -113,12 +121,14 @@ Provider checks only report whether environment variables exist. They do not pri
 Run a zero-config policy doctor demo:
 
 ```bash
+policyaware quickstart
+policyaware quickstart --json
 policyaware demo doctor
 policyaware demo doctor --json
 policyaware demo doctor --out .policyaware/demo/policyaware.demo.yaml --force
 ```
 
-`demo doctor` writes a tiny deny-by-default policy with PII, secrets, MCP/tool, budget, role, and risk signals, then runs the same `policy doctor` report used for real policies. It is useful for onboarding, screenshots, and quick local verification after `pip install policyaware`.
+`quickstart` is the friendly alias for `demo doctor`. Both commands write a tiny deny-by-default policy with PII, secrets, MCP/tool, budget, role, and risk signals, then run the same `policy doctor` report used for real policies. It is useful for onboarding, screenshots, and quick local verification after `pip install policyaware`.
 
 List examples:
 
@@ -153,6 +163,7 @@ Generate a conservative policy from scan findings:
 ```bash
 policyaware policy suggest . --out policyaware.generated.yaml
 policyaware policy validate policyaware.generated.yaml
+policyaware policy validate policyaware.generated.yaml --json
 ```
 
 Preflight a proposed multi-step agent plan before real model or tool execution:

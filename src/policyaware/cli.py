@@ -5,8 +5,14 @@ import os
 import shutil
 import subprocess
 import sys
+from importlib.metadata import PackageNotFoundError, version as package_version
 from importlib.util import find_spec
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
+    import tomli as tomllib
 
 import typer
 import yaml
@@ -53,7 +59,7 @@ from policyaware.simulator import VisualPolicySimulator
 from policyaware.test_harness import PolicyAwareTestHarness
 from policyaware.tools import ToolPolicyEngine
 
-app = typer.Typer(help="PolicyAware AI Gateway CLI")
+app = typer.Typer(help="PolicyAware AI Gateway CLI", invoke_without_command=True, no_args_is_help=True)
 policy_app = typer.Typer(help="Policy testing commands")
 policy_packs_app = typer.Typer(help="Policy pack commands")
 eval_app = typer.Typer(help="Evaluation commands")
@@ -120,6 +126,42 @@ FEEDBACK_FORM_URL = (
     "https://docs.google.com/forms/d/e/1FAIpQLSc2QcQydjXZ0YF9bbVSpudoM5y8noxIP5jU-acVmjlyvf6Slg/viewform"
 )
 LINKEDIN_URL = "https://www.linkedin.com/in/krishna-tirupati/"
+
+
+def _package_version() -> str:
+    for parent in Path(__file__).resolve().parents:
+        pyproject = parent / "pyproject.toml"
+        if pyproject.exists():
+            try:
+                metadata = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+                project = metadata.get("project", {}) if isinstance(metadata, dict) else {}
+                version = project.get("version") if isinstance(project, dict) else None
+                if version:
+                    return str(version)
+            except OSError:
+                break
+    try:
+        return package_version("policyaware")
+    except PackageNotFoundError:
+        return "0.0.0+local"
+
+
+@app.callback()
+def main_callback(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        help="Show PolicyAware version and exit.",
+        is_eager=True,
+    ),
+) -> None:
+    """PolicyAware AI Gateway CLI."""
+    if version:
+        console.print(f"policyaware {_package_version()}")
+        raise typer.Exit()
+
+
 INTEGRATIONS = [
     {
         "name": "FastAPI",
@@ -2077,19 +2119,26 @@ def suggest_policy(
 
 
 @policy_app.command("validate")
-def validate_policy(policy_file: Path) -> None:
+def validate_policy(
+    policy_file: Path,
+    json_output: bool = typer.Option(False, "--json", help="Print validation result as JSON."),
+) -> None:
     """Validate a YAML policy file and print clear schema errors."""
-    import yaml
-
     with policy_file.open("r", encoding="utf-8") as handle:
         policy = yaml.safe_load(handle) or {}
     try:
         PolicySchemaValidator().validate(policy)
     except PolicyValidationError as exc:
+        if json_output:
+            console.print_json(data={"ok": False, "policy_file": str(policy_file), "errors": exc.errors})
+            raise typer.Exit(code=1) from exc
         console.print("[bold red]Policy validation failed[/bold red]")
         for error in exc.errors:
             console.print(f"- {error}")
         raise typer.Exit(code=1) from exc
+    if json_output:
+        console.print_json(data={"ok": True, "policy_file": str(policy_file), "errors": []})
+        return
     console.print("[bold green]Policy validation passed[/bold green]")
 
 
@@ -3434,6 +3483,25 @@ def demo_doctor(
     force: bool = typer.Option(False, "--force", help="Overwrite the demo policy file if it exists."),
 ) -> None:
     """Create a tiny demo policy and run policy doctor without external services."""
+    _run_demo_doctor(out=out, json_output=json_output, force=force)
+
+
+@app.command("quickstart")
+def quickstart(
+    out: Path = typer.Option(
+        Path(".policyaware/demo/policyaware.demo.yaml"),
+        "--out",
+        "-o",
+        help="Demo policy file to write before running policy doctor.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print doctor report as JSON after writing the demo policy."),
+    force: bool = typer.Option(False, "--force", help="Overwrite the demo policy file if it exists."),
+) -> None:
+    """Run the zero-config PolicyAware demo doctor."""
+    _run_demo_doctor(out=out, json_output=json_output, force=force)
+
+
+def _run_demo_doctor(out: Path, json_output: bool, force: bool) -> None:
     if out.exists() and not force:
         console.print(f"[bold red]Output already exists:[/bold red] {out}. Use --force to overwrite.")
         raise typer.Exit(code=1)
@@ -3446,9 +3514,6 @@ def demo_doctor(
         return
     console.print(f"[bold green]Created demo policy:[/bold green] {out}")
     _render_policy_doctor_report(out, report)
-    console.print("Try next:")
-    console.print(f"  policyaware policy checklist {out}")
-    console.print(f"  policyaware policy normalize {out} --out {out.with_suffix('.normalized.yaml')}")
 
 
 @dev_app.command("simulate")

@@ -6,6 +6,13 @@ All notable PolicyAware changes are tracked here.
 
 - No unreleased changes yet.
 
+## 0.4.10
+
+- Added `policyaware --version` for quick install verification.
+- Added a short `docs/quickstart.md` and README "Try in 30 seconds" block.
+- Added `policyaware quickstart` as a friendly alias for the zero-config policy doctor demo.
+- Added `policyaware policy validate --json` for CI-friendly validation output.
+
 ## 0.4.9
 
 - Improved `policyaware demo doctor` overwrite handling so the message is stable across Linux, macOS, and Windows CLI test environments.

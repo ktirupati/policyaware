@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from typer.testing import CliRunner
 
 from policyaware.cli import app
+
+
+def test_cli_version_option() -> None:
+    result = CliRunner().invoke(app, ["--version"])
+
+    assert result.exit_code == 0
+    assert result.output.startswith("policyaware ")
 
 
 def test_doctor_cli_json() -> None:
@@ -65,6 +73,40 @@ rules:
     assert target.exists()
     assert "schema_version: '0.3'" in target.read_text(encoding="utf-8")
     assert validate.exit_code == 0
+
+
+def test_policy_validate_json_success() -> None:
+    result = CliRunner().invoke(app, ["policy", "validate", "examples/policies/basic.yaml", "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["ok"] is True
+    assert Path(payload["policy_file"]) == Path("examples/policies/basic.yaml")
+    assert payload["errors"] == []
+
+
+def test_policy_validate_json_failure(tmp_path: Path) -> None:
+    policy = tmp_path / "invalid.yaml"
+    policy.write_text(
+        """
+id: invalid
+default: maybe
+rules:
+  - name: bad_effect
+    effect: approve
+    when:
+      data.contains_pii: true
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "validate", str(policy), "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.output)
+    assert payload["ok"] is False
+    assert payload["policy_file"] == str(policy)
+    assert payload["errors"]
 
 
 def test_policy_diff_reports_changed_rules(tmp_path: Path) -> None:
@@ -256,6 +298,31 @@ def test_demo_doctor_writes_policy_and_runs_doctor(tmp_path: Path) -> None:
     text = out.read_text(encoding="utf-8")
     assert "policyaware_demo_doctor" in text
     assert "block_secrets" in text
+
+
+def test_quickstart_writes_policy_and_runs_doctor(tmp_path: Path) -> None:
+    out = tmp_path / "quickstart-policy.yaml"
+
+    result = CliRunner().invoke(app, ["quickstart", "--out", str(out)])
+
+    assert result.exit_code == 0
+    assert out.exists()
+    assert "Created demo policy" in result.output
+    assert "PASS PolicyAware policy doctor" in result.output
+    text = out.read_text(encoding="utf-8")
+    assert "policyaware_demo_doctor" in text
+    assert "block_secrets" in text
+
+
+def test_quickstart_json_output(tmp_path: Path) -> None:
+    out = tmp_path / "quickstart-policy.yaml"
+
+    result = CliRunner().invoke(app, ["quickstart", "--out", str(out), "--json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["policy_file"] == str(out)
+    assert payload["readiness"]["ok"] is True
 
 
 def test_demo_doctor_json_output(tmp_path: Path) -> None:
