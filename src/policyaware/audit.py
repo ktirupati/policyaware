@@ -15,9 +15,18 @@ def estimate_tokens(text: str) -> int:
 
 
 class AuditLogger:
-    def __init__(self, path: str | Path | None = None, signer: IntegritySigner | None = None):
+    def __init__(
+        self,
+        path: str | Path | None = None,
+        signer: IntegritySigner | None = None,
+        *,
+        snapshot_mode: str = "full",
+    ):
+        if snapshot_mode not in {"full", "metadata"}:
+            raise ValueError("snapshot_mode must be 'full' or 'metadata'.")
         self.path = Path(path) if path else None
         self.signer = signer
+        self.snapshot_mode = snapshot_mode
 
     def record(self, request: GatewayRequest, response: GatewayResponse, started_at: float) -> AuditTrace:
         input_tokens = estimate_tokens(request.prompt_text)
@@ -36,6 +45,10 @@ class AuditLogger:
             user_id=request.user.get("id"),
             task_type=request.context.get("task_type"),
             policy_decision=response.policy.decision.value,
+            policy_id=response.policy.policy_id,
+            policy_version=response.policy.policy_version,
+            policy_schema_version=response.policy.policy_schema_version,
+            policy_sha256=response.policy.policy_sha256,
             matched_rules=response.policy.matched_rules,
             reason_codes=response.policy.reason_codes,
             actions=response.policy.actions,
@@ -48,14 +61,9 @@ class AuditLogger:
             latency_ms=int((time.perf_counter() - started_at) * 1000),
             risk_score=response.policy.risk_score,
             eval_scores={result.name: result.score for result in response.evals},
-            request_snapshot=request.model_dump(mode="json"),
-            response_snapshot={
-                "content": response.content,
-                "policy": response.policy.model_dump(mode="json"),
-                "route": response.route.model_dump(mode="json") if response.route else None,
-                "evals": [result.model_dump(mode="json") for result in response.evals],
-                "metadata": response.metadata,
-            },
+            snapshot_mode=self.snapshot_mode,
+            request_snapshot=self._request_snapshot(request),
+            response_snapshot=self._response_snapshot(response),
         )
         if self.path:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,6 +73,34 @@ class AuditLogger:
                     payload["integrity"] = self.signer.sign(payload).to_dict()
                 handle.write(json.dumps(payload) + "\n")
         return trace
+
+    def _request_snapshot(self, request: GatewayRequest) -> dict[str, Any]:
+        if self.snapshot_mode == "metadata":
+            return {"request_id": request.request_id}
+        return request.model_dump(mode="json")
+
+    def _response_snapshot(self, response: GatewayResponse) -> dict[str, Any]:
+        if self.snapshot_mode == "metadata":
+            return {
+                "policy": {
+                    "decision": response.policy.decision.value,
+                    "policy_id": response.policy.policy_id,
+                    "policy_version": response.policy.policy_version,
+                    "policy_schema_version": response.policy.policy_schema_version,
+                    "policy_sha256": response.policy.policy_sha256,
+                    "matched_rules": response.policy.matched_rules,
+                    "reason_codes": response.policy.reason_codes,
+                    "actions": response.policy.actions,
+                    "risk_tier": response.policy.risk_tier.value,
+                }
+            }
+        return {
+            "content": response.content,
+            "policy": response.policy.model_dump(mode="json"),
+            "route": response.route.model_dump(mode="json") if response.route else None,
+            "evals": [result.model_dump(mode="json") for result in response.evals],
+            "metadata": response.metadata,
+        }
 
     def export_jsonl(self, traces: list[AuditTrace], path: str | Path) -> None:
         output = Path(path)
@@ -91,8 +127,14 @@ class AuditLogger:
 
 
 class SQLiteAuditLogger(AuditLogger):
-    def __init__(self, path: str | Path = ".policyaware/audit.db", signer: IntegritySigner | None = None):
-        super().__init__(None, signer=signer)
+    def __init__(
+        self,
+        path: str | Path = ".policyaware/audit.db",
+        signer: IntegritySigner | None = None,
+        *,
+        snapshot_mode: str = "full",
+    ):
+        super().__init__(None, signer=signer, snapshot_mode=snapshot_mode)
         self.db_path = Path(path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()

@@ -328,6 +328,10 @@ class DynamicPolicyEngine:
         with self._lock:
             return self._engine.policy if self._engine else {"default": "deny", "rules": []}
 
+    def provenance(self) -> dict[str, str | None]:
+        with self._lock:
+            return dict(self._engine.policy_provenance) if self._engine else {}
+
     def refresh(self, *, force: bool = False) -> bool:
         now = time.time()
         with self._lock:

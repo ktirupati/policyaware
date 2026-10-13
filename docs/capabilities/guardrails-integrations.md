@@ -263,6 +263,8 @@ class InternalSafetyGuard:
 
 ## Design Guidance
 
+PolicyAware provides adapter points and deterministic policy checks; it does not ship a centrally curated first-party validator marketplace. Guardrails Hub and other external catalogs can supply specialized validators, but each validator should be assessed for maintenance, test coverage, dependency footprint, data handling, and license before production use. See [Capabilities, Boundaries, And Deployment Choices](../capability-boundaries.md).
+
 Use PolicyAware for enterprise-wide governance:
 
 - deny-by-default policy

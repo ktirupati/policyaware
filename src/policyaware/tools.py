@@ -6,7 +6,7 @@ from typing import Any
 import yaml
 
 from policyaware.models import Decision, ToolCallRequest, ToolDecision
-from policyaware.policy import PolicyEngine
+from policyaware.policy import PolicyEngine, policy_provenance
 from policyaware.reason_codes import ReasonCode
 
 
@@ -34,7 +34,9 @@ class ToolRegistry:
 class ToolPolicyEngine:
     def __init__(self, registry: ToolRegistry, policy: dict[str, Any] | None = None):
         self.registry = registry
-        self.default = (policy or {}).get("default", "deny")
+        self.policy = policy or {}
+        self.policy_provenance = policy_provenance(self.policy)
+        self.default = self.policy.get("default", "deny")
 
     @classmethod
     def from_file(cls, path: str | Path) -> "ToolPolicyEngine":
@@ -46,23 +48,23 @@ class ToolPolicyEngine:
     def decide(self, request: ToolCallRequest) -> ToolDecision:
         connector = self.registry.connector(request.connector_id)
         if connector is None:
-            return ToolDecision(
+            return self._with_provenance(ToolDecision(
                 decision=Decision.DENY,
                 connector_id=request.connector_id,
                 action=request.action,
                 reason="Unknown tool connector.",
                 reason_codes=[ReasonCode.TOOL_CONNECTOR_UNKNOWN, ReasonCode.TOOL_DENIED],
-            )
+            ))
 
         action = self.registry.action(request.connector_id, request.action)
         if action is None:
-            return ToolDecision(
+            return self._with_provenance(ToolDecision(
                 decision=Decision.DENY,
                 connector_id=request.connector_id,
                 action=request.action,
                 reason="Unknown tool action.",
                 reason_codes=[ReasonCode.TOOL_ACTION_UNKNOWN, ReasonCode.TOOL_DENIED],
-            )
+            ))
 
         context = {
             "agent": {"id": request.agent_id},
@@ -87,7 +89,7 @@ class ToolPolicyEngine:
         reason_codes = [ReasonCode.TOOL_RATE_LIMIT_DECLARED] if limits else []
 
         if effect == "allow":
-            return ToolDecision(
+            return self._with_provenance(ToolDecision(
                 decision=Decision.ALLOW,
                 connector_id=request.connector_id,
                 action=request.action,
@@ -95,10 +97,10 @@ class ToolPolicyEngine:
                 reason_codes=[*reason_codes, ReasonCode.TOOL_ALLOWED],
                 matched_rules=[f"{request.connector_id}.{request.action}"],
                 limits=limits,
-            )
+            ))
 
         if effect == "require_approval":
-            return ToolDecision(
+            return self._with_provenance(ToolDecision(
                 decision=Decision.REQUIRE_APPROVAL,
                 connector_id=request.connector_id,
                 action=request.action,
@@ -107,9 +109,9 @@ class ToolPolicyEngine:
                 matched_rules=[f"{request.connector_id}.{request.action}"],
                 limits=limits,
                 approval_required=True,
-            )
+            ))
 
-        return ToolDecision(
+        return self._with_provenance(ToolDecision(
             decision=Decision.DENY,
             connector_id=request.connector_id,
             action=request.action,
@@ -117,5 +119,10 @@ class ToolPolicyEngine:
             reason_codes=[*reason_codes, ReasonCode.TOOL_DENIED],
             matched_rules=[f"{request.connector_id}.{request.action}"],
             limits=limits,
-        )
+        ))
+
+    def _with_provenance(self, decision: ToolDecision) -> ToolDecision:
+        for key, value in self.policy_provenance.items():
+            setattr(decision, key, value)
+        return decision
 

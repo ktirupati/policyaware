@@ -13,6 +13,14 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://ktirupati.github.io/policyaware/release-notes-0.4.11.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/github-release-v0.4.11.md</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ktirupati.github.io/policyaware/release-notes-0.4.10.md</loc>
     <priority>0.8</priority>
   </url>
@@ -139,6 +147,10 @@
   <url>
     <loc>https://ktirupati.github.io/policyaware/limitations.md</loc>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ktirupati.github.io/policyaware/capability-boundaries.md</loc>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ktirupati.github.io/policyaware/security-model.md</loc>

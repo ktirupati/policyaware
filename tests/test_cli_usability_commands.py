@@ -40,6 +40,16 @@ def test_examples_list_cli() -> None:
     assert "mcp-policy-proxy-demo" in result.output
 
 
+def test_examples_list_compact_cli() -> None:
+    result = CliRunner().invoke(app, ["examples", "list", "--compact"])
+
+    assert result.exit_code == 0
+    lines = result.output.strip().splitlines()
+    assert "fastapi-llm-policy-middleware" in lines
+    assert "mcp-policy-proxy-demo" in lines
+    assert not any("policyaware examples run" in line for line in lines)
+
+
 def test_examples_copy_cli(tmp_path: Path) -> None:
     out = tmp_path / "mcp-demo"
 
@@ -75,6 +85,94 @@ rules:
     assert validate.exit_code == 0
 
 
+def test_policy_fingerprint_cli_is_stable_and_matches_runtime(tmp_path: Path) -> None:
+    from policyaware.policy import policy_provenance
+
+    policy_file = tmp_path / "policy.yaml"
+    policy = {
+        "id": "cli-fingerprint-test",
+        "policy_version": "3",
+        "schema_version": "0.4",
+        "default": "deny",
+        "rules": [],
+    }
+    policy_file.write_text(
+        "id: cli-fingerprint-test\n"
+        "policy_version: '3'\n"
+        "schema_version: '0.4'\n"
+        "default: deny\n"
+        "rules: []\n",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "fingerprint", str(policy_file), "--json"])
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["policy_id"] == "cli-fingerprint-test"
+    assert output["policy_version"] == "3"
+    assert output["policy_sha256"] == policy_provenance(policy)["policy_sha256"]
+
+
+def test_policy_fingerprint_expected_hash_match_and_mismatch(tmp_path: Path) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    policy_file.write_text("id: approved\ndefault: deny\nrules: []\n", encoding="utf-8")
+    fingerprint_result = CliRunner().invoke(
+        app, ["policy", "fingerprint", str(policy_file), "--json"]
+    )
+    fingerprint = json.loads(fingerprint_result.output)["policy_sha256"]
+
+    matched = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "fingerprint",
+            str(policy_file),
+            "--expected-sha256",
+            fingerprint,
+            "--json",
+        ],
+    )
+    mismatched = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "fingerprint",
+            str(policy_file),
+            "--expected-sha256",
+            "0" * 64,
+            "--json",
+        ],
+    )
+
+    assert matched.exit_code == 0
+    assert json.loads(matched.output)["matches_expected"] is True
+    assert mismatched.exit_code == 1
+    assert json.loads(mismatched.output)["matches_expected"] is False
+
+
+def test_policy_fingerprint_rejects_malformed_expected_hash(tmp_path: Path) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    policy_file.write_text("default: deny\nrules: []\n", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        ["policy", "fingerprint", str(policy_file), "--expected-sha256", "not-a-hash"],
+    )
+
+    assert result.exit_code == 2
+
+
+def test_policy_fingerprint_rejects_invalid_policy(tmp_path: Path) -> None:
+    policy_file = tmp_path / "invalid.yaml"
+    policy_file.write_text("default: maybe\nrules: []\n", encoding="utf-8")
+
+    result = CliRunner().invoke(app, ["policy", "fingerprint", str(policy_file), "--json"])
+
+    assert result.exit_code != 0
+    assert "Policy validation failed" in result.output
+
+
 def test_policy_validate_json_success() -> None:
     result = CliRunner().invoke(app, ["policy", "validate", "examples/policies/basic.yaml", "--json"])
 
@@ -107,6 +205,62 @@ rules:
     assert payload["ok"] is False
     assert payload["policy_file"] == str(policy)
     assert payload["errors"]
+
+
+def test_policy_validate_strict_fails_on_high_lint(tmp_path: Path) -> None:
+    policy = tmp_path / "weak.yaml"
+    policy.write_text(
+        """
+id: weak
+default: allow
+rules: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "validate", str(policy), "--strict"])
+
+    assert result.exit_code == 1
+    assert "Strict policy validation failed" in result.output
+    assert "POLICY.DEFAULT_ALLOW" in result.output
+
+
+def test_policy_validate_strict_json_includes_lint(tmp_path: Path) -> None:
+    policy = tmp_path / "weak.yaml"
+    policy.write_text(
+        """
+id: weak
+default: allow
+rules: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "validate", str(policy), "--strict", "--json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.output)
+    assert payload["ok"] is False
+    assert payload["strict"] is True
+    assert payload["lint"]["counts"]["high"] >= 1
+
+
+def test_policy_validate_github_format_outputs_annotations(tmp_path: Path) -> None:
+    policy = tmp_path / "weak.yaml"
+    policy.write_text(
+        """
+id: weak
+default: allow
+rules: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(app, ["policy", "validate", str(policy), "--strict", "--format", "github"])
+
+    assert result.exit_code == 1
+    assert "::error file=" in result.output
+    assert "POLICY.DEFAULT_ALLOW" in result.output
 
 
 def test_policy_diff_reports_changed_rules(tmp_path: Path) -> None:
@@ -323,6 +477,17 @@ def test_quickstart_json_output(tmp_path: Path) -> None:
     payload = json.loads(result.output)
     assert payload["policy_file"] == str(out)
     assert payload["readiness"]["ok"] is True
+
+
+def test_quickstart_no_write_does_not_create_policy(tmp_path: Path) -> None:
+    out = tmp_path / "quickstart-policy.yaml"
+
+    result = CliRunner().invoke(app, ["quickstart", "--out", str(out), "--no-write"])
+
+    assert result.exit_code == 0
+    assert not out.exists()
+    assert "Dry run" in result.output
+    assert "PASS PolicyAware policy doctor" in result.output
 
 
 def test_demo_doctor_json_output(tmp_path: Path) -> None:

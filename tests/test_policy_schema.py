@@ -20,6 +20,17 @@ def test_valid_policy_passes_schema_validation() -> None:
     )
 
 
+def test_policy_version_is_optional_revision_metadata() -> None:
+    PolicySchemaValidator().validate(
+        {"policy_version": "2026.10.1", "default": "deny", "rules": []}
+    )
+
+
+def test_policy_version_rejects_boolean() -> None:
+    with pytest.raises(PolicyValidationError, match="policy_version"):
+        PolicySchemaValidator().validate({"policy_version": True, "rules": []})
+
+
 def test_policy_engine_rejects_invalid_policy() -> None:
     with pytest.raises(PolicyValidationError):
         PolicyEngine({"default": "maybe", "rules": []})

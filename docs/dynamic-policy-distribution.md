@@ -1,8 +1,8 @@
 # Dynamic Policy Distribution
 
-YAML policies work well as policy-as-code, but large organizations often need a way to distribute emergency policy changes without waiting for every application deployment.
+YAML policies work well as policy-as-code, but large organizations often need to update policy without rebuilding every application image.
 
-PolicyAware supports dynamic policy sources so applications and sidecars can load policies from a local file, central HTTP(S) location, AWS S3, Google Cloud Storage, or ADLS Gen2 path, refresh them on an interval, cache the last known-good version, and fail closed when required.
+PolicyAware supports dynamic policy sources so configured SDK instances and sidecars can load policies from a local file, central HTTP(S) location, AWS S3, Google Cloud Storage, or ADLS Gen2 path. On a request, an instance checks whether its refresh TTL has elapsed and fetches an update when needed. A policy-only change can reach already-integrated services without rebuilding their application images, provided the source, credentials, refresh settings, and request integration are already configured. This is request-triggered pull refresh, not background polling or a push-based central control server.
 
 For multi-layer enterprise stacks, combine dynamic policy distribution with
 [policy composition](policy-composition.md). Composition defines predictable
@@ -20,6 +20,16 @@ Use dynamic policy distribution when you have:
 - compliance teams that need faster policy updates than code deployments
 - central artifact storage or internal configuration services
 - cloud storage policy artifacts such as AWS S3, Google Cloud Storage, or ADLS Gen2
+
+## Deployment And Update Model
+
+PolicyAware's dynamic distribution is a request-triggered pull-and-refresh pattern:
+
+1. A policy owner validates and publishes a new policy artifact to the configured source.
+2. The next request after an instance's refresh TTL expires causes it to fetch the source.
+3. A valid policy is activated locally; a failed refresh follows the configured cache and fail-closed/fallback behavior.
+
+The refresh interval affects how quickly active replicas observe a change; it does not provide an instantaneous fleet-wide revoke. Teams must integrate applications with the SDK or route governance checks to the sidecar before relying on its decisions. The sidecar exposes PolicyAware check endpoints; it is not a transparent network interceptor or an OpenAI-compatible reverse proxy. A shared central service can reduce per-application deployment work, but it must be deployed, secured, scaled, and kept highly available by the operator.
 
 ## Sidecar With Central Policy URL
 

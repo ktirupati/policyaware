@@ -32,9 +32,11 @@ Validate the generated file:
 
 ```bash
 policyaware policy validate mcp-policy.yaml
+policyaware policy validate mcp-policy.yaml --strict
+policyaware policy validate mcp-policy.yaml --strict --format github
 ```
 
-Profiles are intentionally lightweight YAML templates. They do not install ML dependencies or call external services.
+Use `--strict` when CI should fail on high-severity policy posture findings after schema validation. Use `--format github` in GitHub Actions to emit native `::error` annotations. Profiles are intentionally lightweight YAML templates. They do not install ML dependencies or call external services.
 
 ## Performance Diagnostics
 
@@ -123,6 +125,7 @@ Run a zero-config policy doctor demo:
 ```bash
 policyaware quickstart
 policyaware quickstart --json
+policyaware quickstart --no-write
 policyaware demo doctor
 policyaware demo doctor --json
 policyaware demo doctor --out .policyaware/demo/policyaware.demo.yaml --force
@@ -134,6 +137,7 @@ List examples:
 
 ```bash
 policyaware examples list
+policyaware examples list --compact
 policyaware examples list --json
 ```
 
@@ -164,6 +168,7 @@ Generate a conservative policy from scan findings:
 policyaware policy suggest . --out policyaware.generated.yaml
 policyaware policy validate policyaware.generated.yaml
 policyaware policy validate policyaware.generated.yaml --json
+policyaware policy validate policyaware.generated.yaml --strict --format github
 ```
 
 Preflight a proposed multi-step agent plan before real model or tool execution:
@@ -338,6 +343,16 @@ policyaware policy normalize policyaware.yaml --in-place
 ```
 
 `policy normalize` preserves rule semantics. It only rewrites YAML ordering so policy-as-code changes are easier to review.
+
+Print the validated policy provenance (including the canonical SHA-256 fingerprint):
+
+```bash
+policyaware policy fingerprint policyaware.yaml
+policyaware policy fingerprint policyaware.yaml --json
+policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha256> --json
+```
+
+The command validates the policy before printing its ID, optional revision, schema version, and fingerprint. The hash is computed from parsed policy content, so YAML formatting or key-order changes do not alter it. With `--expected-sha256`, it reports `matches_expected` in JSON and exits nonzero on a mismatch, making it suitable for CI approval checks. A fingerprint identifies content but is not a signature or proof of approval.
 
 Compare policy changes before review or deployment:
 

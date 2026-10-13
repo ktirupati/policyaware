@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -32,6 +34,7 @@ class PolicyEngine:
     def __init__(self, policy: dict[str, Any]):
         PolicySchemaValidator().validate(policy)
         self.policy = policy
+        self.policy_provenance = policy_provenance(policy)
         self.default = policy.get("default", "deny")
         self.rules = [
             PolicyRule(
@@ -231,6 +234,8 @@ class PolicyEngine:
         return RiskAssessment(tier=tier, score=score, factors=factors, reason_codes=reason_codes)
 
     def _with_explanation(self, decision: PolicyDecision) -> PolicyDecision:
+        for key, value in self.policy_provenance.items():
+            setattr(decision, key, value)
         summary = f"{decision.decision.value}: {decision.reason}"
         decision.explanation = DecisionExplanation(
             decision=decision.decision,
@@ -241,3 +246,23 @@ class PolicyEngine:
             remediation=decision.remediation,
         )
         return decision
+
+
+def policy_provenance(policy: dict[str, Any]) -> dict[str, str | None]:
+    canonical = json.dumps(
+        policy,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        default=str,
+    )
+    return {
+        "policy_id": policy.get("id"),
+        "policy_version": str(policy["policy_version"])
+        if policy.get("policy_version") is not None
+        else None,
+        "policy_schema_version": str(policy["schema_version"])
+        if policy.get("schema_version") is not None
+        else None,
+        "policy_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+    }

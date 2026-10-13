@@ -42,7 +42,7 @@ from policyaware.mcp_stdio import MCPStdioPolicyProxy, MCPStdioProxyConfig
 from policyaware.observability import OpenTelemetryJsonExporter, PrometheusExporter
 from policyaware.performance import performance_status
 from policyaware.plan import PlanPreflightChecker
-from policyaware.policy import PolicyEngine
+from policyaware.policy import PolicyEngine, policy_provenance
 from policyaware.policy_composition import PolicyComposer, PolicyCompositionError, load_policy_layers
 from policyaware.policy_pack_registry import copy_policy_pack, list_policy_packs, read_policy_pack
 from policyaware.policy_suggest import PolicySuggester
@@ -1047,15 +1047,32 @@ def _checklist_severity_counts(report: dict[str, object]) -> dict[str, int]:
     return severity_counts
 
 
+def _lint_severity_counts(report: dict[str, object]) -> dict[str, int]:
+    severity_counts = {"high": 0, "medium": 0, "low": 0}
+    findings = report["findings"]
+    if isinstance(findings, list):
+        for item in findings:
+            if isinstance(item, dict):
+                severity = str(item.get("severity", "low"))
+                if severity in severity_counts:
+                    severity_counts[severity] += 1
+    return severity_counts
+
+
+def _github_annotation_escape(value: object) -> str:
+    text = str(value)
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def _print_github_error(policy_file: Path, message: object) -> None:
+    sys.stdout.write(f"::error file={_github_annotation_escape(policy_file)}::{_github_annotation_escape(message)}\n")
+
+
 def _policy_doctor_report(policy: dict[str, object]) -> dict[str, object]:
     lint_report = _policy_lint(policy)
     checklist_report = _policy_checklist(policy)
     findings = lint_report["findings"] if isinstance(lint_report["findings"], list) else []
-    lint_counts = {
-        "high": sum(1 for item in findings if isinstance(item, dict) and item.get("severity") == "high"),
-        "medium": sum(1 for item in findings if isinstance(item, dict) and item.get("severity") == "medium"),
-        "low": sum(1 for item in findings if isinstance(item, dict) and item.get("severity") == "low"),
-    }
+    lint_counts = _lint_severity_counts(lint_report)
     return {
         "ok": bool(lint_report["ok"]) and bool(checklist_report["ok"]),
         "summary": lint_report["summary"],
@@ -1908,10 +1925,17 @@ def recommend_integrations(
 
 
 @examples_app.command("list")
-def list_examples(json_output: bool = typer.Option(False, "--json", help="Print examples as JSON.")) -> None:
+def list_examples(
+    json_output: bool = typer.Option(False, "--json", help="Print examples as JSON."),
+    compact: bool = typer.Option(False, "--compact", help="Print only example ids, one per line."),
+) -> None:
     """List bundled PolicyAware examples and runnable commands."""
     if json_output:
         console.print_json(data={"examples": EXAMPLES})
+        return
+    if compact:
+        for item in EXAMPLES:
+            console.print(str(item["id"]))
         return
     table = Table(title="PolicyAware Examples")
     table.add_column("Example")
@@ -2122,23 +2146,65 @@ def suggest_policy(
 def validate_policy(
     policy_file: Path,
     json_output: bool = typer.Option(False, "--json", help="Print validation result as JSON."),
+    strict: bool = typer.Option(False, "--strict", help="Also fail on high-severity policy lint findings."),
+    output_format: str = typer.Option("text", "--format", help="Output format: text or github."),
 ) -> None:
     """Validate a YAML policy file and print clear schema errors."""
     with policy_file.open("r", encoding="utf-8") as handle:
         policy = yaml.safe_load(handle) or {}
+    normalized_format = output_format.strip().lower()
+    if normalized_format not in {"text", "github"}:
+        raise typer.BadParameter("--format must be text or github.")
     try:
         PolicySchemaValidator().validate(policy)
     except PolicyValidationError as exc:
         if json_output:
             console.print_json(data={"ok": False, "policy_file": str(policy_file), "errors": exc.errors})
             raise typer.Exit(code=1) from exc
+        if normalized_format == "github":
+            for error in exc.errors:
+                _print_github_error(policy_file, error)
+            raise typer.Exit(code=1) from exc
         console.print("[bold red]Policy validation failed[/bold red]")
         for error in exc.errors:
             console.print(f"- {error}")
         raise typer.Exit(code=1) from exc
+    lint_report = _policy_lint(policy) if strict else None
+    lint_counts = _lint_severity_counts(lint_report) if isinstance(lint_report, dict) else {"high": 0, "medium": 0, "low": 0}
+    strict_failed = strict and lint_counts["high"] > 0
     if json_output:
-        console.print_json(data={"ok": True, "policy_file": str(policy_file), "errors": []})
+        data: dict[str, object] = {
+            "ok": not strict_failed,
+            "policy_file": str(policy_file),
+            "errors": [],
+        }
+        if strict and isinstance(lint_report, dict):
+            data["strict"] = True
+            data["lint"] = {
+                "counts": lint_counts,
+                "findings": lint_report["findings"],
+            }
+        console.print_json(data=data)
+        if strict_failed:
+            raise typer.Exit(code=1)
         return
+    if normalized_format == "github":
+        if strict_failed and isinstance(lint_report, dict) and isinstance(lint_report["findings"], list):
+            for finding in lint_report["findings"]:
+                if isinstance(finding, dict) and finding.get("severity") == "high":
+                    _print_github_error(
+                        policy_file,
+                        f"{finding.get('code', 'POLICY.LINT')}: {finding.get('message', '-')}",
+                    )
+            raise typer.Exit(code=1)
+        console.print(f"Policy validation passed: {policy_file}")
+        return
+    if strict_failed and isinstance(lint_report, dict) and isinstance(lint_report["findings"], list):
+        console.print("[bold red]Strict policy validation failed[/bold red]")
+        for finding in lint_report["findings"]:
+            if isinstance(finding, dict) and finding.get("severity") == "high":
+                console.print(f"- {finding.get('code', 'POLICY.LINT')}: {finding.get('message', '-')}")
+        raise typer.Exit(code=1)
     console.print("[bold green]Policy validation passed[/bold green]")
 
 
@@ -2173,6 +2239,57 @@ def summarize_policy(
         table.add_row("coverage", ", ".join(covered) or "-")
         table.add_row("missing_signals", ", ".join(missing) or "-")
     console.print(table)
+
+
+@policy_app.command("fingerprint")
+def fingerprint_policy(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    json_output: bool = typer.Option(False, "--json", help="Print provenance as JSON."),
+    expected_sha256: str | None = typer.Option(
+        None,
+        "--expected-sha256",
+        help="Fail if the canonical policy fingerprint differs from this SHA-256 value.",
+    ),
+) -> None:
+    """Validate a policy and print its canonical SHA-256 provenance."""
+    if expected_sha256 is not None:
+        expected_sha256 = expected_sha256.strip().lower()
+        if len(expected_sha256) != 64 or any(
+            character not in "0123456789abcdef" for character in expected_sha256
+        ):
+            raise typer.BadParameter("--expected-sha256 must be a 64-character hexadecimal SHA-256.")
+
+    policy = _load_yaml_mapping(policy_file)
+    try:
+        PolicySchemaValidator().validate(policy)
+    except PolicyValidationError as exc:
+        raise typer.BadParameter(f"Policy validation failed: {exc}") from exc
+
+    provenance = policy_provenance(policy)
+    result = {"policy_file": str(policy_file), **provenance}
+    matches_expected = (
+        expected_sha256 is None or provenance["policy_sha256"] == expected_sha256
+    )
+    if expected_sha256 is not None:
+        result["expected_sha256"] = expected_sha256
+        result["matches_expected"] = matches_expected
+    if json_output:
+        console.print_json(data=result)
+        if not matches_expected:
+            raise typer.Exit(code=1)
+        return
+
+    table = Table(title="PolicyAware Policy Fingerprint")
+    table.add_column("Field")
+    table.add_column("Value")
+    for field, value in result.items():
+        table.add_row(field, str(value) if value is not None else "-")
+    console.print(table)
+    if not matches_expected:
+        console.print("[bold red]Policy fingerprint does not match the approved value.[/bold red]")
+        raise typer.Exit(code=1)
+    if expected_sha256 is not None:
+        console.print("[bold green]Policy fingerprint matches the approved value.[/bold green]")
 
 
 @policy_app.command("lint")
@@ -3481,9 +3598,10 @@ def demo_doctor(
     ),
     json_output: bool = typer.Option(False, "--json", help="Print doctor report as JSON after writing the demo policy."),
     force: bool = typer.Option(False, "--force", help="Overwrite the demo policy file if it exists."),
+    no_write: bool = typer.Option(False, "--no-write", help="Preview the demo policy doctor report without writing a file."),
 ) -> None:
     """Create a tiny demo policy and run policy doctor without external services."""
-    _run_demo_doctor(out=out, json_output=json_output, force=force)
+    _run_demo_doctor(out=out, json_output=json_output, force=force, no_write=no_write)
 
 
 @app.command("quickstart")
@@ -3496,23 +3614,30 @@ def quickstart(
     ),
     json_output: bool = typer.Option(False, "--json", help="Print doctor report as JSON after writing the demo policy."),
     force: bool = typer.Option(False, "--force", help="Overwrite the demo policy file if it exists."),
+    no_write: bool = typer.Option(False, "--no-write", help="Preview the demo policy doctor report without writing a file."),
 ) -> None:
     """Run the zero-config PolicyAware demo doctor."""
-    _run_demo_doctor(out=out, json_output=json_output, force=force)
+    _run_demo_doctor(out=out, json_output=json_output, force=force, no_write=no_write)
 
 
-def _run_demo_doctor(out: Path, json_output: bool, force: bool) -> None:
-    if out.exists() and not force:
+def _run_demo_doctor(out: Path, json_output: bool, force: bool, no_write: bool = False) -> None:
+    if out.exists() and not force and not no_write:
         console.print(f"[bold red]Output already exists:[/bold red] {out}. Use --force to overwrite.")
         raise typer.Exit(code=1)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(DEMO_DOCTOR_POLICY_TEMPLATE, encoding="utf-8")
-    policy = _load_yaml_mapping(out)
+    if no_write:
+        policy = yaml.safe_load(DEMO_DOCTOR_POLICY_TEMPLATE) or {}
+    else:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(DEMO_DOCTOR_POLICY_TEMPLATE, encoding="utf-8")
+        policy = _load_yaml_mapping(out)
     report = _policy_doctor_report(policy)
     if json_output:
-        console.print_json(data={"policy_file": str(out), **report})
+        console.print_json(data={"policy_file": str(out), "would_write": no_write, **report})
         return
-    console.print(f"[bold green]Created demo policy:[/bold green] {out}")
+    if no_write:
+        console.print(f"[bold cyan]Dry run:[/bold cyan] would create demo policy: {out}")
+    else:
+        console.print(f"[bold green]Created demo policy:[/bold green] {out}")
     _render_policy_doctor_report(out, report)
 
 

@@ -12,7 +12,9 @@ class PolicyValidationError(ValueError):
 
 @dataclass(frozen=True)
 class PolicySchemaValidator:
-    allowed_top_level: frozenset[str] = frozenset({"id", "schema_version", "default", "rules", "guards"})
+    allowed_top_level: frozenset[str] = frozenset(
+        {"id", "policy_version", "schema_version", "default", "rules", "guards"}
+    )
     allowed_rule_fields: frozenset[str] = frozenset({"name", "effect", "when", "action"})
     allowed_effects: frozenset[str] = frozenset({"allow", "deny", "transform", "require_approval"})
     allowed_actions: frozenset[str] = frozenset(
@@ -52,6 +54,11 @@ class PolicySchemaValidator:
                 )
         if "id" in policy and not isinstance(policy["id"], str):
             errors.append("Field 'id' must be a string.")
+        if "policy_version" in policy and (
+            not isinstance(policy["policy_version"], (str, int))
+            or isinstance(policy["policy_version"], bool)
+        ):
+            errors.append("Field 'policy_version' must be a string or integer.")
 
     def _validate_default(self, policy: dict[str, Any], errors: list[str]) -> None:
         default = policy.get("default", "deny")

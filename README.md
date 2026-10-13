@@ -19,8 +19,13 @@ Unlike basic content filters that only check text strings, PolicyAware provides 
 ```bash
 pip install policyaware
 policyaware --version
+policyaware doctor --json
 policyaware quickstart
+policyaware quickstart --no-write
 policyaware policy validate .policyaware/demo/policyaware.demo.yaml --json
+policyaware policy validate .policyaware/demo/policyaware.demo.yaml --strict --format github
+policyaware policy fingerprint .policyaware/demo/policyaware.demo.yaml --json
+policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha256> --json
 policyaware scan .
 ```
 
@@ -42,6 +47,7 @@ Alternatives guide: [PolicyAware alternatives for guardrails, AI gateways, model
 Usage modes: [Gateway vs callbacks vs tool governance vs scan](https://github.com/ktirupati/policyaware/blob/main/docs/usage-modes.md)
 Enterprise readiness: [enterprise AI governance checklist](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-readiness.md)
 Limitations: [current scope and production validation notes](https://github.com/ktirupati/policyaware/blob/main/docs/limitations.md)
+Capabilities and boundaries: [deployment choices, validator coverage, conversational state, and compliance-evidence scope](https://github.com/ktirupati/policyaware/blob/main/docs/capability-boundaries.md)
 Security model: [deny-by-default and layered AI governance](https://github.com/ktirupati/policyaware/blob/main/docs/security-model.md)
 Security boundaries: [SDK mode vs sidecar/gateway enforcement](https://github.com/ktirupati/policyaware/blob/main/docs/security-boundaries.md)
 Examples matrix: [choose the right runnable example](https://github.com/ktirupati/policyaware/blob/main/docs/examples-matrix.md)
@@ -49,8 +55,8 @@ Compatibility: [Python, providers, extras, and integration status](https://githu
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
 Production checklist: [deployment validation steps for governed AI workflows](https://github.com/ktirupati/policyaware/blob/main/docs/production-checklist.md)
-Release notes: [PolicyAware 0.4.10 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.10.md)
-GitHub release draft: [copy-paste v0.4.10 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.10.md)
+Release notes: [PolicyAware 0.4.11 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.11.md)
+GitHub release draft: [copy-paste v0.4.11 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.11.md)
 Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
 HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
 Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
@@ -203,6 +209,14 @@ Short version: **use PolicyAware when AI actions need governance, not just gener
 
 PolicyAware is intentionally focused on AI systems. For ordinary web APIs or microservices that do not use LLMs, RAG, MCP tools, or autonomous agents, standard API security controls are usually a better first layer. For deeper ML-based detection or conversational safety, PolicyAware keeps the base install lightweight and lets teams opt into Presidio, ProtectAI/Transformers, NeMo Guardrails, Guardrails AI, Haystack, and provider extras. Runtime overhead should be benchmarked in your own request path, especially when optional ML or external guardrail engines are enabled.
 
+**GRC scope:** PolicyAware provides application-level policy enforcement and technical evidence that can feed an existing governance, risk, and compliance process. Its starter policy packs and audit exports do not provide a centralized AI inventory, legally validated regulation-to-code mapping, end-to-end regulatory obligation management, or proof of organizational compliance. See [limitations and scope](https://github.com/ktirupati/policyaware/blob/main/docs/limitations.md) and [enterprise readiness](https://github.com/ktirupati/policyaware/blob/main/docs/enterprise-readiness.md).
+
+**Observability scope:** PolicyAware evaluates governance outcomes and exports traces and telemetry. For deep trace exploration, experiment comparison, production quality analytics, or model/data drift diagnosis, pair it with a dedicated observability platform. See the [comparison](https://github.com/ktirupati/policyaware/blob/main/docs/comparison.md) and [audit and observability guide](https://github.com/ktirupati/policyaware/blob/main/docs/capabilities/audit-observability.md).
+
+**Audit privacy and provenance:** Policy-engine decisions and corresponding audit traces include policy identity and content fingerprint. Full prompt/output snapshots remain the backward-compatible default; configure `snapshot_mode="metadata"` to omit those payloads from stored snapshots. Trace identifiers remain, so use opaque IDs and set retention/access controls.
+
+**Central policy updates:** Already-integrated SDK instances and sidecars check a shared policy source when a request arrives after the refresh TTL expires. Policy-only changes can then take effect without rebuilding application images. This is not background polling, transparent interception, or push-based fleet control; applications must route governance checks through PolicyAware. See the [dynamic policy distribution guide](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md).
+
 ## Scan Report Preview
 
 `policyaware scan` is one of PolicyAware's highest-utility differentiators: it works as an offline AI governance linter for repositories. Most runtime guardrails only discover policy gaps when the application executes. PolicyAware can catch structural AI governance risks during local development or CI/CD.
@@ -279,15 +293,21 @@ policyaware up --policy-url s3://policy-configs/prod/policyaware.yaml --policy-c
 policyaware init
 policyaware policy validate policyaware.yaml
 policyaware policy validate policyaware.yaml --json
+policyaware policy validate policyaware.yaml --strict
+policyaware policy validate policyaware.yaml --strict --format github
 policyaware policy doctor policyaware.yaml
 policyaware policy summarize policyaware.yaml
 policyaware policy lint policyaware.yaml
 policyaware policy checklist policyaware.yaml
 policyaware policy normalize policyaware.yaml --out policyaware.normalized.yaml
 policyaware policy diff old-policy.yaml new-policy.yaml --fail-on-relaxed
+policyaware policy fingerprint policyaware.yaml --json
+policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha256> --json
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
 policyaware quickstart
+policyaware quickstart --no-write
 policyaware demo doctor
+policyaware examples list --compact
 policyaware dev simulate
 policyaware risk classify "Email jane@example.com about a patient diagnosis" --domain healthcare
 policyaware scan ./mylocalfolder

@@ -4,6 +4,8 @@ PolicyAware can perform lightweight stateful inspection across a conversation, u
 
 This helps detect slow exfiltration patterns where each individual request looks harmless, but the session accumulates sensitive data or repeated tool activity over time.
 
+This is threshold-based session governance, not semantic conversation understanding. The application must pass a stable session identifier and invoke PolicyAware on the requests and tool actions to be governed. PolicyAware does not automatically infer that a conversation has gradually gone off-topic, model arbitrary dialogue branches, or replace a conversation-state/orchestration framework. See [Capabilities, Boundaries, And Deployment Choices](capability-boundaries.md) for an overview.
+
 ## Why This Matters
 
 Stateless checks answer:

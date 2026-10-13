@@ -2,6 +2,8 @@
 
 PolicyAware is designed to be practical, modular, and enterprise-friendly. This page explains what the framework currently does well and what users must still configure or validate in their own environment.
 
+For a compact adoption decision guide, see [Capabilities, Boundaries, And Deployment Choices](capability-boundaries.md).
+
 ## What PolicyAware Does Well
 
 - Enforces deny-by-default YAML policy decisions.
@@ -32,7 +34,13 @@ PolicyAware is designed to be practical, modular, and enterprise-friendly. This 
 | Semantic governance | The core package is deterministic and explicit by design. It uses YAML policy, structured metadata, risk tiers, and pattern-based checks. Subtle social engineering, implied policy violations, or adversarial prompt injection may require optional semantic classifiers, guardrail adapters, golden datasets, and human review. |
 | HITL orchestration | PolicyAware can return approval-required decisions, but a full enterprise approval workflow also needs a durable queue, approval identity, secure resume/terminate APIs, timeouts, escalation, and workflow-system integrations such as Slack, PagerDuty, ServiceNow, Jira, or an internal approval API. |
 | Latency overhead | PolicyAware adds governance work before and after model calls. The base rules path is local and lightweight, cached policy loading avoids YAML parsing on every request, and teams can benchmark overhead with their own routes. Optional ML classifiers, external guardrail engines, and very large policy stacks can add more overhead. |
-| Compliance | PolicyAware produces governance evidence, but it is not a legal certification tool by itself. Compliance teams must review policies, audit retention, controls, and deployment procedures. |
+| Audit snapshot privacy | Audit snapshots default to full request/response capture for backward compatibility. Configure `snapshot_mode="metadata"` to omit prompt/output bodies and arbitrary context, metadata, and tool payloads. Standard trace identifiers remain, so use opaque IDs and configure access and retention controls. |
+| Observability and evaluation depth | PolicyAware provides governance-focused runtime checks, golden-dataset evaluation, policy traces, and telemetry exports. It is not a full observability/MLOps analytics platform for deep trace exploration, experiment management, production quality analytics, cohort analysis, or drift diagnosis. Pair it with a dedicated platform when those workflows are required. |
+| Central policy distribution | Configured SDK instances or sidecars fetch remote policy when a request arrives after the refresh TTL expires. Policy-only changes can avoid application image rebuilds after integration, but refresh is not background polling, an instantaneous push, transparent interception, or a managed fleet control plane. Applications must route checks through PolicyAware and operators must manage source availability, sidecar rollout, authentication, and refresh intervals. |
+| Distributed proxy throughput | The HTTP sidecar exposes explicit governance endpoints. It is not a transparent, OpenAI-compatible provider proxy or a turnkey multi-tenant, multi-region gateway with fleet-wide push updates and production throughput guarantees. Benchmark the complete deployment and pair with a dedicated gateway when those features are required. |
+| Specialized validator catalog | PolicyAware includes deterministic policy and pattern checks plus adapters for configured validators. It does not maintain a first-party curated catalog of many independently tested SQL, semantic similarity, hallucination, or domain-specific validators. External validator maturity, dependencies, behavior, and licenses vary. |
+| Multi-turn conversational steering | Session monitoring can count cumulative findings and tool actions when stable session identity and state storage are configured. It does not automatically infer semantic topic drift across a conversation or define branching dialogue flows. Use an appropriate conversational framework or explicit application state for those needs. |
+| GRC and regulatory program management | PolicyAware provides application-level policy controls, starter policy packs, and technical evidence artifacts such as traces, audit bundles, and scan findings. It does not automatically map every event to NIST AI RMF, ISO/IEC 42001, or EU AI Act controls, generate a formal compliance assessment, provide a centralized AI inventory, or replace legal/compliance review. Organizations remain responsible for regulatory interpretation, control ownership, mapping, review, and retention. |
 
 ## Best Fit And Trade-Offs
 

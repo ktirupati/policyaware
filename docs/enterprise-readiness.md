@@ -6,6 +6,8 @@ This page summarizes the features that help security, platform, compliance, and 
 
 PolicyAware is an open-source framework that enterprise teams can embed, extend, and operate as a policy-aware control plane inside their own AI applications and platform workflows. Teams can connect their preferred identity systems, storage retention model, approval workflows, dashboards, SIEM/GRC tools, and compliance review processes around PolicyAware controls.
 
+Its compliance-related features are application-level controls and technical evidence outputs. PolicyAware does not provide a centralized enterprise AI inventory, end-to-end regulatory obligation management, legally validated regulation-to-code mappings, or an executive GRC dashboard. Treat policy packs as examples to review, and use traces, scan reports, and evidence bundles as inputs to your existing governance process rather than as proof of compliance.
+
 ## Readiness Checklist
 
 | Area | PolicyAware Support |
@@ -85,6 +87,6 @@ These artifacts help reviewers understand what was checked, which policy matched
 | --- | --- |
 | AI platform engineers | Common control plane for model, RAG, agent, and tool workflows. |
 | Security engineers | PII/secrets checks, tool shielding, scan reports, audit traces, and reason codes. |
-| Compliance reviewers | Evidence bundles, policy reports, trace viewer, and governance summaries. |
+| Compliance reviewers | Technical evidence bundles, policy reports, and traces to support review within the organization's broader compliance process. |
 | Application developers | Copy-paste SDK, CLI, callbacks, and middleware examples. |
 | FinOps teams | Token, budget, model routing, and provider metadata controls. |

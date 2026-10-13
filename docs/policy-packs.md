@@ -2,7 +2,7 @@
 
 PolicyAware includes bundled starter policy packs so teams do not have to begin with a blank YAML file.
 
-These packs are policy-as-code starting points, not legal certifications. Review them with your security, privacy, compliance, and legal stakeholders before production use.
+These packs are policy-as-code starting points, not legal certifications or complete regulatory control mappings. They encode example runtime controls; they do not determine whether a system or organization is subject to a regulation or compliant with it. Review and adapt them with your security, privacy, compliance, and legal stakeholders before production use.
 
 ## List Packs
 

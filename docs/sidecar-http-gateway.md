@@ -2,9 +2,13 @@
 
 PolicyAware is Python-first, but non-Python services can use it through a lightweight HTTP sidecar.
 
-The sidecar is dependency-free and uses Python's standard library HTTP server. It is intended as a local service, sidecar, or internal gateway pattern for Node.js, Go, Java, Rust, and other application stacks.
+The sidecar is dependency-free and uses Python's standard library HTTP server. It is intended as a local service, sidecar, or internal governance API for Node.js, Go, Java, Rust, and other application stacks. Applications must send checks to its endpoints and honor the returned decisions. It does not transparently intercept model traffic or act as an OpenAI-compatible reverse proxy.
 
-Use embedded SDK mode when you want fast adoption inside a Python app. Use sidecar or gateway mode when you want a stronger out-of-process enforcement point with separate runtime identity, network policy, logs, and operational controls.
+The sidecar is not positioned as a high-throughput, multi-tenant, multi-region AI proxy. It does not provide transparent provider connection pooling or a fleet control plane. For those requirements, use a dedicated gateway and call PolicyAware for explicit governance checks where appropriate. Benchmark serialization, network, policy, optional-validator, and storage costs at expected concurrency before production rollout.
+
+Use embedded SDK mode when you want fast adoption inside a Python app. Use sidecar mode when you want a separate out-of-process governance service with its own runtime identity, network policy, logs, and operational controls.
+
+For fleet deployments, sidecars can refresh from a shared remote policy source when a request arrives after the configured TTL expires. This can avoid rebuilding application images for policy-only changes after the applications have been integrated with the sidecar. Refresh is request-triggered pull, not background polling or push; configure service discovery, authentication, availability, and traffic routing as part of your deployment.
 
 ## Start The Sidecar
 

@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 
 from policyaware.models import Decision, GatewayRequest, PolicyDecision, RiskTier, ToolCallRequest, ToolDecision
-from policyaware.policy import PolicyEngine
+from policyaware.policy import PolicyEngine, policy_provenance
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,7 @@ class EmergencyRevokeList:
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
+        self.policy_provenance = policy_provenance(self.config)
         self.rules = list(self.config.get("rules", []) or [])
 
     @classmethod
@@ -53,7 +54,7 @@ class EmergencyRevokeList:
         return self._match(context)
 
     def deny_decision(self, match: EmergencyRevokeMatch) -> PolicyDecision:
-        return PolicyDecision(
+        decision = PolicyDecision(
             decision=Decision.DENY,
             reason=match.reason or "Denied by emergency revoke list.",
             risk_tier=RiskTier.CRITICAL,
@@ -63,9 +64,12 @@ class EmergencyRevokeList:
             reason_codes=["EMERGENCY.REVOKE_MATCHED"],
             remediation=["Review the emergency revoke list before retrying this request."],
         )
+        for key, value in self.policy_provenance.items():
+            setattr(decision, key, value)
+        return decision
 
     def deny_tool_decision(self, request: ToolCallRequest, match: EmergencyRevokeMatch) -> ToolDecision:
-        return ToolDecision(
+        decision = ToolDecision(
             decision=Decision.DENY,
             connector_id=request.connector_id,
             action=request.action,
@@ -73,6 +77,9 @@ class EmergencyRevokeList:
             reason_codes=["EMERGENCY.REVOKE_MATCHED"],
             matched_rules=[match.rule] if match.rule else ["emergency_revoke"],
         )
+        for key, value in self.policy_provenance.items():
+            setattr(decision, key, value)
+        return decision
 
     def _match(self, context: dict[str, Any]) -> EmergencyRevokeMatch:
         matcher = PolicyEngine({"rules": []})

@@ -12,6 +12,7 @@ Check the installed version:
 
 ```bash
 policyaware --version
+policyaware doctor --json
 ```
 
 ## Run The Zero-Config Demo
@@ -28,6 +29,12 @@ For machine-readable output:
 
 ```bash
 policyaware quickstart --json
+```
+
+Preview the same report without writing the demo file:
+
+```bash
+policyaware quickstart --no-write
 ```
 
 ## Scan A Repository
@@ -49,6 +56,8 @@ policyaware scan . --format html,json,sarif,markdown --fail-on high
 ```bash
 policyaware init --profile mcp --out policyaware.yaml
 policyaware policy validate policyaware.yaml --json
+policyaware policy validate policyaware.yaml --strict
+policyaware policy validate policyaware.yaml --strict --format github
 policyaware policy doctor policyaware.yaml
 policyaware policy checklist policyaware.yaml
 policyaware policy normalize policyaware.yaml --out policyaware.normalized.yaml

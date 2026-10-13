@@ -4,7 +4,15 @@ All notable PolicyAware changes are tracked here.
 
 ## Unreleased
 
-- No unreleased changes yet.
+## 0.4.11
+
+- Added `policyaware quickstart --no-write` for dry-run onboarding demos.
+- Added `policyaware policy validate --strict` and `--format github` for lightweight CI gating and GitHub Actions annotations.
+- Added `policyaware examples list --compact` for scripts and documentation snippets.
+- Added `policyaware policy fingerprint` to validate and print canonical provenance, with `--expected-sha256` CI gating for approved policy changes.
+- Added policy ID, version, schema version, and canonical SHA-256 provenance to policy decisions and audit traces.
+- Added metadata-only audit snapshots to omit raw request and response payloads while retaining compact decision details; full snapshots remain the default.
+- Expanded capability-boundary documentation for deployment, observability, validator, conversational-state, and GRC scope.
 
 ## 0.4.10
 

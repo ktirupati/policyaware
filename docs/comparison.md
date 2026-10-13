@@ -15,7 +15,7 @@ Add deny-by-default policy, PII redaction, tool governance, model routing, evalu
 | Guardrails | Validate prompts or outputs against safety, format, or quality rules. | Helpful for prompt safety, structured outputs, toxicity checks, and response validation. | Usually does not provide full request context policy, model routing, tool permissions, approval workflows, or audit evidence. |
 | AI gateway | Proxy requests to one or more model providers. | Helpful for provider abstraction, API keys, usage tracking, rate limits, and fallback routing. | Often model-call focused, not policy-first across prompts, context, tools, RAG quality, approvals, and compliance traces. |
 | Model router | Select the best model for a request. | Helpful for cost, latency, availability, provider failover, and quality tradeoffs. | Usually does not decide whether a request is legally, organizationally, or operationally allowed before routing. |
-| PolicyAware | Enforce policy before model/tool execution, then evaluate and audit the result. | Helpful for enterprise governance across LLMs, RAG, AI agents, MCP tools, model routing, approvals, and compliance review. | It is an embeddable open-source control plane, not a hosted SaaS dashboard or replacement for legal/security review. |
+| PolicyAware | Enforce policy around model and tool execution, then evaluate and record the result. | Helpful for application-level controls across LLMs, RAG, AI agents, MCP tools, model routing, approvals, and technical evidence for governance review. | It is an embeddable open-source framework, not an organization-wide GRC platform, hosted AI inventory, legal interpretation service, or replacement for compliance review. |
 
 ## PolicyAware Compared
 
@@ -30,7 +30,7 @@ Add deny-by-default policy, PII redaction, tool governance, model routing, evalu
 | Can it route across providers after policy approval? | No | Yes | Yes | Yes |
 | Can it evaluate RAG citation/grounding and leakage? | Sometimes | Limited | No | Yes |
 | Can it emit audit traces with reason codes? | Limited | Sometimes | Limited | Yes |
-| Can it generate compliance evidence artifacts? | Usually no | Usually no | No | Yes |
+| Can it generate technical policy and runtime evidence? | Varies | Varies | Usually not the focus | Yes; evidence still needs organizational review and retention controls. |
 
 ## When To Use PolicyAware
 
@@ -68,6 +68,20 @@ Use a model router-only library when:
 - You do not need to decide whether the request should be allowed in the first place.
 
 ## Where PolicyAware Stands Today
+
+### Observability And Evaluation Scope
+
+PolicyAware includes governance-focused runtime checks, golden-dataset evaluation, policy decision traces, and telemetry exports. These help enforce and review policy outcomes; they are not a full LLM observability or MLOps analytics suite. PolicyAware does not aim to provide the depth of trace exploration, experiment comparison, production quality analytics, cohort analysis, or drift diagnostics available in dedicated tools. Teams can pair PolicyAware with products such as LangSmith, Arize Phoenix, or Fiddler when they need those workflows. Capabilities vary by product and configuration.
+
+### Deployment And Policy Updates
+
+PolicyAware SDK instances and sidecars check for a shared policy update when a request arrives after the configured refresh TTL expires. For services already integrated with PolicyAware, a policy-only update can take effect without rebuilding each application image. This is not background polling, transparent interception, or push-based fleet control: applications must call the governance API or be explicitly routed through it, and each instance refreshes independently. NeMo Guardrails and Guardrails AI also support service-based deployment options, so avoid describing either as in-process only ([NeMo deployment options](https://docs.nvidia.com/nemo/guardrails/latest/index.html), [Guardrails AI server](https://github.com/guardrails-ai/guardrails-api)).
+
+### GRC And Regulatory Scope
+
+PolicyAware focuses on controls inside AI applications and on technical evidence about those controls. Its policy packs are editable starting points, and its audit bundles, scan reports, and traces can support a governance review or be exported into an organization's existing SIEM/GRC process. These features do not provide a centralized AI inventory, end-to-end regulatory obligation management, legally validated mapping from regulations to application code, or executive GRC reporting. They do not establish that an organization is compliant.
+
+Products such as IBM watsonx.governance, Credo AI, and OneTrust address broader governance workflows, which can include AI inventories, risk assessments, framework-aligned processes, and stakeholder reporting. Exact capabilities vary by product and configuration. PolicyAware can complement those platforms with application-level enforcement and evidence; it should not be presented as a replacement for them.
 
 | Feedback Area | Honest Position |
 | --- | --- |

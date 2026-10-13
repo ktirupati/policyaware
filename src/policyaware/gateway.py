@@ -178,6 +178,10 @@ class Gateway:
             "contains_sensitive": findings.contains_sensitive,
             "state_mutation": decision.state_mutation,
             "request_id": policy_request.request_id,
+            "policy_id": decision.policy_id,
+            "policy_version": decision.policy_version,
+            "policy_schema_version": decision.policy_schema_version,
+            "policy_sha256": decision.policy_sha256,
         }
         response = GatewayResponse(
             content=safe_prompt if metadata_out["allowed"] else "",
@@ -476,6 +480,10 @@ class Gateway:
     ) -> PolicyDecision:
         return PolicyDecision(
             decision=Decision.DENY,
+            policy_id=original.policy_id,
+            policy_version=original.policy_version,
+            policy_schema_version=original.policy_schema_version,
+            policy_sha256=original.policy_sha256,
             actions=[*original.actions, "guardrail_block"],
             matched_rules=original.matched_rules,
             violated_rules=[*original.violated_rules, guard_name],

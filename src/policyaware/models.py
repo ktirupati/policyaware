@@ -98,6 +98,10 @@ class DecisionExplanation(BaseModel):
 
 class PolicyDecision(BaseModel):
     decision: Decision
+    policy_id: str | None = None
+    policy_version: str | None = None
+    policy_schema_version: str | None = None
+    policy_sha256: str | None = None
     actions: list[str] = Field(default_factory=list)
     matched_rules: list[str] = Field(default_factory=list)
     reason: str
@@ -151,6 +155,10 @@ class ToolCallRequest(BaseModel):
 
 class ToolDecision(BaseModel):
     decision: Decision
+    policy_id: str | None = None
+    policy_version: str | None = None
+    policy_schema_version: str | None = None
+    policy_sha256: str | None = None
     connector_id: str
     action: str
     reason: str
@@ -172,6 +180,7 @@ class GatewayResponse(BaseModel):
 
 class AuditTrace(BaseModel):
     schema_version: str = "0.2"
+    snapshot_mode: Literal["full", "metadata"] = "full"
     trace_id: str
     parent_trace_id: str | None = None
     session_id: str | None = None
@@ -181,6 +190,10 @@ class AuditTrace(BaseModel):
     user_id: str | None = None
     task_type: str | None = None
     policy_decision: str
+    policy_id: str | None = None
+    policy_version: str | None = None
+    policy_schema_version: str | None = None
+    policy_sha256: str | None = None
     matched_rules: list[str]
     reason_codes: list[str] = Field(default_factory=list)
     actions: list[str]

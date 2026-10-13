@@ -4,6 +4,14 @@
 
 Audit captures evidence for policy decisions and runtime behavior.
 
+These records document what PolicyAware observed and decided. They are technical evidence for downstream review, not immutable proof, legal conclusions, or a complete audit program. Configure access control, integrity protection, export, and retention in the deployment that stores them.
+
+Audit bundles and traces are not automatically cross-walked to NIST AI RMF, ISO/IEC 42001, or EU AI Act controls, and they are not a formal compliance assessment. Teams must define and review their own control mappings, evidence sufficiency, retention, and legal interpretation. PolicyAware does not certify that an organization is compliant. See [Capabilities, Boundaries, And Deployment Choices](../capability-boundaries.md).
+
+Decisions from `PolicyEngine`, `ToolPolicyEngine`, and `EmergencyRevokeList` carry the policy ID, optional human-managed `policy_version`, schema version, and SHA-256 fingerprint of the canonical configuration. Audit traces preserve these fields when the recorded decision came from one of those engines. Session-threshold decisions may not have a policy fingerprint. The fingerprint identifies configuration content; it is not a digital signature or proof of who approved or published it.
+
+PolicyAware's observability features focus on governance events and policy evidence. They do not replace a dedicated LLM observability platform for detailed trace exploration, experiment comparison, production quality analytics, cohort analysis, or drift diagnosis. Export or correlate PolicyAware traces with the observability stack already used by your team when those capabilities are needed.
+
 It records:
 
 - trace ID
@@ -41,11 +49,66 @@ from policyaware import (
 | `logger.read_traces()` | method | Reads stored traces. |
 | `logger.find_trace(trace_id)` | method | Finds one trace by ID. |
 | `TraceViewer().write_html(...)` | method | Generates a local HTML trace viewer. |
-| `AuditBundleWriter().write(...)` | method | Generates compliance evidence artifacts for a trace. |
+| `AuditBundleWriter().write(...)` | method | Generates technical audit evidence artifacts for downstream governance review; it does not map them to regulatory controls. |
 | `PrometheusExporter` | class | Exports trace metrics in Prometheus format. |
 | `OpenTelemetryJsonExporter` | class | Exports OpenTelemetry-shaped JSON from traces. |
 | `RuntimeTelemetryCollector` | class | Records live request and tool-governance metrics for runtime dashboards. |
 | `RuntimeTelemetryCollector.record_governance_event(...)` | method | Records advanced governance events such as jury vetoes, trajectory mutation, synthetic redaction, retrieval sanitization, and circuit-breaker pauses. |
+
+## Policy Provenance
+
+Add an optional revision to a policy file. The content fingerprint is computed automatically and is attached to `PolicyDecision`, `ToolDecision`, and `AuditTrace` results.
+
+```yaml
+id: customer-support-policy
+policy_version: "2026.10.1"
+schema_version: "0.4"
+default: deny
+rules:
+  - name: allow_low_risk_support
+    effect: allow
+    when:
+      user.role_in: [support_agent]
+      risk.tier: low
+```
+
+Use `policy_sha256` to compare the effective policy content across deployments. Formatting-only YAML changes do not change the fingerprint; content changes do. `policy_version` is a human-managed revision label, while `schema_version` describes the policy schema.
+
+Print the same runtime provenance from the CLI for release records or CI artifacts:
+
+```bash
+policyaware policy fingerprint policyaware.yaml --json
+policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha256> --json
+```
+
+The command validates the policy first. With `--expected-sha256`, CI receives a nonzero exit code when the current fingerprint differs from the approved value. Its SHA-256 identifies the parsed policy content; it is not a digital signature or approval attestation.
+
+## Snapshot Privacy
+
+Audit snapshots default to `full` for backward compatibility. This mode can store prompts, outputs, context, metadata, and tool arguments. Select `metadata` to omit those free-text and arbitrary payload snapshots while keeping a request ID and compact policy decision data:
+
+```python
+from policyaware import AuditLogger, Gateway
+
+gateway = Gateway.from_policy_file("policyaware.yaml")
+gateway.audit_logger = AuditLogger(
+    ".policyaware/traces.jsonl",
+    snapshot_mode="metadata",
+)
+```
+
+SQLite supports the same option:
+
+```python
+from policyaware import SQLiteAuditLogger
+
+gateway.audit_logger = SQLiteAuditLogger(
+    ".policyaware/audit.db",
+    snapshot_mode="metadata",
+)
+```
+
+Metadata mode still records normal trace-level identifiers and governance fields, including tenant, app, user ID, and session ID when supplied. Prefer opaque identifiers and apply access controls and retention limits to audit storage. Full mode intentionally retains payload snapshots; do not enable it without reviewing data classification, access, and retention requirements.
 
 ## `AuditTrace` Fields
 
