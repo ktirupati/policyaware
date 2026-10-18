@@ -173,6 +173,92 @@ def test_policy_fingerprint_rejects_invalid_policy(tmp_path: Path) -> None:
     assert "Policy validation failed" in result.output
 
 
+def test_policy_lock_create_and_verify_detects_policy_drift(tmp_path: Path) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    lock_file = tmp_path / "policyaware.lock.json"
+    policy_file.write_text(
+        "id: locked-policy\ndefault: deny\nrules: []\n", encoding="utf-8"
+    )
+
+    created = CliRunner().invoke(
+        app,
+        ["policy", "lock", "create", str(policy_file), "--out", str(lock_file)],
+    )
+    verified = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "lock",
+            "verify",
+            str(policy_file),
+            "--lock-file",
+            str(lock_file),
+            "--json",
+        ],
+    )
+
+    assert created.exit_code == 0, created.output
+    lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+    assert lock_data["lock_version"] == 1
+    assert lock_data["policy"]["policy_id"] == "locked-policy"
+    assert verified.exit_code == 0, verified.output
+    assert json.loads(verified.output)["matches"] is True
+
+    policy_file.write_text(
+        "id: locked-policy\ndefault: allow\nrules: []\n", encoding="utf-8"
+    )
+    drift = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "lock",
+            "verify",
+            str(policy_file),
+            "--lock-file",
+            str(lock_file),
+            "--json",
+        ],
+    )
+
+    assert drift.exit_code == 1
+    assert json.loads(drift.output)["matches"] is False
+
+
+def test_policy_lock_create_requires_force_to_replace(tmp_path: Path) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    lock_file = tmp_path / "policyaware.lock.json"
+    policy_file.write_text("default: deny\nrules: []\n", encoding="utf-8")
+    args = ["policy", "lock", "create", str(policy_file), "--out", str(lock_file)]
+
+    assert CliRunner().invoke(app, args).exit_code == 0
+    refused = CliRunner().invoke(app, args)
+    replaced = CliRunner().invoke(app, [*args, "--force"])
+
+    assert refused.exit_code != 0
+    assert replaced.exit_code == 0
+
+
+def test_policy_lock_verify_rejects_malformed_lockfile(tmp_path: Path) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    lock_file = tmp_path / "lock.json"
+    policy_file.write_text("default: deny\nrules: []\n", encoding="utf-8")
+    lock_file.write_text('{"lock_version": true, "policy": {}}', encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "lock",
+            "verify",
+            str(policy_file),
+            "--lock-file",
+            str(lock_file),
+        ],
+    )
+
+    assert result.exit_code != 0
+
+
 def test_policy_validate_json_success() -> None:
     result = CliRunner().invoke(app, ["policy", "validate", "examples/policies/basic.yaml", "--json"])
 

@@ -4,6 +4,10 @@ All notable PolicyAware changes are tracked here.
 
 ## Unreleased
 
+## 0.4.12
+
+- Added `policyaware policy lock create` and `verify` for reviewable, dependency-light policy fingerprint pinning in CI.
+
 ## 0.4.11
 
 - Added `policyaware quickstart --no-write` for dry-run onboarding demos.

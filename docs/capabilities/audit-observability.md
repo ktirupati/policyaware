@@ -83,6 +83,15 @@ policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha2
 
 The command validates the policy first. With `--expected-sha256`, CI receives a nonzero exit code when the current fingerprint differs from the approved value. Its SHA-256 identifies the parsed policy content; it is not a digital signature or approval attestation.
 
+For a reviewable pin tracked with policy code, create and verify a lockfile:
+
+```bash
+policyaware policy lock create policyaware.yaml --out policyaware.lock.json
+policyaware policy lock verify policyaware.yaml --lock-file policyaware.lock.json --json
+```
+
+The lockfile is unsigned; protect it through the same repository review and access controls as the policy itself.
+
 ## Snapshot Privacy
 
 Audit snapshots default to `full` for backward compatibility. This mode can store prompts, outputs, context, metadata, and tool arguments. Select `metadata` to omit those free-text and arbitrary payload snapshots while keeping a request ID and compact policy decision data:

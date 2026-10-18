@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from importlib.metadata import PackageNotFoundError, version as package_version
 from importlib.util import find_spec
 from pathlib import Path
@@ -62,6 +63,7 @@ from policyaware.tools import ToolPolicyEngine
 app = typer.Typer(help="PolicyAware AI Gateway CLI", invoke_without_command=True, no_args_is_help=True)
 policy_app = typer.Typer(help="Policy testing commands")
 policy_packs_app = typer.Typer(help="Policy pack commands")
+policy_lock_app = typer.Typer(help="Policy provenance lockfile commands")
 eval_app = typer.Typer(help="Evaluation commands")
 dev_app = typer.Typer(help="Local development commands")
 demo_app = typer.Typer(help="Zero-config demos for first-time users")
@@ -91,6 +93,7 @@ drift_app = typer.Typer(help="Model drift canary commands")
 fairness_app = typer.Typer(help="Fairness and decision-distribution commands")
 app.add_typer(policy_app, name="policy")
 policy_app.add_typer(policy_packs_app, name="packs")
+policy_app.add_typer(policy_lock_app, name="lock")
 app.add_typer(eval_app, name="eval")
 app.add_typer(dev_app, name="dev")
 app.add_typer(demo_app, name="demo")
@@ -2259,13 +2262,7 @@ def fingerprint_policy(
         ):
             raise typer.BadParameter("--expected-sha256 must be a 64-character hexadecimal SHA-256.")
 
-    policy = _load_yaml_mapping(policy_file)
-    try:
-        PolicySchemaValidator().validate(policy)
-    except PolicyValidationError as exc:
-        raise typer.BadParameter(f"Policy validation failed: {exc}") from exc
-
-    provenance = policy_provenance(policy)
+    provenance = _validated_policy_provenance(policy_file)
     result = {"policy_file": str(policy_file), **provenance}
     matches_expected = (
         expected_sha256 is None or provenance["policy_sha256"] == expected_sha256
@@ -2290,6 +2287,118 @@ def fingerprint_policy(
         raise typer.Exit(code=1)
     if expected_sha256 is not None:
         console.print("[bold green]Policy fingerprint matches the approved value.[/bold green]")
+
+
+def _validated_policy_provenance(policy_file: Path) -> dict[str, str | None]:
+    policy = _load_yaml_mapping(policy_file)
+    try:
+        PolicySchemaValidator().validate(policy)
+    except PolicyValidationError as exc:
+        raise typer.BadParameter(f"Policy validation failed: {exc}") from exc
+    return policy_provenance(policy)
+
+
+@policy_lock_app.command("create")
+def create_policy_lock(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    out: Path = typer.Option(
+        Path("policyaware.lock.json"),
+        "--out",
+        "-o",
+        help="Lockfile output path (default: policyaware.lock.json).",
+    ),
+    force: bool = typer.Option(False, "--force", help="Replace an existing lockfile."),
+    json_output: bool = typer.Option(False, "--json", help="Print lock metadata as JSON."),
+) -> None:
+    """Validate a policy and write a reviewable JSON lockfile."""
+    if not policy_file.exists():
+        raise typer.BadParameter(f"Policy file does not exist: {policy_file}")
+    if out.resolve() == policy_file.resolve():
+        raise typer.BadParameter("Lockfile output must not overwrite the policy file.")
+    if out.exists() and not force:
+        raise typer.BadParameter(f"Lockfile already exists: {out}. Use --force to replace it.")
+    provenance = _validated_policy_provenance(policy_file)
+    lock_data = {"lock_version": 1, "policy": provenance}
+    if not out.parent.exists():
+        raise typer.BadParameter(f"Lockfile directory does not exist: {out.parent}")
+
+    temporary_path: Path | None = None
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{out.name}.", suffix=".tmp", dir=out.parent
+        )
+        temporary_path = Path(temporary_name)
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
+            json.dump(lock_data, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+        os.replace(temporary_path, out)
+    except OSError as exc:
+        raise typer.BadParameter(f"Could not write policy lockfile: {exc}") from exc
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+    if json_output:
+        console.print_json(data={"lock_file": str(out), **lock_data})
+    else:
+        console.print(f"[bold green]Policy lockfile written:[/bold green] {out}")
+        console.print(f"Policy SHA-256: {provenance['policy_sha256']}")
+
+
+@policy_lock_app.command("verify")
+def verify_policy_lock(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    lock_file: Path = typer.Option(
+        Path("policyaware.lock.json"),
+        "--lock-file",
+        help="Lockfile to verify (default: policyaware.lock.json).",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Print verification result as JSON."),
+) -> None:
+    """Validate policy and fail if its fingerprint differs from the lockfile."""
+    if not lock_file.exists():
+        raise typer.BadParameter(f"Lockfile does not exist: {lock_file}")
+    try:
+        lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"Could not read policy lockfile: {exc}") from exc
+    if (
+        not isinstance(lock_data, dict)
+        or not isinstance(lock_data.get("lock_version"), int)
+        or isinstance(lock_data.get("lock_version"), bool)
+        or lock_data.get("lock_version") != 1
+        or not isinstance(lock_data.get("policy"), dict)
+    ):
+        raise typer.BadParameter("Unsupported or malformed PolicyAware lockfile.")
+    locked_provenance = lock_data["policy"]
+    locked_hash = locked_provenance.get("policy_sha256")
+    if (
+        not isinstance(locked_hash, str)
+        or len(locked_hash) != 64
+        or any(character not in "0123456789abcdef" for character in locked_hash.lower())
+    ):
+        raise typer.BadParameter("Lockfile policy_sha256 must be a 64-character hexadecimal SHA-256.")
+
+    current_provenance = _validated_policy_provenance(policy_file)
+    matches = current_provenance["policy_sha256"] == locked_hash.lower()
+    result = {
+        "policy_file": str(policy_file),
+        "lock_file": str(lock_file),
+        "expected_sha256": locked_hash.lower(),
+        "actual_sha256": current_provenance["policy_sha256"],
+        "matches": matches,
+    }
+    if json_output:
+        console.print_json(data=result)
+    elif matches:
+        console.print("[bold green]Policy matches the lockfile.[/bold green]")
+        console.print(f"Policy SHA-256: {current_provenance['policy_sha256']}")
+    else:
+        console.print("[bold red]Policy does not match the lockfile.[/bold red]")
+        console.print(f"Expected: {locked_hash.lower()}")
+        console.print(f"Actual:   {current_provenance['policy_sha256']}")
+    if not matches:
+        raise typer.Exit(code=1)
 
 
 @policy_app.command("lint")

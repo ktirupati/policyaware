@@ -354,6 +354,21 @@ policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha2
 
 The command validates the policy before printing its ID, optional revision, schema version, and fingerprint. The hash is computed from parsed policy content, so YAML formatting or key-order changes do not alter it. With `--expected-sha256`, it reports `matches_expected` in JSON and exits nonzero on a mismatch, making it suitable for CI approval checks. A fingerprint identifies content but is not a signature or proof of approval.
 
+Keep the approved fingerprint in a reviewable JSON lockfile instead of a CI variable:
+
+```bash
+policyaware policy lock create policyaware.yaml --out policyaware.lock.json
+git add policyaware.yaml policyaware.lock.json
+```
+
+Verify it before deployment:
+
+```bash
+policyaware policy lock verify policyaware.yaml --lock-file policyaware.lock.json --json
+```
+
+The lockfile records the lock format version and policy provenance. Verification validates the policy and exits nonzero when its canonical hash differs. Creating a lock does not overwrite an existing one unless `--force` is supplied. Treat the lockfile as reviewed source code: it is not signed and does not by itself prove who approved it.
+
 Compare policy changes before review or deployment:
 
 ```bash
