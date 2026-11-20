@@ -4,6 +4,10 @@ All notable PolicyAware changes are tracked here.
 
 ## Unreleased
 
+## 0.4.13
+
+- Added `policyaware policy lock update` to refresh an existing policy fingerprint lock only with explicit `--force`, reporting old and new hashes.
+
 ## 0.4.12
 
 - Added `policyaware policy lock create` and `verify` for reviewable, dependency-light policy fingerprint pinning in CI.

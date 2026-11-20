@@ -2298,6 +2298,54 @@ def _validated_policy_provenance(policy_file: Path) -> dict[str, str | None]:
     return policy_provenance(policy)
 
 
+def _read_policy_lockfile(lock_file: Path) -> dict[str, object]:
+    if not lock_file.exists():
+        raise typer.BadParameter(f"Lockfile does not exist: {lock_file}")
+    try:
+        lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"Could not read policy lockfile: {exc}") from exc
+    if (
+        not isinstance(lock_data, dict)
+        or not isinstance(lock_data.get("lock_version"), int)
+        or isinstance(lock_data.get("lock_version"), bool)
+        or lock_data.get("lock_version") != 1
+        or not isinstance(lock_data.get("policy"), dict)
+    ):
+        raise typer.BadParameter("Unsupported or malformed PolicyAware lockfile.")
+    locked_hash = lock_data["policy"].get("policy_sha256")
+    if (
+        not isinstance(locked_hash, str)
+        or len(locked_hash) != 64
+        or any(character not in "0123456789abcdef" for character in locked_hash.lower())
+    ):
+        raise typer.BadParameter("Lockfile policy_sha256 must be a 64-character hexadecimal SHA-256.")
+    return lock_data
+
+
+def _write_policy_lockfile(lock_file: Path, lock_data: dict[str, object]) -> None:
+    if not lock_file.parent.exists():
+        raise typer.BadParameter(f"Lockfile directory does not exist: {lock_file.parent}")
+    temporary_path: Path | None = None
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{lock_file.name}.", suffix=".tmp", dir=lock_file.parent
+        )
+        temporary_path = Path(temporary_name)
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
+            json.dump(lock_data, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+        os.replace(temporary_path, lock_file)
+    except OSError as exc:
+        raise typer.BadParameter(f"Could not write policy lockfile: {exc}") from exc
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
+
+
 @policy_lock_app.command("create")
 def create_policy_lock(
     policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
@@ -2319,30 +2367,59 @@ def create_policy_lock(
         raise typer.BadParameter(f"Lockfile already exists: {out}. Use --force to replace it.")
     provenance = _validated_policy_provenance(policy_file)
     lock_data = {"lock_version": 1, "policy": provenance}
-    if not out.parent.exists():
-        raise typer.BadParameter(f"Lockfile directory does not exist: {out.parent}")
-
-    temporary_path: Path | None = None
-    try:
-        descriptor, temporary_name = tempfile.mkstemp(
-            prefix=f".{out.name}.", suffix=".tmp", dir=out.parent
-        )
-        temporary_path = Path(temporary_name)
-        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
-            json.dump(lock_data, handle, indent=2, sort_keys=True)
-            handle.write("\n")
-        os.replace(temporary_path, out)
-    except OSError as exc:
-        raise typer.BadParameter(f"Could not write policy lockfile: {exc}") from exc
-    finally:
-        if temporary_path is not None and temporary_path.exists():
-            temporary_path.unlink()
+    _write_policy_lockfile(out, lock_data)
 
     if json_output:
         console.print_json(data={"lock_file": str(out), **lock_data})
     else:
         console.print(f"[bold green]Policy lockfile written:[/bold green] {out}")
         console.print(f"Policy SHA-256: {provenance['policy_sha256']}")
+
+
+@policy_lock_app.command("update")
+def update_policy_lock(
+    policy_file: Path = typer.Argument(..., help="PolicyAware YAML policy file."),
+    lock_file: Path = typer.Option(
+        Path("policyaware.lock.json"),
+        "--lock-file",
+        help="Existing lockfile to refresh (default: policyaware.lock.json).",
+    ),
+    force: bool = typer.Option(False, "--force", help="Confirm replacing the existing approved fingerprint."),
+    json_output: bool = typer.Option(False, "--json", help="Print old and new fingerprints as JSON."),
+) -> None:
+    """Refresh an existing lockfile after an explicitly confirmed policy change."""
+    if not force:
+        raise typer.BadParameter("Updating a policy lock requires explicit confirmation with --force.")
+    if lock_file.resolve() == policy_file.resolve():
+        raise typer.BadParameter("Lockfile must not overwrite the policy file.")
+
+    lock_data = _read_policy_lockfile(lock_file)
+    locked_policy = lock_data["policy"]
+    assert isinstance(locked_policy, dict)
+    previous_sha256 = str(locked_policy["policy_sha256"]).lower()
+    updated_provenance = _validated_policy_provenance(policy_file)
+    updated_sha256 = updated_provenance["policy_sha256"]
+    _write_policy_lockfile(
+        lock_file,
+        {"lock_version": 1, "policy": updated_provenance},
+    )
+
+    result = {
+        "policy_file": str(policy_file),
+        "lock_file": str(lock_file),
+        "previous_sha256": previous_sha256,
+        "updated_sha256": updated_sha256,
+        "changed": previous_sha256 != updated_sha256,
+    }
+    if json_output:
+        console.print_json(data=result)
+        return
+    console.print(f"Previous SHA-256: {previous_sha256}")
+    console.print(f"Updated  SHA-256: {updated_sha256}")
+    if result["changed"]:
+        console.print(f"[bold green]Policy lockfile updated:[/bold green] {lock_file}")
+    else:
+        console.print(f"[bold]Policy fingerprint unchanged; lockfile refreshed:[/bold] {lock_file}")
 
 
 @policy_lock_app.command("verify")
@@ -2356,28 +2433,11 @@ def verify_policy_lock(
     json_output: bool = typer.Option(False, "--json", help="Print verification result as JSON."),
 ) -> None:
     """Validate policy and fail if its fingerprint differs from the lockfile."""
-    if not lock_file.exists():
-        raise typer.BadParameter(f"Lockfile does not exist: {lock_file}")
-    try:
-        lock_data = json.loads(lock_file.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise typer.BadParameter(f"Could not read policy lockfile: {exc}") from exc
-    if (
-        not isinstance(lock_data, dict)
-        or not isinstance(lock_data.get("lock_version"), int)
-        or isinstance(lock_data.get("lock_version"), bool)
-        or lock_data.get("lock_version") != 1
-        or not isinstance(lock_data.get("policy"), dict)
-    ):
-        raise typer.BadParameter("Unsupported or malformed PolicyAware lockfile.")
+    lock_data = _read_policy_lockfile(lock_file)
     locked_provenance = lock_data["policy"]
+    assert isinstance(locked_provenance, dict)
     locked_hash = locked_provenance.get("policy_sha256")
-    if (
-        not isinstance(locked_hash, str)
-        or len(locked_hash) != 64
-        or any(character not in "0123456789abcdef" for character in locked_hash.lower())
-    ):
-        raise typer.BadParameter("Lockfile policy_sha256 must be a 64-character hexadecimal SHA-256.")
+    assert isinstance(locked_hash, str)
 
     current_provenance = _validated_policy_provenance(policy_file)
     matches = current_provenance["policy_sha256"] == locked_hash.lower()

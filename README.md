@@ -27,6 +27,7 @@ policyaware policy validate .policyaware/demo/policyaware.demo.yaml --strict --f
 policyaware policy fingerprint .policyaware/demo/policyaware.demo.yaml --json
 policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha256> --json
 policyaware policy lock create policyaware.yaml --out policyaware.lock.json
+policyaware policy lock update policyaware.yaml --lock-file policyaware.lock.json --force --json
 policyaware policy lock verify policyaware.yaml --lock-file policyaware.lock.json --json
 policyaware scan .
 ```
@@ -57,8 +58,8 @@ Compatibility: [Python, providers, extras, and integration status](https://githu
 Integrations strategy: [official vs compatible integrations](https://github.com/ktirupati/policyaware/blob/main/docs/integrations-strategy.md)
 Benchmarks: [lightweight governance benchmarks](https://github.com/ktirupati/policyaware/blob/main/docs/benchmarks.md)
 Production checklist: [deployment validation steps for governed AI workflows](https://github.com/ktirupati/policyaware/blob/main/docs/production-checklist.md)
-Release notes: [PolicyAware 0.4.12 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.12.md)
-GitHub release draft: [copy-paste v0.4.12 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.12.md)
+Release notes: [PolicyAware 0.4.13 highlights](https://github.com/ktirupati/policyaware/blob/main/docs/release-notes-0.4.13.md)
+GitHub release draft: [copy-paste v0.4.13 release body](https://github.com/ktirupati/policyaware/blob/main/docs/github-release-v0.4.13.md)
 Policy packs: [healthcare, finance, EU AI Act, and SOC 2 starter policies](https://github.com/ktirupati/policyaware/blob/main/docs/policy-packs.md)
 HTTP sidecar: [use PolicyAware from Node.js, Go, Java, Rust, and other services](https://github.com/ktirupati/policyaware/blob/main/docs/sidecar-http-gateway.md)
 Dynamic policy distribution: [central HTTP, S3, GCS, and ADLS policy sources with refresh, cache, and emergency revoke patterns](https://github.com/ktirupati/policyaware/blob/main/docs/dynamic-policy-distribution.md)
@@ -306,6 +307,7 @@ policyaware policy diff old-policy.yaml new-policy.yaml --fail-on-relaxed
 policyaware policy fingerprint policyaware.yaml --json
 policyaware policy fingerprint policyaware.yaml --expected-sha256 <approved-sha256> --json
 policyaware policy lock create policyaware.yaml --out policyaware.lock.json
+policyaware policy lock update policyaware.yaml --lock-file policyaware.lock.json --force --json
 policyaware policy lock verify policyaware.yaml --lock-file policyaware.lock.json --json
 policyaware policy migrate policyaware.yaml --to 0.3 --out policyaware.v0.3.yaml
 policyaware quickstart

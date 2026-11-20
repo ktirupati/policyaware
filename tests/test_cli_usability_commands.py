@@ -238,6 +238,88 @@ def test_policy_lock_create_requires_force_to_replace(tmp_path: Path) -> None:
     assert replaced.exit_code == 0
 
 
+def test_policy_lock_update_requires_force_and_reports_both_fingerprints(
+    tmp_path: Path,
+) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    lock_file = tmp_path / "policyaware.lock.json"
+    policy_file.write_text("id: policy-a\ndefault: deny\nrules: []\n", encoding="utf-8")
+    created = CliRunner().invoke(
+        app,
+        ["policy", "lock", "create", str(policy_file), "--out", str(lock_file)],
+    )
+    old_hash = json.loads(lock_file.read_text(encoding="utf-8"))["policy"]["policy_sha256"]
+    policy_file.write_text("id: policy-a\ndefault: allow\nrules: []\n", encoding="utf-8")
+    update_args = [
+        "policy",
+        "lock",
+        "update",
+        str(policy_file),
+        "--lock-file",
+        str(lock_file),
+        "--json",
+    ]
+
+    refused = CliRunner().invoke(app, update_args)
+    assert refused.exit_code != 0
+    assert json.loads(lock_file.read_text(encoding="utf-8"))["policy"]["policy_sha256"] == old_hash
+
+    updated = CliRunner().invoke(app, [*update_args, "--force"])
+
+    assert created.exit_code == 0
+    assert updated.exit_code == 0, updated.output
+    result = json.loads(updated.output)
+    current_hash = json.loads(lock_file.read_text(encoding="utf-8"))["policy"]["policy_sha256"]
+    assert result["previous_sha256"] == old_hash
+    assert result["updated_sha256"] == current_hash
+    assert result["changed"] is True
+    assert current_hash != old_hash
+
+    verified = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "lock",
+            "verify",
+            str(policy_file),
+            "--lock-file",
+            str(lock_file),
+            "--json",
+        ],
+    )
+    assert verified.exit_code == 0
+
+
+def test_policy_lock_update_reports_unchanged_fingerprint(tmp_path: Path) -> None:
+    policy_file = tmp_path / "policy.yaml"
+    lock_file = tmp_path / "policyaware.lock.json"
+    policy_file.write_text("default: deny\nrules: []\n", encoding="utf-8")
+    created = CliRunner().invoke(
+        app,
+        ["policy", "lock", "create", str(policy_file), "--out", str(lock_file)],
+    )
+
+    updated = CliRunner().invoke(
+        app,
+        [
+            "policy",
+            "lock",
+            "update",
+            str(policy_file),
+            "--lock-file",
+            str(lock_file),
+            "--force",
+            "--json",
+        ],
+    )
+
+    assert created.exit_code == 0
+    assert updated.exit_code == 0, updated.output
+    result = json.loads(updated.output)
+    assert result["changed"] is False
+    assert result["previous_sha256"] == result["updated_sha256"]
+
+
 def test_policy_lock_verify_rejects_malformed_lockfile(tmp_path: Path) -> None:
     policy_file = tmp_path / "policy.yaml"
     lock_file = tmp_path / "lock.json"

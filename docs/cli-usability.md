@@ -361,6 +361,17 @@ policyaware policy lock create policyaware.yaml --out policyaware.lock.json
 git add policyaware.yaml policyaware.lock.json
 ```
 
+After an intentionally reviewed policy change, refresh the existing lock explicitly:
+
+```bash
+policyaware policy lock update policyaware.yaml \
+  --lock-file policyaware.lock.json \
+  --force \
+  --json
+```
+
+`--force` is required. The command validates the existing lock and new policy, prints the previous and updated fingerprints, and atomically replaces the lockfile. If the fingerprint did not change, the output reports `changed: false`.
+
 Verify it before deployment:
 
 ```bash

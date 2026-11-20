@@ -87,10 +87,11 @@ For a reviewable pin tracked with policy code, create and verify a lockfile:
 
 ```bash
 policyaware policy lock create policyaware.yaml --out policyaware.lock.json
+policyaware policy lock update policyaware.yaml --lock-file policyaware.lock.json --force --json
 policyaware policy lock verify policyaware.yaml --lock-file policyaware.lock.json --json
 ```
 
-The lockfile is unsigned; protect it through the same repository review and access controls as the policy itself.
+Update requires explicit `--force` and reports the prior and replacement fingerprints. The lockfile is unsigned; protect it through the same repository review and access controls as the policy itself.
 
 ## Snapshot Privacy
 
